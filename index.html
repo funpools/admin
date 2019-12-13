@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
+  <title>Calendar Framework7 Demo App</title>
+  <link rel="stylesheet" href="framework7.bundle.css">
+  <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+  <div id="app">
+    <div class="statusbar"></div>
+    <div class="view view-main">
+      <div data-name="home" class="page">
+        <div class="page-content">
+          <div class="block-title">Example block</div>
+          <div class="block row">
+            <div class="col-50">
+              Add your content here
+              <a class="button button-fill" href="#" onclick="signOut()">Demo Button</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="framework7.bundle.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-app.js"></script>
+  <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-analytics.js"></script>
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyDE4eEbTl4-2uRZhPotGSVMxgj6nVEhqjw",
+      authDomain: "fun-sports-pools.firebaseapp.com",
+      databaseURL: "https://fun-sports-pools.firebaseio.com",
+      projectId: "fun-sports-pools",
+      storageBucket: "fun-sports-pools.appspot.com",
+      messagingSenderId: "825861071194",
+      appId: "1:825861071194:web:eb3544cbf38bd07331d363",
+      measurementId: "G-5LMHL36YSF"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+
+    //reference to the firestore database
+    var db = firebase.firestore();
+
+    var User; //An objects that contins the user data if the currently signed in user
+
+    //Firebase authentication
+    firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
+
+      if (user) { // User is signed in
+        //user id is user.uid
+
+      } else { //User is signed out.
+        console.log("nobody is signed in");
+        self.app.views.main.router.navigate('/login-screen/', {
+          ignoreCache: true,
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>
