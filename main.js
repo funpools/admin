@@ -130,19 +130,56 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
     var poolRef = db.collection('pools').doc(poolID);
     //Edit pool name
     if (poolName) {
-      poolRef
+      poolRef.update({
+          name: poolName,
+        })
+        .then(function() {
+          console.log("pool successfully updated!");
+        })
+        .catch(function(error) {
+          console.error("Error updating pool: ", error);
+        });
     }
     if (poolDescription) {
-
+      poolRef.update({
+          description: poolDescription,
+        })
+        .then(function() {
+          console.log("pool successfully updated!");
+        })
+        .catch(function(error) {
+          console.error("Error updating pool: ", error);
+        });
     }
     if (poolPicture) {
+      var profilePictureRef = storageRef.child('profile-pictures').child(User.uid);
+      profilePictureRef.put(file).then(function(snapshot) {
 
+
+      });
     }
     if (poolStartDate) {
-
+      poolRef.update({
+          startDate: poolStartDate,
+        })
+        .then(function() {
+          console.log("pool successfully updated!");
+        })
+        .catch(function(error) {
+          console.error("Error updating pool: ", error);
+        });
     }
     if (tags) {
       ///will be an array
+      poolRef.update({
+          tags: tags,
+        })
+        .then(function() {
+          console.log("pool successfully updated!");
+        })
+        .catch(function(error) {
+          console.error("Error updating pool: ", error);
+        });
     }
   } else {
     //the pool does not exist so create a pool and set its information
