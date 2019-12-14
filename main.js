@@ -2,26 +2,18 @@ var app = new Framework7({
   root: '#app',
   name: 'My App',
   id: 'com.myapp.test',
-  routes: [
-    // Add your routes here
-    // Example:
-    /*
-    {
-      path: '/about/',
-      url: 'about.html',
-    },
-    */
-    {
+  theme: 'aurora',
+  routes: [{
       path: '/home/',
       url: 'index.html',
     },
     {
-      path: '/login-screen/',
+      path: '/login/',
       url: 'pages/login.html',
       on: {
         pageInit: function(e, page) {
           //When the pages is Initialized setup the signIn button
-          document.getElementById('sign-in-button').addEventListener('click', function() {
+          document.getElementById('log-in-button').addEventListener('click', function() {
             var email = document.getElementById("uname").value;
             var password = document.getElementById("pword").value;
             signIn(email, password);
@@ -38,16 +30,18 @@ var app = new Framework7({
 var mainView = app.views.create('.view-main');
 
 
+
 function signIn(email, password) {
-  var err = document.getElementById("errmsg");
-  err.innerHTML = "";
+  app.preloader.show();
   firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
-    // Handle Errors here.
-    var errorCode = error.code;
-    var errorMessage = error.message;
-    console.log("Failed to login: " + error.message);
-    err.innerHTML = "Oops! " + error.message;
+    app.preloader.hide();
+    app.toast.show({
+      text: error,
+      closeTimeout: 10000,
+      closeButton: true
+    });
   }).then(function() {
+    app.preloader.hide();
     //Put any code that needs to happen after login here
     console.log("Signed in!");
     //self.app.views.main.router.navigate('/home/');

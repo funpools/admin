@@ -10,85 +10,202 @@
   <link rel="stylesheet" href="main.css">
 </head>
 
-<body class="aurora">
+<body>
   <div id="app">
-    <div class="statusbar"></div>
+    <div class="panel panel-left">
+      <div class="block">
+        <h3 id="username"></h3>
+        <div class="list no-hairlines">
+          <ul>
+            <li><a href="#tab-1" class="tab-link no-ripple tab-link-active">Reports</a></li>
+            <li><a href="#tab-2" class="tab-link no-ripple">All Users</a></li>
+            <li><a href="#tab-3" class="tab-link no-ripple">Banned Users</a></li>
+            <li><a href="#tab-4" class="tab-link no-ripple">Change Password</a></li>
+            <li><a href="#tab-5" class="tab-link no-ripple">Quizzes & Answers</a></li>
+          </ul>
+        </div>
+        <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
+      </div>
+    </div>
     <div class="view view-main">
       <div data-name="home" class="page">
         <div class="page-content">
-          <div class="row" style="height: 100%">
-            <div class="col-20 side-panel" style="height: 100%">
+          <div class="tabs">
+            <div id="tab-1" class="tab tab-active">
               <div class="block">
-                <h3>Hi, Username</h3>
-                <div class="list">
-                  <ul>
-                    <li><a href="#tab-1" class="tab-link no-ripple tab-link-active">Reports</a></li>
-                    <li><a href="#tab-2" class="tab-link no-ripple">All Users</a></li>
-                    <li><a href="#tab-3" class="tab-link no-ripple">Banned Users</a></li>
-                    <li><a href="#tab-4" class="tab-link no-ripple">Change Password</a></li>
-                    <li><a href="#tab-5" class="tab-link no-ripple">Quizzes & Answers</a></li>
+                <div class="list no-hairlines">
+                  <ul id="reports-list">
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                          <div class="item-after">8:47 PM</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                          <div class="item-after">8:47 PM</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                          <div class="item-after">8:47 PM</div>
+                        </div>
+                      </a>
+                    </li>
                   </ul>
                 </div>
-                <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
               </div>
             </div>
-            <div class="col-80">
-              <div class="tabs">
-                <div id="tab-1" class="tab tab-active">
-                  <div class="block">
-                    <div class="list no-hairlines">
-                      <ul id="reports-list">
-                        <li>
-                          <a href="#" class="item-link item-content">
-                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                            <div class="item-inner">
-                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                              <div class="item-after">8:47 PM</div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#" class="item-link item-content">
-                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                            <div class="item-inner">
-                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                              <div class="item-after">8:47 PM</div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a href="#" class="item-link item-content">
-                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                            <div class="item-inner">
-                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                              <div class="item-after">8:47 PM</div>
-                            </div>
-                          </a>
-                        </li>
-                      </ul>
+            <div id="tab-2" class="tab">
+              <div class="block">
+                <div class="searchbar-backdrop"></div>
+                <form class="searchbar no-hairline">
+                  <div class="searchbar-inner">
+                    <div class="searchbar-input-wrap">
+                      <input type="search" placeholder="Search">
+                      <i class="searchbar-icon"></i>
+                      <span class="input-clear-button"></span>
                     </div>
+                    <span class="searchbar-disable-button">Cancel</span>
                   </div>
+                </form>
+                <div class="list no-hairlines">
+                  <ul id="all-users-list">
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">Ivan Petrovs</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">mr_brown_pants</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div class="item-description">Kanye West</div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
                 </div>
-                <div id="tab-2" class="tab">
-                  <div class="block">
-                    <p>Tab 2 content</p>
+              </div>
+            </div>
+            <div id="tab-3" class="tab">
+              <div class="block">
+                <div class="searchbar-backdrop"></div>
+                <form class="searchbar searchbar-init no-hairline" data-search-in=".item-title" data-search-container="#banned-users-list">
+                  <div class="searchbar-inner">
+                    <div class="searchbar-input-wrap">
+                      <input type="search" placeholder="Search">
+                      <i class="searchbar-icon"></i>
+                      <span class="input-clear-button"></span>
+                    </div>
+                    <span class="searchbar-disable-button">Cancel</span>
                   </div>
+                </form>
+                <div class="list search-list searchbar-found no-hairlines">
+                  <ul id="banned-users-list">
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div>
+                            <div class="item-title">Ivan Petrov</div>
+                            <div class="item-description"><strong>Reason for ban:</strong> user posted too many photos of his cat.</div>
+                          </div>
+                          <div class="item-after"><button class="button">Lift Ban</button></div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div>
+                            <div class="item-title">Kanye West</div>
+                            <div class="item-description"><strong>Reason for ban:</strong> user posted too many photos of his cat.</div>
+                          </div>
+                          <div class="item-after"><button class="button">Lift Ban</button></div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                        <div class="item-inner">
+                          <div>
+                            <div class="item-title">Ivan Petrov</div>
+                            <div class="item-description"><strong>Reason for ban:</strong> user posted too many photos of his cat.</div>
+                          </div>
+                          <div class="item-after"><button class="button">Lift Ban</button></div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
                 </div>
-                <div id="tab-3" class="tab">
-                  <div class="block">
-                    <p>Tab 3 content</p>
-                  </div>
+                <div class="block searchbar-not-found">
+                  <div class="block-inner">Nothing found</div>
                 </div>
-                <div id="tab-4" class="tab">
-                  <div class="block">
-                    <p>Tab 4 content</p>
-                  </div>
+              </div>
+            </div>
+            <div id="tab-4" class="tab">
+              <div class="block">
+                <div class="list no-hairlines-md">
+                  <ul>
+                    <li class="item-content item-input">
+                      <div class="item-inner">
+                        <div class="item-title item-label">Current Password</div>
+                        <div class="item-input-wrap">
+                          <input type="password" placeholder="Your current password">
+                          <span class="input-clear-button"></span>
+                        </div>
+                      </div>
+                    </li>
+                    <li class="item-content item-input">
+                      <div class="item-inner">
+                        <div class="item-title item-label">New Password</div>
+                        <div class="item-input-wrap">
+                          <input type="password" placeholder="Your new password">
+                          <span class="input-clear-button"></span>
+                        </div>
+                      </div>
+                    </li>
+                    <li class="item-content item-input">
+                      <div class="item-inner">
+                        <div class="item-title item-label">Confirm Password</div>
+                        <div class="item-input-wrap">
+                          <input type="password" placeholder="Your new password again">
+                          <span class="input-clear-button"></span>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
-                <div id="tab-5" class="tab">
-                  <div class="block">
-                    <p>Tab 5 content</p>
-                  </div>
-                </div>
+                <a href="#" class="button">Save</a>
+              </div>
+            </div>
+            <div id="tab-5" class="tab">
+              <div class="block">
+                <p>Tab 5 content</p>
               </div>
             </div>
           </div>
@@ -161,13 +278,20 @@
               console.log(pool);
             });
             console.log("Document data:", userData.data());
+            document.getElementById("username").innerHTML = "Hi, " + User.username;
+            var panel = app.panel.create({
+              el: '.panel-left',
+              resizable: true,
+              visibleBreakpoint: 1024,
+              collapsedBreakpoint: 768,
+            });
           } else {
             console.log("This user is not an admin!");
           }
         });
       } else { //User is signed out.
         console.log("Nobody is signed in");
-        self.app.views.main.router.navigate('/login-screen/', {
+        self.app.views.main.router.navigate('/login/', {
           ignoreCache: true,
         });
       }

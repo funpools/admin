@@ -1,3 +1,7 @@
 .side-panel {
   background-color: lightgray;
 }
+
+.tab-link-active {
+  font-weight: bold;
+}
