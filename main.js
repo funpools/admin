@@ -56,17 +56,56 @@ function signOut() {
   });
 }
 
+
+var loadedUsers = []
+
+
+
+function getUser(userID, callback) {
+  //example usage
+  //  getUser('MTyzi4gXVqfKIOoeihvdUuVAu3E2', function(user) {
+  //  console.log(user);});
+  //If we have already loaded this users data then return it else load it from the database
+  if (userID in loadedUsers) {
+    console.log("found user in array");
+    callback(loadedUsers[userID]);
+  } else {
+    var profilePic = "";
+    // Create a reference to the file we want to download
+    var profilePictureRef = storageRef.child('profile-pictures').child(userID);
+    // Get the download URL
+    profilePictureRef.getDownloadURL().then(function(url) {
+      profilePic = url;
+    }).catch(function(error) {
+      profilePic = "https://www.keypointintelligence.com/img/anonymous.png";
+    }).then(function() {
+      db.collection("users").doc(userID).get().then(function(userData) {
+        loadedUsers[userID] = {
+          uid: userID,
+          username: userData.get("username"),
+          firstName: userData.get("firstName"),
+          lastName: userData.get("lastName"),
+          picURL: profilePic,
+        };
+        console.log("loaded user: " + userID);
+        callback(loadedUsers[userID]);
+      });
+    });
+  }
+}
+
+
 var loadedPools = []; //An array of all the pools we have loaded
 function getPool(poolID, callback) {
   //If we have already loaded this users data then return it else load it from the database
   if (poolID in loadedPools) {
     console.log("found pool in array");
-    callback(loadedUsers[userID]);
+    callback(loadedPools[poolID]);
   } else {
     var poolPic = "";
     // Create a reference to the file we want to download
     var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
-    // Get the download URL
+    // Get the download URL for the picture
     poolPictureRef.getDownloadURL().then(function(url) {
       poolPic = url;
     }).catch(function(error) {
@@ -78,8 +117,8 @@ function getPool(poolID, callback) {
           name: poolData.get("name"),
           description: poolData.get("description"),
           pic: poolPic,
+          tags: poolData.get("tags"),
         };
-        //console.log("loaded user: " + userID);
         callback(loadedPools[poolID]);
       });
     });
