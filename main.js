@@ -44,7 +44,6 @@ function signIn(email, password) {
     app.preloader.hide();
     //Put any code that needs to happen after login here
     console.log("Signed in!");
-    //self.app.views.main.router.navigate('/home/');
   });
 }
 

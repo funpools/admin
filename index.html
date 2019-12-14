@@ -286,6 +286,10 @@
                 profilePic: null //profilePic,// TODO: Load that here
               };
 
+              if (self.app.views.main.router.currentRoute.path != '/') {
+                self.app.views.main.router.navigate('/home/');
+                console.log("navigated to main page");
+              }
               loadPools();
               //editPool('FnTmTFNOpWIDlX1X6YA0', "pool edit test", "This is a test that has been edited via the editEvent function", "poolPic", "date", ['test', 'baseball']);
 
