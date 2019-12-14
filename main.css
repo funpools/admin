@@ -1,3 +1,13 @@
 .side-panel {
   background-color: lightgray;
 }
+
+.pool-card .card-header {
+  height: 20vh;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+}
+.pool-card-header-pic .card-content-padding .date{
+  color: #8e8e93;
+}

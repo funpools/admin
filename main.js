@@ -65,22 +65,19 @@ function signOut() {
 
 var loadedPools = []; //An array of all the pools we have loaded
 function getPool(poolID, callback) {
-
   //If we have already loaded this users data then return it else load it from the database
   if (poolID in loadedPools) {
-    console.log("found user in array");
+    console.log("found pool in array");
     callback(loadedUsers[userID]);
   } else {
     var poolPic = "";
-
     // Create a reference to the file we want to download
     var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
-
     // Get the download URL
     poolPictureRef.getDownloadURL().then(function(url) {
       poolPic = url;
     }).catch(function(error) {
-      poolPic = "https://www.keypointintelligence.com/img/anonymous.png";
+      poolPic = "https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg";
     }).then(function() {
       db.collection("pools").doc(poolID).get().then(function(poolData) {
         loadedPools[poolID] = {
@@ -96,3 +93,37 @@ function getPool(poolID, callback) {
 
   }
 }
+
+function loadPools() {
+  //Get all pools in the database // TODO:only load the gloabal pools and maybe the most popular custom pools
+  db.collection("pools").get().then(function(pools) {
+
+    pools.forEach(function(doc) {
+      getPool(doc.id, function(pool) {
+
+        var poolList = document.getElementById("pool-list");
+        var a = document.createElement('div');
+        a.classList.add("card");
+        a.classList.add("pool-card");
+        a.classList.add("col-30");
+        a.onclick = function() {
+          // TODO: Load the pools page
+        };
+        a.innerHTML = '<div style="background-image:url(https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg)" class="card-header align-items-flex-end">' + pool.name + '</div>' +
+          '<div class="card-content card-content-padding">' +
+          '  <p class="date">Starts on January 21, 2015</p>' +
+          '  <p>Pool ' + pool.description + '</p>' +
+          '</div>' +
+          '<div class="card-footer"><a href="#" class="link">Something</a><a href="#" class="link">Start Event</a></div>';
+        poolList.appendChild(a);
+      });
+    });
+  });
+}
+
+
+
+
+
+
+/////

@@ -26,7 +26,7 @@
                     <li><a href="#tab-2" class="tab-link no-ripple">All Users</a></li>
                     <li><a href="#tab-3" class="tab-link no-ripple">Banned Users</a></li>
                     <li><a href="#tab-4" class="tab-link no-ripple">Change Password</a></li>
-                    <li><a href="#tab-5" class="tab-link no-ripple">Quizzes & Answers</a></li>
+                    <li><a href="#tab-5" class="tab-link no-ripple">Pool Management</a></li>
                   </ul>
                 </div>
                 <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
@@ -86,7 +86,17 @@
                 </div>
                 <div id="tab-5" class="tab">
                   <div class="block">
-                    <p>Tab 5 content</p>
+                    <p>Pool Management</p>
+                    <div id="pool-list" class="row justify-content-space-around">
+                      <div class="card pool-card col-30">
+                        <div style="background-image:url(https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg)" class="card-header align-items-flex-end">Pool Name</div>
+                        <div class="card-content card-content-padding">
+                          <p class="date">Posted on January 21, 2015</p>
+                          <p>Quisque eget vestibulum nulla. Quisque quis dui quis ex ultricies efficitur vitae non felis. Phasellus quis nibh hendrerit...</p>
+                        </div>
+                        <div class="card-footer"><a href="#" class="link">Like</a><a href="#" class="link">Read more</a></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -107,6 +117,8 @@
   <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-database.js"></script>
+
 
   <script>
     // Your web app's Firebase configuration
@@ -157,9 +169,11 @@
               },
               profilePic: null //profilePic,// TODO: Load that here
             };
+            //fsS7rDLvdzW1OQPT1gT2.jpg
             getPool("fsS7rDLvdzW1OQPT1gT2", function(pool) {
               console.log(pool);
             });
+            loadPools();
             console.log("Document data:", userData.data());
           } else {
             console.log("This user is not an admin!");
