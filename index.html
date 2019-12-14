@@ -4,22 +4,92 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
-  <title>Calendar Framework7 Demo App</title>
+  <title>Fun Sports Pools Admin</title>
+  <link rel="shortcut icon" href="favicon.ico" />
   <link rel="stylesheet" href="framework7.bundle.css">
   <link rel="stylesheet" href="main.css">
 </head>
 
-<body>
+<body class="aurora">
   <div id="app">
     <div class="statusbar"></div>
     <div class="view view-main">
       <div data-name="home" class="page">
         <div class="page-content">
-          <div class="block-title">Example block</div>
-          <div class="block row">
-            <div class="col-50">
-              Add your content here
-              <a class="button button-fill" href="#" onclick="signOut()">Demo Button</a>
+          <div class="row" style="height: 100%">
+            <div class="col-20 side-panel" style="height: 100%">
+              <div class="block">
+                <h3>Hi, Username</h3>
+                <div class="list">
+                  <ul>
+                    <li><a href="#tab-1" class="tab-link no-ripple tab-link-active">Reports</a></li>
+                    <li><a href="#tab-2" class="tab-link no-ripple">All Users</a></li>
+                    <li><a href="#tab-3" class="tab-link no-ripple">Banned Users</a></li>
+                    <li><a href="#tab-4" class="tab-link no-ripple">Change Password</a></li>
+                    <li><a href="#tab-5" class="tab-link no-ripple">Quizzes & Answers</a></li>
+                  </ul>
+                </div>
+                <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
+              </div>
+            </div>
+            <div class="col-80">
+              <div class="tabs">
+                <div id="tab-1" class="tab tab-active">
+                  <div class="block">
+                    <div class="list no-hairlines">
+                      <ul id="reports-list">
+                        <li>
+                          <a href="#" class="item-link item-content">
+                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                            <div class="item-inner">
+                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                              <div class="item-after">8:47 PM</div>
+                            </div>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="item-link item-content">
+                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                            <div class="item-inner">
+                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                              <div class="item-after">8:47 PM</div>
+                            </div>
+                          </a>
+                        </li>
+                        <li>
+                          <a href="#" class="item-link item-content">
+                            <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
+                            <div class="item-inner">
+                              <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
+                              <div class="item-after">8:47 PM</div>
+                            </div>
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-2" class="tab">
+                  <div class="block">
+                    <p>Tab 2 content</p>
+                  </div>
+                </div>
+                <div id="tab-3" class="tab">
+                  <div class="block">
+                    <p>Tab 3 content</p>
+                  </div>
+                </div>
+                <div id="tab-4" class="tab">
+                  <div class="block">
+                    <p>Tab 4 content</p>
+                  </div>
+                </div>
+                <div id="tab-5" class="tab">
+                  <div class="block">
+                    <p>Tab 5 content</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
