@@ -169,11 +169,10 @@
               },
               profilePic: null //profilePic,// TODO: Load that here
             };
-            //fsS7rDLvdzW1OQPT1gT2.jpg
-            getPool("fsS7rDLvdzW1OQPT1gT2", function(pool) {
-              console.log(pool);
-            });
+
             loadPools();
+            //editPool(0, "test 2", "This is another test that has been added via the edit event function", "poolPic", "date", ['test', 'soccer']);
+
             console.log("Document data:", userData.data());
           } else {
             console.log("This user is not an admin!");
