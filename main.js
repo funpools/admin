@@ -62,3 +62,37 @@ function signOut() {
     console.log("Failed to sign out: " + error.message);
   });
 }
+
+var loadedPools = []; //An array of all the pools we have loaded
+function getPool(poolID, callback) {
+
+  //If we have already loaded this users data then return it else load it from the database
+  if (poolID in loadedPools) {
+    console.log("found user in array");
+    callback(loadedUsers[userID]);
+  } else {
+    var poolPic = "";
+
+    // Create a reference to the file we want to download
+    var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
+
+    // Get the download URL
+    poolPictureRef.getDownloadURL().then(function(url) {
+      poolPic = url;
+    }).catch(function(error) {
+      poolPic = "https://www.keypointintelligence.com/img/anonymous.png";
+    }).then(function() {
+      db.collection("pools").doc(poolID).get().then(function(poolData) {
+        loadedPools[poolID] = {
+          poolID: poolID,
+          poolName: poolData.get("name"),
+          description: poolData.get("description"),
+          poolPic: poolPic,
+        };
+        //console.log("loaded user: " + userID);
+        callback(loadedPools[poolID]);
+      });
+    });
+
+  }
+}
