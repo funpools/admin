@@ -205,98 +205,110 @@
             </div>
             <div id="tab-5" class="tab">
               <div class="block">
-                <p>Tab 5 content</p>
+                <p>Pool Management</p>
+                <div id="pool-list" class="row justify-content-space-around">
+                  <div class="card pool-card col-30">
+                    <div style="background-image:url(https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg)" class="card-header align-items-flex-end">Pool Name</div>
+                    <div class="card-content card-content-padding">
+                      <p class="date">Posted on January 21, 2015</p>
+                      <p>Quisque eget vestibulum nulla. Quisque quis dui quis ex ultricies efficitur vitae non felis. Phasellus quis nibh hendrerit...</p>
+                    </div>
+                    <div class="card-footer"><a href="#" class="link">Like</a><a href="#" class="link">Read more</a></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <script type="text/javascript" src="framework7.bundle.js"></script>
-  <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="framework7.bundle.js"></script>
+    <script type="text/javascript" src="main.js"></script>
 
-  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-app.js"></script>
-  <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
-  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-analytics.js"></script>
-  <!-- Add Firebase products that you want to use -->
-  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-storage.js"></script>
-
-  <script>
-    // Your web app's Firebase configuration
-    var firebaseConfig = {
-      apiKey: "AIzaSyDE4eEbTl4-2uRZhPotGSVMxgj6nVEhqjw",
-      authDomain: "fun-sports-pools.firebaseapp.com",
-      databaseURL: "https://fun-sports-pools.firebaseio.com",
-      projectId: "fun-sports-pools",
-      storageBucket: "fun-sports-pools.appspot.com",
-      messagingSenderId: "825861071194",
-      appId: "1:825861071194:web:eb3544cbf38bd07331d363",
-      measurementId: "G-5LMHL36YSF"
-    };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    firebase.analytics();
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-app.js"></script>
+    <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-analytics.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-database.js"></script>
 
 
-    var storage = firebase.storage();
+    <script>
+      // Your web app's Firebase configuration
+      var firebaseConfig = {
+        apiKey: "AIzaSyDE4eEbTl4-2uRZhPotGSVMxgj6nVEhqjw",
+        authDomain: "fun-sports-pools.firebaseapp.com",
+        databaseURL: "https://fun-sports-pools.firebaseio.com",
+        projectId: "fun-sports-pools",
+        storageBucket: "fun-sports-pools.appspot.com",
+        messagingSenderId: "825861071194",
+        appId: "1:825861071194:web:eb3544cbf38bd07331d363",
+        measurementId: "G-5LMHL36YSF"
+      };
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      firebase.analytics();
 
-    var storageRef = storage.ref();
 
-    //reference to the firestore database
-    var db = firebase.firestore();
+      var storage = firebase.storage();
 
-    var User; //An objects that contins the user data if the currently signed in user
-    var uid; //This is the users id
+      var storageRef = storage.ref();
 
-    //Firebase authentication
-    firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
+      //reference to the firestore database
+      var db = firebase.firestore();
 
-      //If the user is signed in
-      if (user) {
-        uid = user.uid;
-        //direct user to main page if not already there
-        db.collection("admins").doc(user.uid).get().catch(function(error) {
-          console.log(error.message);
-        }).then(function(userData) {
-          //If the user exist then this user is an admin so load the main page
-          if (userData.exists) {
-            User = {
-              uid: uid,
-              username: userData.get("lastName"),
-              firstName: userData.get("firstName"),
-              lastName: userData.get("lastName"),
-              fullName: function() {
-                return "" + this.firstName + " " + this.lastName;
-              },
-              profilePic: null //profilePic,// TODO: Load that here
-            };
-            getPool("fsS7rDLvdzW1OQPT1gT2", function(pool) {
-              console.log(pool);
-            });
-            console.log("Document data:", userData.data());
-            document.getElementById("username").innerHTML = "Hi, " + User.username;
-            var panel = app.panel.create({
-              el: '.panel-left',
-              resizable: true,
-              visibleBreakpoint: 1024,
-              collapsedBreakpoint: 768,
-            });
-          } else {
-            console.log("This user is not an admin!");
-          }
-        });
-      } else { //User is signed out.
-        console.log("Nobody is signed in");
-        self.app.views.main.router.navigate('/login/', {
-          ignoreCache: true,
-        });
-      }
-    });
-  </script>
+      var User; //An objects that contins the user data if the currently signed in user
+      var uid; //This is the users id
+
+      //Firebase authentication
+      firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
+
+        //If the user is signed in
+        if (user) {
+          uid = user.uid;
+          //direct user to main page if not already there
+          db.collection("admins").doc(user.uid).get().catch(function(error) {
+            console.log(error.message);
+          }).then(function(userData) {
+            //If the user exist then this user is an admin so load the main page
+            if (userData.exists) {
+              User = {
+                uid: uid,
+                username: userData.get("lastName"),
+                firstName: userData.get("firstName"),
+                lastName: userData.get("lastName"),
+                fullName: function() {
+                  return "" + this.firstName + " " + this.lastName;
+                },
+                profilePic: null //profilePic,// TODO: Load that here
+              };
+
+              loadPools();
+              //editPool('FnTmTFNOpWIDlX1X6YA0', "pool edit test", "This is a test that has been edited via the editEvent function", "poolPic", "date", ['test', 'baseball']);
+
+              console.log("Document data:", userData.data());
+              document.getElementById("username").innerHTML = "Hi, " + User.username;
+              var panel = app.panel.create({
+                el: '.panel-left',
+                resizable: true,
+                visibleBreakpoint: 1024,
+                collapsedBreakpoint: 768,
+              });
+            } else {
+              console.log("This user is not an admin!");
+            }
+          });
+        } else { //User is signed out.
+          console.log("Nobody is signed in");
+          self.app.views.main.router.navigate('/login/', {
+            ignoreCache: true,
+          });
+        }
+      });
+    </script>
 </body>
 
 </html>
