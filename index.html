@@ -65,6 +65,46 @@
                   </ul>
                 </div>
               </div>
+
+
+              <label>
+                <div id="pic-preview" class="pic-upload">
+                  <input id="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event)" />
+                  <i id="pic-icon" class="material-icons" style="font-size: 50px">add_photo_alternate</i>
+                </div>
+              </label>
+              <div class="list inset">
+                <ul>
+                  <li class="item-content item-input">
+                    <div class="item-inner">
+                      <div class="item-input-wrap">
+                        <input type="text" placeholder="Pool name">
+                        <span class="input-clear-button"></span>
+                      </div>
+                    </div>
+                  </li>
+                  <div class="text-editor text-editor-init text-editor-resizable" data-placeholder="Pool description">
+                    <div class="text-editor-content" contenteditable></div>
+                  </div>
+                  <li class="item-content item-input">
+                    <div class="item-inner">
+                      <div class="item-input-wrap">
+                        <input type="email" placeholder="">
+                        <span class="input-clear-button"></span>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="item-content item-input">
+                    <div class="item-inner">
+                      <div class="item-input-wrap">
+                        <input type="url" placeholder="URL">
+                        <span class="input-clear-button"></span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
             </div>
             <div id="tab-2" class="tab">
               <div class="block">
@@ -206,7 +246,7 @@
             <div id="tab-5" class="tab">
               <div class="block">
                 <p>Pool Management</p>
-                <div id="pool-list" class="row justify-content-space-around">
+                <div id="pool-list" class="row justify-content-flex-start">
                   <div class="card pool-card col-30">
                     <div style="background-image:url(https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg)" class="card-header align-items-flex-end">Pool Name</div>
                     <div class="card-content card-content-padding">
@@ -252,9 +292,8 @@
       firebase.initializeApp(firebaseConfig);
       firebase.analytics();
 
-
+      //get referenes for media storage
       var storage = firebase.storage();
-
       var storageRef = storage.ref();
 
       //reference to the firestore database
@@ -291,11 +330,11 @@
 
               console.log("Document data:", userData.data());
               document.getElementById("username").innerHTML = "Hi, " + User.username;
+
+              //show left panel
               var panel = app.panel.create({
                 el: '.panel-left',
-                resizable: true,
-                visibleBreakpoint: 1024,
-                collapsedBreakpoint: 768,
+                visibleBreakpoint: 300,
               });
             } else {
               console.log("This user is not an admin!");
@@ -303,6 +342,11 @@
           });
         } else { //User is signed out.
           console.log("Nobody is signed in");
+
+          //hide left panel
+          app.panel.destroy('.panel-left');
+
+          //show login page
           self.app.views.main.router.navigate('/login/', {
             ignoreCache: true,
           });

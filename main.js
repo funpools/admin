@@ -102,14 +102,31 @@ function loadPools() {
         a.classList.add("pool-card");
         a.classList.add("col-30");
         a.onclick = function() {
-          // TODO: Load the pools page
+          app.popup.create({
+            content: '<div class="popup">' +
+              '<div class="block">' +
+              '<label><div id="profile-pic-preview" class="profile-pic-upload">' +
+              '<input id="profile-pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, "profile ")" />' +
+              '<i id="profile-pic-icon" class="material-icons">edit</i></div></label>' +
+              '<p><a href="#" class="link popup-close">Close me</a></p>' +
+              '</div>' +
+              '</div>',
+            // Events
+            on: {
+              open: function(popup) {
+                console.log('Popup open');
+              },
+              opened: function(popup) {
+                console.log('Popup opened');
+              },
+            }
+          }).open();
         };
         a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
           '<div class="card-content card-content-padding">' +
           '  <p class="date">Starts on January 21, 2015</p>' +
           '  <p>Pool ' + pool.description + '</p>' +
-          '</div>' +
-          '<div class="card-footer"><a href="#" class="link">Something</a><a href="#" class="link">Start Event</a></div>';
+          '</div>';
         poolList.appendChild(a);
       });
     });
@@ -194,6 +211,11 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
 }
 
 
+//displays uploaded picture on screen
+function previewPic(event) {
+  document.getElementById('pic-preview').style.backgroundImage = "url(" + URL.createObjectURL(event.target.files[0]) + ")";
+  document.getElementById('pic-icon').innerHTML = "edit";
+};
 
 
 
