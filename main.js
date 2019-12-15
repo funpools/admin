@@ -57,10 +57,45 @@ function signOut() {
 }
 
 
-var loadedUsers = []
 
+function setupMainPage() {
+  //direct user to main page if not already there
+  db.collection("admins").doc(uid).get().catch(function(error) {
+    console.log(error.message);
+  }).then(function(userData) {
+    //If the user exist then this user is an admin so load the main page
+    if (userData.exists) {
+      User = {
+        uid: uid,
+        username: userData.get("lastName"),
+        firstName: userData.get("firstName"),
+        lastName: userData.get("lastName"),
+        fullName: function() {
+          return "" + this.firstName + " " + this.lastName;
+        },
+        profilePic: null //profilePic,// TODO: Load that here
+      };
 
+      if (self.app.views.main.router.currentRoute.path != '/') {
+        self.app.views.main.router.navigate('/home/');
+        console.log("navigated to main page");
+      }
+      loadPools();
+      editUser('Administrator', 'test', 'user', null, null);
+      document.getElementById("username").innerHTML = "Hi, " + User.username;
+      var panel = app.panel.create({
+        el: '.panel-left',
+        resizable: true,
+        visibleBreakpoint: 1024,
+        collapsedBreakpoint: 768,
+      });
+    } else {
+      console.log("This user is not an admin!");
+    }
+  });
+}
 
+var loadedUsers = []; //
 function getUser(userID, callback) {
   //example usage
   //  getUser('MTyzi4gXVqfKIOoeihvdUuVAu3E2', function(user) {
@@ -94,6 +129,71 @@ function getUser(userID, callback) {
   }
 }
 
+//If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
+function editUser(username, firstName, lastName, pic, password) {
+  //If the user document is not null and not 0 edit the data
+  var userRef = db.collection('users').doc(uid);
+  db.collection('users').doc(uid).get().then(function(userData) {
+    if (userData.exists) {
+      //Edit pool name
+      if (username) {
+        userRef.update({
+            username: username,
+          })
+          .then(function() {
+            console.log("username successfully updated!");
+          })
+          .catch(function(error) {
+            console.error("Error updating user: ", error);
+          });
+      }
+      if (firstName) {
+        userRef.update({
+            firstName: firstName,
+          })
+          .then(function() {
+            console.log("user firstName successfully updated!");
+          })
+          .catch(function(error) {
+            console.error("Error updating user: ", error);
+          });
+      }
+      if (lastName) {
+        userRef.update({
+            lastName: lastName,
+          })
+          .then(function() {
+            console.log("user lastName successfully updated!");
+          })
+          .catch(function(error) {
+            console.error("Error updating user: ", error);
+          });
+      }
+      if (pic) {
+        var profilePictureRef = storageRef.child('profile-pictures').child(uid);
+        profilePictureRef.put(file).then(function(snapshot) {
+          //after picture is posted
+        });
+      }
+      if (password) {
+        // TODO: paswords
+      }
+    } else {
+      //the user doc does not exist so create a new doc and set its information
+      db.collection("users").doc(uid).set({
+          username: username,
+          firstName: firstName,
+          lastName: lastName,
+        })
+        .then(function() {
+          console.log("Successfully added a new pool!");
+        })
+        .catch(function(error) {
+          console.error("Error adding pool: ", error);
+        });
+    }
+  });
+}
 
 var loadedPools = []; //An array of all the pools we have loaded
 function getPool(poolID, callback) {
@@ -156,7 +256,6 @@ function loadPools() {
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags) {
-
   //If the poolID is not null and not 0 edit the data
   if (poolID && poolID != 0) {
     var poolRef = db.collection('pools').doc(poolID);

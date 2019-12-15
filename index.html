@@ -269,45 +269,7 @@
         //If the user is signed in
         if (user) {
           uid = user.uid;
-          //direct user to main page if not already there
-          db.collection("admins").doc(user.uid).get().catch(function(error) {
-            console.log(error.message);
-          }).then(function(userData) {
-            //If the user exist then this user is an admin so load the main page
-            if (userData.exists) {
-              User = {
-                uid: uid,
-                username: userData.get("lastName"),
-                firstName: userData.get("firstName"),
-                lastName: userData.get("lastName"),
-                fullName: function() {
-                  return "" + this.firstName + " " + this.lastName;
-                },
-                profilePic: null //profilePic,// TODO: Load that here
-              };
-
-              if (self.app.views.main.router.currentRoute.path != '/') {
-                self.app.views.main.router.navigate('/home/');
-                console.log("navigated to main page");
-              }
-              loadPools();
-
-              getUser('MTyzi4gXVqfKIOoeihvdUuVAu3E2', function(user) {
-                console.log(user);
-              });
-
-              document.getElementById("username").innerHTML = "Hi, " + User.username;
-              var panel = app.panel.create({
-                el: '.panel-left',
-                resizable: true,
-                visibleBreakpoint: 1024,
-                collapsedBreakpoint: 768,
-              });
-
-            } else {
-              console.log("This user is not an admin!");
-            }
-          });
+          setupMainPage();
         } else { //User is signed out.
           console.log("Nobody is signed in");
           self.app.views.main.router.navigate('/login/', {
