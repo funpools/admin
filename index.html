@@ -108,17 +108,10 @@
             </div>
             <div id="tab-2" class="tab">
               <div class="block">
-                <div class="searchbar-backdrop"></div>
-                <form class="searchbar no-hairline">
-                  <div class="searchbar-inner">
-                    <div class="searchbar-input-wrap">
-                      <input type="search" placeholder="Search">
-                      <i class="searchbar-icon"></i>
-                      <span class="input-clear-button"></span>
-                    </div>
-                    <span class="searchbar-disable-button">Cancel</span>
-                  </div>
-                </form>
+                <div class="left" style="margin-left:8px; display:flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <input id="user-search" type="text" placeholder="Search" style="width: 90%">
+                  <a onclick="searchUsers()" class="link"><i class="material-icons">search</i></a>
+                </div>
                 <div class="list no-hairlines">
                   <ul id="all-users-list">
                     <li>

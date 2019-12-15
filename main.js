@@ -195,6 +195,32 @@ function editUser(username, firstName, lastName, pic, password) {
   });
 }
 
+function searchUsers() {
+  document.getElementById("all-users-list").innerHTML = '';
+  var search = document.getElementById('user-search').value;
+  console.log('searched for ' + search);
+  db.collection('users').where("username", ">=", search).get().catch(function(error) {
+    console.log(error);
+  }).then(function(users) {
+    console.log(users.size);
+    users.forEach(function(userDoc) {
+      getUser(userDoc.id, function(user) {
+        var usersList = document.getElementById("all-users-list");
+        var li = document.createElement('li');
+        li.innerHTML = '<a href="#" class="item-link item-content">' +
+          '<div class="item-media"><img src="' + user.picURL + '" width="32px" style="border-radius: 50%" /></div>' +
+          '<div class="item-inner">' +
+          '<div class="item-description">' + user.username + '</div>' +
+          '</div>' +
+          '</a>';
+        usersList.appendChild(li);
+        console.log(user);
+      });
+    });
+  });
+
+}
+
 var loadedPools = []; //An array of all the pools we have loaded
 function getPool(poolID, callback) {
   //If we have already loaded this users data then return it else load it from the database
