@@ -104,17 +104,10 @@
             </div>
             <div id="tab-2" class="tab">
               <div class="block">
-                <div class="searchbar-backdrop"></div>
-                <form class="searchbar no-hairline">
-                  <div class="searchbar-inner">
-                    <div class="searchbar-input-wrap">
-                      <input type="search" placeholder="Search">
-                      <i class="searchbar-icon"></i>
-                      <span class="input-clear-button"></span>
-                    </div>
-                    <span class="searchbar-disable-button">Cancel</span>
-                  </div>
-                </form>
+                <div class="left" style="margin-left:8px; display:flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <input id="user-search" type="text" placeholder="Search" style="width: 90%">
+                  <a onclick="searchUsers()" class="link"><i class="material-icons">search</i></a>
+                </div>
                 <div class="list no-hairlines">
                   <ul id="all-users-list">
                     <li>
@@ -307,42 +300,7 @@
         //If the user is signed in
         if (user) {
           uid = user.uid;
-          //direct user to main page if not already there
-          db.collection("admins").doc(user.uid).get().catch(function(error) {
-            console.log(error.message);
-          }).then(function(userData) {
-            //If the user exist then this user is an admin so load the main page
-            if (userData.exists) {
-              User = {
-                uid: uid,
-                username: userData.get("lastName"),
-                firstName: userData.get("firstName"),
-                lastName: userData.get("lastName"),
-                fullName: function() {
-                  return "" + this.firstName + " " + this.lastName;
-                },
-                profilePic: null //profilePic,// TODO: Load that here
-              };
-
-              if (self.app.views.main.router.currentRoute.path != '/') {
-                self.app.views.main.router.navigate('/home/');
-                console.log("navigated to main page");
-              }
-              loadPools();
-              //editPool('FnTmTFNOpWIDlX1X6YA0', "pool edit test", "This is a test that has been edited via the editEvent function", "poolPic", "date", ['test', 'baseball']);
-
-              console.log("Document data:", userData.data());
-              document.getElementById("username").innerHTML = "Hi, " + User.username;
-
-              //show left panel
-              var panel = app.panel.create({
-                el: '.panel-left',
-                visibleBreakpoint: 300,
-              });
-            } else {
-              console.log("This user is not an admin!");
-            }
-          });
+          setupMainPage();
         } else { //User is signed out.
           console.log("Nobody is signed in");
 
