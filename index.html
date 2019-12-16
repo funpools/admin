@@ -88,20 +88,16 @@
                   </div>
                   <li class="item-content item-input">
                     <div class="item-inner">
+                      <div class="item-title item-label">UTC Date & Time</div>
                       <div class="item-input-wrap">
-                        <input type="email" placeholder="">
+                        <input type="datetime-local">
                         <span class="input-clear-button"></span>
                       </div>
                     </div>
                   </li>
-                  <li class="item-content item-input">
-                    <div class="item-inner">
-                      <div class="item-input-wrap">
-                        <input type="url" placeholder="URL">
-                        <span class="input-clear-button"></span>
-                      </div>
-                    </div>
-                  </li>
+                  <div id="chips">
+                    <input type="text" onkeypress="addTag(this)">
+                  </div>
                 </ul>
               </div>
 
@@ -145,8 +141,11 @@
                         </div>
                       </a>
                     </li>
+
                   </ul>
                 </div>
+
+
               </div>
             </div>
             <div id="tab-3" class="tab">

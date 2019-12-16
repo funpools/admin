@@ -216,6 +216,26 @@ function previewPic(event) {
   document.getElementById('pic-icon').innerHTML = "edit";
 };
 
+//add a tag on edit pool page
+function addTag(el) {
+  chipsDiv = el.parentElement;
+  if (el.value.includes(",")) {
+    var tag = el.value.split(',')[0];
+    var chip = document.createElement("div");
+    chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + tag + '</div><a href="#" class="chip-delete"></a></div>';
+    chipsDiv.appendChild(chip.childNodes[0]);
+    el.value = "";
+    el.focus();
+    el.select();
+
+  }
+
+}
+
+//delete tag on pool page
+function deleteTag(el) {
+  el.parentElement.removeChild(el);
+}
 
 
 
