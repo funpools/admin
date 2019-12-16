@@ -21,7 +21,7 @@
             <li><a href="#tab-2" class="tab-link no-ripple">All Users</a></li>
             <li><a href="#tab-3" class="tab-link no-ripple">Banned Users</a></li>
             <li><a href="#tab-4" class="tab-link no-ripple">Change Password</a></li>
-            <li><a href="#tab-5" class="tab-link no-ripple">Quizzes & Answers</a></li>
+            <li><a href="#tab-5" class="tab-link no-ripple">Pools</a></li>
           </ul>
         </div>
         <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
@@ -65,42 +65,6 @@
                   </ul>
                 </div>
               </div>
-
-
-              <label>
-                <div id="pic-preview" class="pic-upload">
-                  <input id="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event)" />
-                  <i id="pic-icon" class="material-icons" style="font-size: 50px">add_photo_alternate</i>
-                </div>
-              </label>
-              <div class="list inset">
-                <ul>
-                  <li class="item-content item-input">
-                    <div class="item-inner">
-                      <div class="item-input-wrap">
-                        <input type="text" placeholder="Pool name">
-                        <span class="input-clear-button"></span>
-                      </div>
-                    </div>
-                  </li>
-                  <div class="text-editor text-editor-init text-editor-resizable" data-placeholder="Pool description">
-                    <div class="text-editor-content" contenteditable></div>
-                  </div>
-                  <li class="item-content item-input">
-                    <div class="item-inner">
-                      <div class="item-title item-label">UTC Date & Time</div>
-                      <div class="item-input-wrap">
-                        <input type="datetime-local">
-                        <span class="input-clear-button"></span>
-                      </div>
-                    </div>
-                  </li>
-                  <div id="chips">
-                    <input type="text" onkeypress="addTag(this)">
-                  </div>
-                </ul>
-              </div>
-
             </div>
             <div id="tab-2" class="tab">
               <div class="block">
@@ -137,8 +101,6 @@
 
                   </ul>
                 </div>
-
-
               </div>
             </div>
             <div id="tab-3" class="tab">
@@ -237,16 +199,8 @@
             </div>
             <div id="tab-5" class="tab">
               <div class="block">
-                <p>Pool Management</p>
+                <button class="button button-fill new-pool" style="width: 50%; margin: 16px auto">New Pool</button>
                 <div id="pool-list" class="row justify-content-flex-start">
-                  <div class="card pool-card col-30">
-                    <div style="background-image:url(https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg)" class="card-header align-items-flex-end">Pool Name</div>
-                    <div class="card-content card-content-padding">
-                      <p class="date">Posted on January 21, 2015</p>
-                      <p>Quisque eget vestibulum nulla. Quisque quis dui quis ex ultricies efficitur vitae non felis. Phasellus quis nibh hendrerit...</p>
-                    </div>
-                    <div class="card-footer"><a href="#" class="link">Like</a><a href="#" class="link">Read more</a></div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -254,66 +208,130 @@
         </div>
       </div>
     </div>
-    <script type="text/javascript" src="framework7.bundle.js"></script>
-    <script type="text/javascript" src="main.js"></script>
+  </div>
 
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-app.js"></script>
-    <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-analytics.js"></script>
-    <!-- Add Firebase products that you want to use -->
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-database.js"></script>
+  <div class="popup pool-popup">
+    <div class="block">
+      <label>
+        <div id="pic-preview" class="pic-upload">
+          <input id="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event)" />
+          <i id="pic-icon" class="material-icons" style="font-size: 50px">add_photo_alternate</i>
+        </div>
+      </label>
+      <div class="list inset">
+        <ul>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">Pool Name</div>
+              <div class="item-input-wrap">
+                <input id="pool-name" type="text" placeholder="Pool name" data-id="0">
+                <span class="input-clear-button"></span>
+              </div>
+            </div>
+          </li>
+          <div class="text-editor text-editor-init text-editor-resizable" data-placeholder="Pool description">
+            <div id="pool-description" class="text-editor-content" contenteditable></div>
+          </div>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">UTC Date & Time</div>
+              <div class="item-input-wrap row">
+                <div class="col">
+                  <input id="pool-date" type="date">
+                </div>
+                <div class="col">
+                  <input id="pool-time" type="time">
+                </div>
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">Pool Tags</div>
+              <div class="item-input-wrap">
+                <input type="text" placeholder="Enter tags separated by a comma." onkeypress="addTag(this)">
+              </div>
+            </div>
+          </li>
+          <div class="block" id="pool-tags" style="padding-bottom: 16px">
+          </div>
+        </ul>
+      </div>
+      <div class="row justify-content-space-around">
+        <div class="col">
+          <button class="button button-fill color-red hide-confirm">Hide Pool</button>
+        </div>
+        <div class="col">
+          <button class="button button-fill popup-close">Cancel</button>
+        </div>
+        <div class="col">
+          <button class="button button-fill pool-save">Save Pool</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="framework7.bundle.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-app.js"></script>
+  <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-analytics.js"></script>
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.6.0/firebase-database.js"></script>
 
 
-    <script>
-      // Your web app's Firebase configuration
-      var firebaseConfig = {
-        apiKey: "AIzaSyDE4eEbTl4-2uRZhPotGSVMxgj6nVEhqjw",
-        authDomain: "fun-sports-pools.firebaseapp.com",
-        databaseURL: "https://fun-sports-pools.firebaseio.com",
-        projectId: "fun-sports-pools",
-        storageBucket: "fun-sports-pools.appspot.com",
-        messagingSenderId: "825861071194",
-        appId: "1:825861071194:web:eb3544cbf38bd07331d363",
-        measurementId: "G-5LMHL36YSF"
-      };
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
-      firebase.analytics();
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyDE4eEbTl4-2uRZhPotGSVMxgj6nVEhqjw",
+      authDomain: "fun-sports-pools.firebaseapp.com",
+      databaseURL: "https://fun-sports-pools.firebaseio.com",
+      projectId: "fun-sports-pools",
+      storageBucket: "fun-sports-pools.appspot.com",
+      messagingSenderId: "825861071194",
+      appId: "1:825861071194:web:eb3544cbf38bd07331d363",
+      measurementId: "G-5LMHL36YSF"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
 
-      //get referenes for media storage
-      var storage = firebase.storage();
-      var storageRef = storage.ref();
+    //get referenes for media storage
+    var storage = firebase.storage();
+    var storageRef = storage.ref();
 
-      //reference to the firestore database
-      var db = firebase.firestore();
+    //reference to the firestore database
+    var db = firebase.firestore();
 
-      var User; //An objects that contins the user data if the currently signed in user
-      var uid; //This is the users id
+    var User; //An objects that contins the user data if the currently signed in user
+    var uid; //This is the users id
 
-      //Firebase authentication
-      firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
+    //Firebase authentication
+    firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
 
-        //If the user is signed in
-        if (user) {
-          uid = user.uid;
-          setupMainPage();
-        } else { //User is signed out.
-          console.log("Nobody is signed in");
+      //If the user is signed in
+      if (user) {
+        uid = user.uid;
+        setupMainPage();
+      } else { //User is signed out.
+        console.log("Nobody is signed in");
 
-          //hide left panel
-          app.panel.destroy('.panel-left');
+        //hide left panel
+        app.panel.destroy('.panel-left');
 
-          //show login page
-          self.app.views.main.router.navigate('/login/', {
-            ignoreCache: true,
-          });
-        }
-      });
-    </script>
+        //show login page
+        self.app.views.main.router.navigate('/login/', {
+          ignoreCache: true,
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>

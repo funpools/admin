@@ -79,6 +79,10 @@
   color: #8e8e93;
 }
 
+.pool-popup {
+  overflow-y: scroll;
+}
+
 .tab-link-active {
   font-weight: bold;
 }

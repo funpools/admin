@@ -1,11 +1,16 @@
 var app = new Framework7({
   root: '#app',
-  name: 'My App',
+  name: 'Fun Sports Pools Admin',
   id: 'com.myapp.test',
   theme: 'aurora',
   routes: [{
       path: '/home/',
       url: 'index.html',
+      on: {
+        pageInit: function(e, page) {
+
+        }
+      }
     },
     {
       path: '/login/',
@@ -27,8 +32,53 @@ var app = new Framework7({
   ],
 });
 
+var $$ = Dom7;
+
 var mainView = app.views.create('.view-main');
 
+
+// hide pool button
+$$('.hide-confirm').on('click', function() {
+  app.dialog.confirm('Hiding this pool means it will no longer be visible to the public. You can always unhide pools.', function() {
+    app.popup.close(".pool-popup");
+    // TODO: Hide pool
+  });
+});
+
+//save pool
+$$('.pool-save').on('click', function() {
+  app.preloader.show();
+  var id = document.getElementById("pool-name").dataset.id;
+  var name = document.getElementById("pool-name").value;
+  var description = document.getElementById("pool-description").innerHTML;
+  var pic = document.getElementById('pic-input').files[0];
+  var timestamp = document.getElementById('pool-date').valueAsNumber + document.getElementById('pool-time').valueAsNumber;
+
+  var tags = [];
+
+  //get tags
+  var foo = document.getElementById("pool-tags").getElementsByClassName("chip-label");
+  var i;
+  for (i = 0; i < foo.length; i++) {
+    tags.push(foo[i].innerHTML);
+    console.log(foo[i].innerHTML);
+  }
+  editPool(id, name, description, pic, timestamp, tags);
+});
+
+
+//clear any past values
+$$('.new-pool').on('click', function() {
+  document.getElementById('pic-preview').style.backgroundImage = "";
+  document.getElementById("pool-name").value = "";
+  document.getElementById("pool-name").dataset.id = "0";
+  document.getElementById("pool-description").innerHTML = "";
+
+  document.getElementById("pool-date").value = "";
+  document.getElementById("pool-time").value = "";
+  app.popup.open(".pool-popup");
+
+});
 
 
 function signIn(email, password) {
@@ -86,8 +136,7 @@ function setupMainPage() {
       var panel = app.panel.create({
         el: '.panel-left',
         resizable: true,
-        visibleBreakpoint: 1024,
-        collapsedBreakpoint: 768,
+        visibleBreakpoint: 300,
       });
     } else {
       console.log("This user is not an admin!");
@@ -252,6 +301,8 @@ function getPool(poolID, callback) {
   }
 }
 
+
+
 //This loads the pools. This can also be used to refresh the pools page
 function loadPools() {
   //Remove any old pool data from th html.// TODO: also remove the data from the loadedPools array. This will ensure that we have the most up to date data avalible
@@ -265,26 +316,29 @@ function loadPools() {
         a.classList.add("card");
         a.classList.add("pool-card");
         a.classList.add("col-30");
+
+        //fill popup with content and show it when card is clicked
         a.onclick = function() {
-          app.popup.create({
-            content: '<div class="popup">' +
-              '<div class="block">' +
-              '<label><div id="profile-pic-preview" class="profile-pic-upload">' +
-              '<input id="profile-pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, "profile ")" />' +
-              '<i id="profile-pic-icon" class="material-icons">edit</i></div></label>' +
-              '<p><a href="#" class="link popup-close">Close me</a></p>' +
-              '</div>' +
-              '</div>',
-            // Events
-            on: {
-              open: function(popup) {
-                console.log('Popup open');
-              },
-              opened: function(popup) {
-                console.log('Popup opened');
-              },
-            }
-          }).open();
+          document.getElementById('pic-preview').style.backgroundImage = "url(" + pool.pic + ")";
+          document.getElementById("pool-name").value = pool.name;
+          document.getElementById("pool-name").dataset.id = pool.poolID;
+          document.getElementById("pool-description").innerHTML = pool.description;
+
+          var date = new Date(pool.time);
+          document.getElementById("pool-date").value = "";
+          document.getElementById("pool-time").value = "";
+
+
+          //add in tags
+          var chipsDiv = document.getElementById("pool-tags");
+          chipsDiv.innerHTML = "";
+          for (var i = 0; i < pool.tags.length; i++) {
+            var chip = document.createElement("div");
+            chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
+            chipsDiv.appendChild(chip.childNodes[0]);
+          }
+
+          app.popup.open(".pool-popup");
         };
         a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
           '<div class="card-content card-content-padding">' +
@@ -299,76 +353,78 @@ function loadPools() {
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags) {
+
+  loadedPools = [];
+
   //If the poolID is not null and not 0 edit the data
   if (poolID && poolID != 0) {
     var poolRef = db.collection('pools').doc(poolID);
-    //Edit pool name
-    if (poolName) {
-      poolRef.update({
-          name: poolName,
-        })
-        .then(function() {
-          console.log("pool successfully updated!");
-        })
-        .catch(function(error) {
-          console.error("Error updating pool: ", error);
-        });
-    }
-    if (poolDescription) {
-      poolRef.update({
-          description: poolDescription,
-        })
-        .then(function() {
-          console.log("pool successfully updated!");
-        })
-        .catch(function(error) {
-          console.error("Error updating pool: ", error);
-        });
-    }
-    if (poolPicture) {
-      var profilePictureRef = storageRef.child('profile-pictures').child(User.uid);
-      profilePictureRef.put(file).then(function(snapshot) {
 
-
+    poolRef.update({
+      name: poolName,
+      description: poolDescription,
+      startDate: poolStartDate,
+      tags: tags,
+    }).then(function() {
+      var profilePictureRef = storageRef.child('pool-pictures').child(poolID);
+      profilePictureRef.put(poolPicture).then(function() {
+        app.preloader.hide();
+        app.toast.show({
+          text: "Pool Saved",
+          closeTimeout: 3000,
+        });
+        app.popup.close(".pool-popup");
+        loadPools();
+      }).catch(function(error) {
+        app.preloader.hide();
+        app.toast.show({
+          text: error,
+          closeTimeout: 10000,
+          closeButton: true
+        });
       });
-    }
-    if (poolStartDate) {
-      poolRef.update({
-          startDate: poolStartDate,
-        })
-        .then(function() {
-          console.log("pool successfully updated!");
-        })
-        .catch(function(error) {
-          console.error("Error updating pool: ", error);
-        });
-    }
-    if (tags) {
-      ///will be an array
-      poolRef.update({
-          tags: tags,
-        })
-        .then(function() {
-          console.log("pool successfully updated!");
-        })
-        .catch(function(error) {
-          console.error("Error updating pool: ", error);
-        });
-    }
+    }).catch(function(error) {
+      app.preloader.hide();
+      app.toast.show({
+        text: error,
+        closeTimeout: 10000,
+        closeButton: true
+      });
+    });
+
   } else {
     //the pool does not exist so create a pool and set its information
     db.collection("pools").add({
-        name: poolName,
-        description: poolDescription,
-        startDate: poolStartDate,
-        tags: tags,
-      })
-      .then(function() {
-        console.log("Successfully added a new pool!");
-      })
-      .catch(function(error) {
-        console.error("Error adding pool: ", error);
+      name: poolName,
+      description: poolDescription,
+      startDate: poolStartDate,
+      tags: tags,
+    }).then(function(doc) {
+      var profilePictureRef = storageRef.child('pool-pictures').child(doc.id);
+      profilePictureRef.put(poolPicture).then(function() {
+        app.preloader.hide();
+        app.toast.show({
+          text: "Pool Saved",
+          closeTimeout: 3000,
+        });
+        app.popup.close(".pool-popup");
+        loadPools();
+      }).catch(function(error) {
+        app.preloader.hide();
+        app.toast.show({
+          text: error,
+          closeTimeout: 10000,
+          closeButton: true
+        });
       });
+    }).catch(function(error) {
+      app.preloader.hide();
+      app.toast.show({
+        text: error,
+        closeTimeout: 10000,
+        closeButton: true
+      });
+    });
   }
 
 }
@@ -378,13 +434,13 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
 function previewPic(event) {
   document.getElementById('pic-preview').style.backgroundImage = "url(" + URL.createObjectURL(event.target.files[0]) + ")";
   document.getElementById('pic-icon').innerHTML = "edit";
-};
+}
 
 //add a tag on edit pool page
 function addTag(el) {
-  chipsDiv = el.parentElement;
+  chipsDiv = document.getElementById("pool-tags");
   if (el.value.includes(",")) {
-    var tag = el.value.split(',')[0];
+    var tag = el.value.split(',')[0].toLowerCase();
     var chip = document.createElement("div");
     chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + tag + '</div><a href="#" class="chip-delete"></a></div>';
     chipsDiv.appendChild(chip.childNodes[0]);
@@ -400,7 +456,3 @@ function addTag(el) {
 function deleteTag(el) {
   el.parentElement.removeChild(el);
 }
-
-
-
-/////
