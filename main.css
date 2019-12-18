@@ -1,3 +1,10 @@
+:root {
+  --f7-theme-color: #4CAF50;
+  --f7-theme-color-rgb: 76, 175, 80;
+  --f7-theme-color-shade: #409343;
+  --f7-theme-color-tint: #67bd6a;
+}
+
 @font-face {
   font-family: 'Framework7 Icons';
   font-style: normal;
@@ -55,17 +62,40 @@
   -webkit-font-smoothing: antialiased;
 }
 
+#splash-screen {
+  z-index: 10000;
+  background-color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {}
+
+.block-card {
+  margin: 16px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 4px;
+}
+
 .side-panel {
   background-color: lightgray;
 }
 
 .pool-card {
+  box-shadow: none;
   transition: .2s;
 }
 
 .pool-card:hover {
   transform: scale(1.02) translateY(-4px);
-  box-shadow: var(--f7-elevation-7);
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, .1);
 }
 
 .pool-card .card-header {
@@ -79,12 +109,31 @@
   color: #8e8e93;
 }
 
+.date {
+  color: var(--f7-theme-color)
+}
+
 .pool-popup {
   overflow-y: scroll;
 }
 
+.tab-link {
+  margin: 2px auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: .1s;
+}
+
+.tab-link:hover {
+  background-color: rgba(76, 175, 80, .1);
+}
+
 .tab-link-active {
   font-weight: bold;
+}
+
+.tab {
+  animation: fadeIn .2s;
 }
 
 .pic-upload {
@@ -106,4 +155,19 @@
 
 .pic-upload input[type=file] {
   display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fadeIn {
+  -webkit-animation-name: fadeIn;
+  animation-name: fadeIn;
 }

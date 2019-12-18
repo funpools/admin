@@ -36,6 +36,12 @@ var $$ = Dom7;
 
 var mainView = app.views.create('.view-main');
 
+// user search
+$$('#user-search').on('keyup', function(event) {
+  if (event.keyCode === 13) {
+    $$('#user-search-button').click();
+  }
+});
 
 // hide pool button
 $$('.hide-confirm').on('click', function() {
@@ -73,7 +79,7 @@ $$('.new-pool').on('click', function() {
   document.getElementById("pool-name").value = "";
   document.getElementById("pool-name").dataset.id = "0";
   document.getElementById("pool-description").innerHTML = "";
-
+  $$("#pool-tags").html("");
   document.getElementById("pool-date").value = "";
   document.getElementById("pool-time").value = "";
   app.popup.open(".pool-popup");
@@ -138,6 +144,10 @@ function setupMainPage() {
         resizable: true,
         visibleBreakpoint: 300,
       });
+
+      //hide splash screen
+      var sc = document.getElementById("splash-screen");
+      sc.parentElement.removeChild(sc);
     } else {
       console.log("This user is not an admin!");
     }
@@ -245,16 +255,20 @@ function editUser(username, firstName, lastName, pic, password) {
 }
 
 function searchUsers() {
-  document.getElementById("all-users-list").innerHTML = '';
+  var usersList = document.getElementById("all-users-list");
+
+  usersList.innerHTML = 'Searching...';
   var search = document.getElementById('user-search').value;
   console.log('searched for ' + search);
   db.collection('users').where("username", ">=", search).get().catch(function(error) {
     console.log(error);
   }).then(function(users) {
+    usersList.innerHTML = "";
+    if (users.size === 0)
+      usersList.innerHTML = "No users matching \"" + search + "\" were found.";
     console.log(users.size);
     users.forEach(function(userDoc) {
       getUser(userDoc.id, function(user) {
-        var usersList = document.getElementById("all-users-list");
         var li = document.createElement('li');
         li.innerHTML = '<a href="#" class="item-link item-content">' +
           '<div class="item-media"><img src="' + user.picURL + '" width="32px" style="border-radius: 50%" /></div>' +
@@ -340,9 +354,10 @@ function loadPools() {
 
           app.popup.open(".pool-popup");
         };
+        var date = new Date();
         a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
           '<div class="card-content card-content-padding">' +
-          '  <p class="date">Starts on January 21, 2015</p>' +
+          '  <p class="date">' + date.toLocaleString() + '</p>' +
           '  <p>Pool ' + pool.description + '</p>' +
           '</div>';
         poolList.appendChild(a);
