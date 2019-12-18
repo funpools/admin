@@ -359,6 +359,11 @@
         //hide left panel
         app.panel.destroy('.panel-left');
 
+        //hide splash screen
+        var sc = document.getElementById("splash-screen");
+        if (sc)
+          sc.parentElement.removeChild(sc);
+
         //show login page
         self.app.views.main.router.navigate('/login/', {
           ignoreCache: true,
