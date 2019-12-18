@@ -75,8 +75,6 @@
   align-items: center;
 }
 
-.title {}
-
 .block-card {
   margin: 16px;
   padding: 16px;
@@ -89,13 +87,14 @@
 }
 
 .pool-card {
+  border: 2px solid rgba(0, 0, 0, 0);
   box-shadow: none;
-  transition: .2s;
+  transition: .1s;
 }
 
 .pool-card:hover {
-  transform: scale(1.02) translateY(-4px);
-  box-shadow: 0 0 20px 5px rgba(0, 0, 0, .1);
+  border-color: var(--f7-theme-color);
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, .05);
 }
 
 .pool-card .card-header {
@@ -115,6 +114,35 @@
 
 .pool-popup {
   overflow-y: scroll;
+}
+
+.question {
+  margin: 32px 0;
+  padding: 8px;
+  border: 1px solid var(--f7-list-item-border-color);
+  border-radius: 4px;
+}
+
+.question .item-inner {
+  flex-direction: row;
+  align-items: center;
+}
+
+.question .item-input {
+  border-radius: 4px;
+  margin: 8px;
+  background-color: var(--f7-page-bg-color);
+}
+
+.question .item-input button {
+  text-overflow: inherit;
+  width: auto;
+}
+
+.seporator {
+  margin: 16px 0;
+  height: 1px;
+  background-color: var(--f7-list-item-border-color);
 }
 
 .tab-link {

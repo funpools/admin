@@ -36,6 +36,17 @@ var $$ = Dom7;
 
 var mainView = app.views.create('.view-main');
 
+
+function makeid(length) {
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 // user search
 $$('#user-search').on('keyup', function(event) {
   if (event.keyCode === 13) {
@@ -43,9 +54,133 @@ $$('#user-search').on('keyup', function(event) {
   }
 });
 
+// new pool multiple choice question
+$$('#mc-question').on('click', function() {
+
+  //store the question number for later use
+  var questionNumb = makeid(10);
+
+  //add the new question html to the page
+  $$('#pool-questions').append('<div class="question mc-question list no-hairlines no-hairlines-between">\
+    <ul>\
+      <li class="item-content item-input">\
+        <div class="item-inner">\
+        <div>\
+          <div class="item-title item-label">Multiple Choice Question</div>\
+          <div class="item-input-wrap">\
+            <input type="text" placeholder="Your question">\
+          </div>\
+          </div>\
+          <div class="item-after">\
+            <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+          </div>\
+        </div>\
+      </li>\
+      <div class="seporator"></div>\
+      <li class="item-content item-input">\
+        <div class="item-inner">\
+          <div>\
+            <div class="item-title item-label">Answer</div>\
+            <div class="item-input-wrap">\
+              <input type="text" placeholder="Your answer">\
+            </div>\
+          </div>\
+          <div class="item-after">\
+            <button class="button" onclick="setAnswer(this)">Correct</button>\
+          </div>\
+        </div>\
+      </li>\
+    </ul>\
+    <button class="button mc-answer-' + questionNumb + '">+ Add Answer</button>\
+  </div>');
+
+  // add event listner for new multiple choice answer
+  $$('.mc-answer-' + questionNumb).on('click', function(event) {
+    $$('.mc-answer-' + questionNumb).prev().append('<li class="item-content item-input">\
+      <div class="item-inner">\
+        <div>\
+          <div class="item-title item-label">Answer</div>\
+          <div class="item-input-wrap">\
+            <input type="text" placeholder="Your answer">\
+          </div>\
+        </div>\
+        <div class="item-after">\
+        <button class="button" onclick="deleteAnswer(this)">Delete</button>\
+          <button class="button" onclick="setAnswer(this)">Correct</button>\
+        </div>\
+      </div>\
+    </li>');
+  });
+
+});
+
+
+//remove an answer from a multiple choice question
+function deleteAnswer(el) {
+  var answer = el.parentElement.parentElement.parentElement;
+  answer.parentElement.removeChild(answer);
+}
+
+
+//set the selected answer the correct answer for a multiple choice question
+function setAnswer(el) {
+  var answer = el.parentElement.parentElement.parentElement;
+  var answers = answer.parentElement.childNodes;
+
+  for (var i = 0; i < answers.length; i++) {
+    answers[i].style = "";
+  }
+
+  answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
+}
+
+
+//remove a question from the list
+function deleteQuestion(el) {
+  deleteAnswer(el.parentElement.parentElement);
+}
+
+
+
+// new pool numeric question
+$$('#n-question').on('click', function() {
+
+  //store the question number for later use
+  var questionNumb = makeid(10);
+
+
+  //add the new question html to the page
+  $$('#pool-questions').append('<div class="question n-question list no-hairlines no-hairlines-between">\
+    <ul>\
+      <li class="item-content item-input">\
+      <div class="item-inner">\
+      <div>\
+        <div class="item-title item-label">Numeric Question</div>\
+        <div class="item-input-wrap">\
+          <input type="text" placeholder="Your question">\
+        </div>\
+        </div>\
+        <div class="item-after">\
+          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+        </div>\
+      </div>\
+      </li>\
+      <div class="seporator"></div>\
+      <li class="item-content item-input">\
+        <div class="item-inner"><div>\
+          <div class="item-title item-label">Answer</div>\
+          <div class="item-input-wrap">\
+            <input type="number">\
+          </div>\
+        </div></div>\
+      </li>\
+    </ul>\
+  </div>');
+});
+
 // hide pool button
 $$('.hide-confirm').on('click', function() {
-  app.dialog.confirm('Hiding this pool means it will no longer be visible to the public. You can always unhide pools.', function() {
+  app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
     app.popup.close(".pool-popup");
     // TODO: Hide pool
   });
@@ -53,7 +188,10 @@ $$('.hide-confirm').on('click', function() {
 
 //save pool
 $$('.pool-save').on('click', function() {
+
   app.preloader.show();
+
+  //store all the values
   var id = document.getElementById("pool-name").dataset.id;
   var name = document.getElementById("pool-name").value;
   var description = document.getElementById("pool-description").innerHTML;
@@ -69,19 +207,28 @@ $$('.pool-save').on('click', function() {
     tags.push(foo[i].innerHTML);
     console.log(foo[i].innerHTML);
   }
+
+  //save the pool to the database
   editPool(id, name, description, pic, timestamp, tags);
 });
 
 
-//clear any past values
+//pool popup
 $$('.new-pool').on('click', function() {
+
+  //clear any existing values in the popup
   document.getElementById('pic-preview').style.backgroundImage = "";
   document.getElementById("pool-name").value = "";
   document.getElementById("pool-name").dataset.id = "0";
   document.getElementById("pool-description").innerHTML = "";
   $$("#pool-tags").html("");
+  $$("#pool-questions").html("");
+
   document.getElementById("pool-date").value = "";
   document.getElementById("pool-time").value = "";
+
+
+  //open the popup
   app.popup.open(".pool-popup");
 
 });
