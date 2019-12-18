@@ -9,7 +9,7 @@ var app = new Framework7({
       on: {
         pageInit: function(e, page) {
 
-        }
+        },
       }
     },
     {
@@ -294,7 +294,8 @@ function setupMainPage() {
 
       //hide splash screen
       var sc = document.getElementById("splash-screen");
-      sc.parentElement.removeChild(sc);
+      if (sc)
+        sc.parentElement.removeChild(sc);
     } else {
       console.log("This user is not an admin!");
     }
@@ -488,6 +489,8 @@ function loadPools() {
           var date = new Date(pool.time);
           document.getElementById("pool-date").value = "";
           document.getElementById("pool-time").value = "";
+
+          $$("#pool-questions").html("");
 
 
           //add in tags
