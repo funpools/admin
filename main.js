@@ -167,7 +167,7 @@ $$('.new-pool').on('click', function() {
 
   document.getElementById("pool-date").value = "";
   document.getElementById("pool-time").value = "";
-
+  console.log("aaa");
   //open the popup
   app.popup.open(".pool-popup");
 
@@ -346,79 +346,95 @@ function loadPools() {
   loadedPools = [];
   document.getElementById("pool-list").innerHTML = '';
 
+  var pools = [];
   //Then get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
-  db.collection("pools").get().then(function(pools) {
-    pools.forEach(function(doc) {
+  db.collection("pools").get().then(function(poolsSnapshot) {
+    poolsSnapshot.forEach(function(doc) {
       //Get the pool Data
-      getPool(doc.id, function(pool) {
-        var poolList = document.getElementById("pool-list");
-        var date = new Date();
+      getPool(doc.id, function(poolDAT) {
 
-        //setup the pool card
-        var a = document.createElement('div');
-        a.classList.add("card");
-        a.classList.add("pool-card");
-        a.classList.add("col-30");
-        //When the card is clicked fill the popup with data
-        a.onclick = function() {
-          document.getElementById('pic-preview').style.backgroundImage = "url(" + pool.pic + ")";
-          document.getElementById("pool-name").value = pool.name;
-          document.getElementById("pool-name").dataset.id = pool.poolID;
-          document.getElementById("pool-description").innerHTML = pool.description;
-          var date = new Date(pool.time);
-          document.getElementById("pool-date").value = "";
-          document.getElementById("pool-time").value = "";
+        //Add the pool data to an array for later use
+        pools.push(poolDAT);
 
-          document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
+        //once the array length is the same as the number of pools we have loaded sort the array then add all the pools top the html
+        if (pools.length >= poolsSnapshot.size) {
+          console.log("loaded all the pool data");
+          pools.sort((a, b) => (a.name > b.name) ? 1 : -1);
+          pools.forEach(function(pool) {
 
-          //Clear the question and answer IDs because we are loading a new page
-          questionIDs = [];
-          answerIDs = [];
+            var poolList = document.getElementById("pool-list");
+            var date = new Date();
 
-          //Check to see if this pool has any questions. If so then load them // TODO: maybe if there are no questions then add a blank question at the bottom of the code?
-          if (pool.questions != 'undefined' && pool.questions != null) {
+            //setup the pool card
+            var a = document.createElement('div');
+            a.classList.add("card");
+            a.classList.add("pool-card");
+            a.classList.add("col-30");
+            //When the card is clicked fill the popup with data
+            a.onclick = function() {
+              document.getElementById('pic-preview').style.backgroundImage = "url(" + pool.pic + ")";
+              document.getElementById("pool-name").value = pool.name;
+              document.getElementById("pool-name").dataset.id = pool.poolID;
+              document.getElementById("pool-description").innerHTML = pool.description;
+              var date = new Date(pool.time);
+              document.getElementById("pool-date").value = "";
+              document.getElementById("pool-time").value = "";
 
-            //For each question in the pool.
-            Object.keys(pool.questions).forEach(function(questionID) {
-              //Add the question to the html
-              addQuestion(questionID, pool.questions[questionID].description);
-              //For each answer in the current question
-              Object.keys(pool.questions[questionID].answers).forEach(function(answerID) {
-                //Add the answer to the html
-                addAnswer(questionID, answerID);
-                //Set the answers text // TODO:  This may be able to be done in the addAnswer function
-                document.getElementById(answerID).value = pool.questions[questionID].answers[answerID].text;
-                //Check to see if this answer is the correct one
-                if (pool.questions[questionID].answers[answerID].correct) {
-                  console.log("this answer is correct do somthing");
-                  //change the set answer function to user the answers id instead of the element
-                }
+              document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
 
-              });
-            });
-          }
+              //Clear the question and answer IDs because we are loading a new page
+              questionIDs = [];
+              answerIDs = [];
 
-          //add in tags
-          var chipsDiv = document.getElementById("pool-tags");
-          chipsDiv.innerHTML = "";
-          for (var i = 0; i < pool.tags.length; i++) {
-            var chip = document.createElement("div");
-            chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
-            chipsDiv.appendChild(chip.childNodes[0]);
-          }
+              //Check to see if this pool has any questions. If so then load them // TODO: maybe if there are no questions then add a blank question at the bottom of the code?
+              if (pool.questions != 'undefined' && pool.questions != null) {
 
-          app.popup.open(".pool-popup");
-        };
+                //For each question in the pool.
+                Object.keys(pool.questions).forEach(function(questionID) {
+                  //Add the question to the html
+                  addQuestion(questionID, pool.questions[questionID].description);
+                  //For each answer in the current question
+                  Object.keys(pool.questions[questionID].answers).forEach(function(answerID) {
+                    //Add the answer to the html
+                    addAnswer(questionID, answerID);
+                    //Set the answers text // TODO:  This may be able to be done in the addAnswer function
+                    document.getElementById(answerID).value = pool.questions[questionID].answers[answerID].text;
+                    //Check to see if this answer is the correct one
+                    if (pool.questions[questionID].answers[answerID].correct) {
+                      console.log("this answer is correct do somthing");
+                      //change the set answer function to user the answers id instead of the element
+                    }
 
-        //Setup the card's inner html
-        a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
-          '<div class="card-content card-content-padding">' +
-          '  <p class="date">' + date.toLocaleString() + '</p>' +
-          '  <p>Pool ' + pool.description + '</p>' +
-          '</div>';
-        //Add the card to the pool list
-        poolList.appendChild(a);
+                  });
+                });
+              }
+
+              //add in tags
+              var chipsDiv = document.getElementById("pool-tags");
+              chipsDiv.innerHTML = "";
+              for (var i = 0; i < pool.tags.length; i++) {
+                var chip = document.createElement("div");
+                chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
+                chipsDiv.appendChild(chip.childNodes[0]);
+              }
+
+              app.popup.open(".pool-popup");
+            };
+
+            //Setup the card's inner html
+            a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
+              '<div class="card-content card-content-padding">' +
+              '  <p class="date">' + date.toLocaleString() + '</p>' +
+              '  <p> ' + pool.description + '</p>' +
+              '</div>';
+            //Add the card to the pool list
+            poolList.appendChild(a);
+          });
+        }
       });
+
+
+      ///
 
     });
   });
