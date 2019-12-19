@@ -70,32 +70,7 @@ $$('#n-question').on('click', function() {
   var questionNumb = makeid(10);
 
   //add the new question html to the page
-  $$('#pool-questions').append('<div class="question n-question list no-hairlines no-hairlines-between">\
-    <ul>\
-      <li class="item-content item-input">\
-      <div class="item-inner">\
-      <div>\
-        <div class="item-title item-label">Numeric Question</div>\
-        <div class="item-input-wrap">\
-          <input type="text" placeholder="Your question">\
-        </div>\
-        </div>\
-        <div class="item-after">\
-          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
-        </div>\
-      </div>\
-      </li>\
-      <div class="seporator"></div>\
-      <li class="item-content item-input">\
-        <div class="item-inner"><div>\
-          <div class="item-title item-label">Answer</div>\
-          <div class="item-input-wrap">\
-            <input type="number">\
-          </div>\
-        </div></div>\
-      </li>\
-    </ul>\
-  </div>');
+
 });
 
 // Hide pool button on click
@@ -127,14 +102,18 @@ $$('.pool-save').on('click', function() {
     console.log(chips[i].innerHTML);
   }
 
-  console.log(questionIDs.length);
+  console.log(poolQuestions);
+
+
   var questions = {};
   //For each question
-  for (var i = 0; i < questionIDs.length; i++) {
+  for (var i = 0; i < poolQuestions.length; i++) {
 
+    var questionID = poolQuestions[i].id;
+    console.log(questionID);
     var answers = {};
     //Get the questions answers and store them in an object called answers
-    var answerEL = document.getElementsByClassName(questionIDs[i] + "-answer");
+    var answerEL = document.getElementsByClassName(questionID + "-answer");
     for (var x = 0; x < answerEL.length; x++) {
       answers[answerEL[x].id] = {
         correct: false, // TODO: find the correct answer here
@@ -143,7 +122,7 @@ $$('.pool-save').on('click', function() {
     }
     //Add this question to the questions object
     questions[questionIDs[i]] = {
-      description: document.getElementById('question-description-' + questionIDs[i]).value,
+      description: document.getElementById('question-description-' + questionID).value,
       answers: answers,
     };
   }
@@ -180,6 +159,7 @@ var answerIDs = [];
 function addAnswer(questionID, answerID) {
   // TODO: Check to see if this id is already in the database. If so dont add the answer
   answerIDs.push(answerID);
+
   $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
   <div class="item-inner">\
     <div>\
@@ -230,6 +210,45 @@ function addQuestion(questionID, description) {
   });
   //Setup the question description
   document.getElementById("question-description-" + questionID).value = description;
+}
+
+//
+function addNumericQuestion(questionID, description) {
+  // TODO: Check to see if this questionId has been added already if so dont add the question
+  questionIDs.push(questionID);
+
+  // Add the question html to the pool questions element
+  $$('#pool-questions').append('<div  id="' + questionID + '"  class="question n-question list no-hairlines no-hairlines-between">\
+    <ul>\
+      <li class="item-content item-input">\
+      <div class="item-inner">\
+      <div>\
+        <div class="item-title item-label">Numeric Question</div>\
+        <div class="item-input-wrap">\
+          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
+        </div>\
+        </div>\
+        <div class="item-after">\
+          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+        </div>\
+      </div>\
+      </li>\
+      <div class="seporator"></div>\
+      <li class="item-content item-input">\
+        <div class="item-inner"><div>\
+          <div class="item-title item-label">Answer</div>\
+          <div class="item-input-wrap">\
+            <input id="' + questionID + '-answer" class="' + questionID + '-answer" type="number">\
+          </div>\
+        </div></div>\
+      </li>\
+    </ul>\
+  </div>');
+
+  //Setup the question description
+  document.getElementById("question-description-" + questionID).value = description;
+
+
 }
 
 // TODO: Change these to use the questionIDs and answerIDs
