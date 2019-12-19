@@ -37,6 +37,7 @@ var $$ = Dom7;
 var mainView = app.views.create('.view-main');
 
 
+///////********Page Setup Functions and dom stuff*********\\\\\\\\\\
 function makeid(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -53,57 +54,20 @@ $$('#user-search').on('keyup', function(event) {
     $$('#user-search-button').click();
   }
 });
-var questionIDs = [];
-// new pool multiple choice question
-$$('#mc-question').on('click', function() {
 
+// Setup for the new multiple choice question button
+$$('#mc-question').on('click', function() {
   //store the question number for later use
   var questionNumb = makeid(10);
-  questionIDs.push(questionNumb);
   //add the new question html to the page
-  addQuestion(questionNumb, makeid(10));
-
-  // add event listner for new multiple choice answer
-  $$('.mc-answer-' + questionNumb).on('click', function(event) {
-    addAnswer(questionNumb, makeid(10));
-  });
-
+  addQuestion(questionNumb, '');
 });
 
-
-//remove an answer from a multiple choice question
-function deleteAnswer(el) {
-  var answer = el.parentElement.parentElement.parentElement;
-  answer.parentElement.removeChild(answer);
-}
-
-
-//set the selected answer the correct answer for a multiple choice question
-function setAnswer(el) {
-  var answer = el.parentElement.parentElement.parentElement;
-  var answers = answer.parentElement.childNodes;
-
-  for (var i = 0; i < answers.length; i++) {
-    answers[i].style = "";
-  }
-
-  answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
-}
-
-
-//remove a question from the list
-function deleteQuestion(el) {
-  deleteAnswer(el.parentElement.parentElement);
-}
-
-
-
-// new pool numeric question
+// Setup for the new numeric question button
 $$('#n-question').on('click', function() {
 
   //store the question number for later use
   var questionNumb = makeid(10);
-
 
   //add the new question html to the page
   $$('#pool-questions').append('<div class="question n-question list no-hairlines no-hairlines-between">\
@@ -134,7 +98,7 @@ $$('#n-question').on('click', function() {
   </div>');
 });
 
-// hide pool button
+// Hide pool button on click
 $$('.hide-confirm').on('click', function() {
   app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
     app.popup.close(".pool-popup");
@@ -142,7 +106,7 @@ $$('.hide-confirm').on('click', function() {
   });
 });
 
-//save pool
+// Save pool button on click
 $$('.pool-save').on('click', function() {
 
   app.preloader.show();
@@ -155,50 +119,42 @@ $$('.pool-save').on('click', function() {
   var timestamp = document.getElementById('pool-date').valueAsNumber + document.getElementById('pool-time').valueAsNumber;
   var poolQuestions = document.getElementsByClassName("question");
 
-
   var tags = [];
-
-  //get tags
-  var foo = document.getElementById("pool-tags").getElementsByClassName("chip-label");
-  for (var i = 0; i < foo.length; i++) {
-    tags.push(foo[i].innerHTML);
-    console.log(foo[i].innerHTML);
+  //Get tags
+  var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
+  for (var i = 0; i < chips.length; i++) {
+    tags.push(chips[i].innerHTML);
+    console.log(chips[i].innerHTML);
   }
 
-
-  // /console.log(poolQuestions);
   console.log(questionIDs.length);
-  //question - description - ' + questionNumb
   var questions = {};
-
-  //for each question
+  //For each question
   for (var i = 0; i < questionIDs.length; i++) {
 
     var answers = {};
+    //Get the questions answers and store them in an object called answers
     var answerEL = document.getElementsByClassName(questionIDs[i] + "-answer");
     for (var x = 0; x < answerEL.length; x++) {
       answers[answerEL[x].id] = {
         correct: false, // TODO: find the correct answer here
         text: answerEL[x].value,
       };
-      console.log(answerEL.id);
     }
-    console.log(answers);
+    //Add this question to the questions object
     questions[questionIDs[i]] = {
       description: document.getElementById('question-description-' + questionIDs[i]).value,
       answers: answers,
     };
   }
+
   console.log(questions);
 
-
-
-  //save the pool to the database
+  //Save the pool to the database
   editPool(id, name, description, pic, timestamp, tags, questions);
 });
 
-
-//pool popup
+// New pool button on click
 $$('.new-pool').on('click', function() {
 
   //clear any existing values in the popup
@@ -212,37 +168,94 @@ $$('.new-pool').on('click', function() {
   document.getElementById("pool-date").value = "";
   document.getElementById("pool-time").value = "";
 
-
   //open the popup
   app.popup.open(".pool-popup");
 
 });
 
 
-function signIn(email, password) {
-  app.preloader.show();
-  firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
-    app.preloader.hide();
-    app.toast.show({
-      text: error,
-      closeTimeout: 10000,
-      closeButton: true
-    });
-  }).then(function() {
-    app.preloader.hide();
-    //Put any code that needs to happen after login here
-    console.log("Signed in!");
-  });
+
+var answerIDs = [];
+//Adds an answer to the html // NOTE: this only add the answer to the html not the data base
+function addAnswer(questionID, answerID) {
+  // TODO: Check to see if this id is already in the database. If so dont add the answer
+  answerIDs.push(answerID);
+  $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
+  <div class="item-inner">\
+    <div>\
+      <div class="item-title item-label">Answer</div>\
+      <div class="item-input-wrap">\
+        <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
+      </div>\
+    </div>\
+    <div class="item-after">\
+    <button class="button" onclick="deleteAnswer(this)">Delete</button>\
+      <button class="button" onclick="setAnswer(this)">Correct</button>\
+    </div>\
+  </div>\
+  </li>');
 }
 
-function signOut() {
-  firebase.auth().signOut().then(function() {
-    // Sign-out successful.
-  }).catch(function(error) {
-    throw (error);
-    console.log("Failed to sign out: " + error.message);
+var questionIDs = [];
+// This is currently adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database // TODO: add Numeric questions as well
+function addQuestion(questionID, description) {
+  // TODO: Check to see if this questionId has been added already if so dont add the question
+  //
+  questionIDs.push(questionID);
+  // Add the question html to the pool questions element
+  $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
+  <ul>\
+    <li class="item-content item-input">\
+      <div class="item-inner">\
+      <div>\
+        <div class="item-title item-label">Multiple Choice Question</div>\
+        <div class="item-input-wrap">\
+          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
+        </div>\
+        </div>\
+        <div class="item-after">\
+          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+        </div>\
+      </div>\
+    </li>\
+    <div class="seporator"></div>\
+  </ul>\
+  <button class="button mc-answer-' + questionID + '">+ Add Answer</button>\
+</div>');
+
+  //setup the add answer button
+  $$('.mc-answer-' + questionID).on('click', function(event) {
+    var answerID = makeid(10);
+    addAnswer(questionID, answerID);
   });
+  //Setup the question description
+  document.getElementById("question-description-" + questionID).value = description;
 }
+
+// TODO: Change these to use the questionIDs and answerIDs
+//remove an answer from a multiple choice question
+function deleteAnswer(el) {
+  var answer = el.parentElement.parentElement.parentElement;
+  answer.parentElement.removeChild(answer);
+}
+
+//set the selected answer the correct answer for a multiple choice question
+function setAnswer(el) {
+  var answer = el.parentElement.parentElement.parentElement;
+  var answers = answer.parentElement.childNodes;
+
+  for (var i = 0; i < answers.length; i++) {
+    answers[i].style = "";
+  }
+
+  answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
+}
+
+//remove a question from the list
+function deleteQuestion(el) {
+  deleteAnswer(el.parentElement.parentElement);
+}
+
 
 
 
@@ -288,8 +301,9 @@ function setupMainPage() {
 }
 
 
-
+//////*******Pools section********\\\\\\\
 var loadedPools = []; //An array of all the pools we have loaded
+// An asyc method to get pool data
 function getPool(poolID, callback) {
   //If we have already loaded this users data then return it else load it from the database
   if (poolID in loadedPools) {
@@ -323,66 +337,64 @@ function getPool(poolID, callback) {
 }
 
 
-
-//This loads the pools. This can also be used to refresh the pools page
+// This loads the pools. This can also be used to refresh the pools page
 function loadPools() {
+
+  //Close any open pool popup
+  app.popup.close(".pool-popup");
   //Remove any old pool data from th html.// TODO: also remove the data from the loadedPools array. This will ensure that we have the most up to date data avalible
+  loadedPools = [];
   document.getElementById("pool-list").innerHTML = '';
+
   //Then get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
   db.collection("pools").get().then(function(pools) {
     pools.forEach(function(doc) {
+      //Get the pool Data
       getPool(doc.id, function(pool) {
         var poolList = document.getElementById("pool-list");
+        var date = new Date();
+
+        //setup the pool card
         var a = document.createElement('div');
         a.classList.add("card");
         a.classList.add("pool-card");
         a.classList.add("col-30");
-
-        //fill popup with content and show it when card is clicked
+        //When the card is clicked fill the popup with data
         a.onclick = function() {
           document.getElementById('pic-preview').style.backgroundImage = "url(" + pool.pic + ")";
           document.getElementById("pool-name").value = pool.name;
           document.getElementById("pool-name").dataset.id = pool.poolID;
           document.getElementById("pool-description").innerHTML = pool.description;
-
           var date = new Date(pool.time);
           document.getElementById("pool-date").value = "";
           document.getElementById("pool-time").value = "";
 
-          var questionsList = document.getElementById("pool-questions");
-          questionsList.innerHTML = '';
+          document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
 
+          //Clear the question and answer IDs because we are loading a new page
+          questionIDs = [];
+          answerIDs = [];
+
+          //Check to see if this pool has any questions. If so then load them // TODO: maybe if there are no questions then add a blank question at the bottom of the code?
           if (pool.questions != 'undefined' && pool.questions != null) {
-            console.log(pool.questions.keys);
-            Object.keys(pool.questions).forEach(function(questionID) { //for each question
-              console.log("questionid:" + questionID + "question data:");
-              console.log(pool.questions[questionID]);
-              questionIDs.push(questionID);
 
-              addQuestion(questionID, 0);
-              //setup add answer button
-              $$('.mc-answer-' + questionID).on('click', function(event) {
-                var answerID = makeid(10);
+            //For each question in the pool.
+            Object.keys(pool.questions).forEach(function(questionID) {
+              //Add the question to the html
+              addQuestion(questionID, pool.questions[questionID].description);
+              //For each answer in the current question
+              Object.keys(pool.questions[questionID].answers).forEach(function(answerID) {
+                //Add the answer to the html
                 addAnswer(questionID, answerID);
-              });
-
-              //set the questions description
-              document.getElementById("question-description-" + questionID).value = pool.questions[questionID].description;
-
-              Object.keys(pool.questions[questionID].answers).forEach(function(answerID) { //for each answer
-                console.log(answerID + " " + pool.questions[questionID].answers[answerID]);
-
-                addAnswer(questionID, answerID);
-                if (pool.questions[questionID].answers[answerID].correct) {
-
-                  console.log("this answer is correct do somthing");
-                  //change the set answer function to user the answers id instead og the element+
-                }
-                //set the answers text
+                //Set the answers text // TODO:  This may be able to be done in the addAnswer function
                 document.getElementById(answerID).value = pool.questions[questionID].answers[answerID].text;
+                //Check to see if this answer is the correct one
+                if (pool.questions[questionID].answers[answerID].correct) {
+                  console.log("this answer is correct do somthing");
+                  //change the set answer function to user the answers id instead of the element
+                }
 
               });
-
             });
           }
 
@@ -397,67 +409,28 @@ function loadPools() {
 
           app.popup.open(".pool-popup");
         };
-        var date = new Date();
+
+        //Setup the card's inner html
         a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
           '<div class="card-content card-content-padding">' +
           '  <p class="date">' + date.toLocaleString() + '</p>' +
           '  <p>Pool ' + pool.description + '</p>' +
           '</div>';
+        //Add the card to the pool list
         poolList.appendChild(a);
       });
-
 
     });
   });
 }
 
-//this is currently a multiple choice question
-function addAnswer(questionID, answerID) {
-  $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
-  <div class="item-inner">\
-    <div>\
-      <div class="item-title item-label">Answer</div>\
-      <div class="item-input-wrap">\
-        <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
-      </div>\
-    </div>\
-    <div class="item-after">\
-    <button class="button" onclick="deleteAnswer(this)">Delete</button>\
-      <button class="button" onclick="setAnswer(this)">Correct</button>\
-    </div>\
-  </div>\
-  </li>');
 
-}
-
-function addQuestion(questionID, answerID) {
-  $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
-  <ul>\
-    <li class="item-content item-input">\
-      <div class="item-inner">\
-      <div>\
-        <div class="item-title item-label">Multiple Choice Question</div>\
-        <div class="item-input-wrap">\
-          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
-        </div>\
-        </div>\
-        <div class="item-after">\
-          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
-        </div>\
-      </div>\
-    </li>\
-    <div class="seporator"></div>\
-  </ul>\
-  <button class="button mc-answer-' + questionID + '">+ Add Answer</button>\
-</div>');
-
-}
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions) {
 
+  //Clear the loaded pools array this is to make sure we load the most up to date data
   loadedPools = [];
-
   //If the poolID is not null and not 0 edit the data
   if (poolID && poolID != 0) {
     var poolRef = db.collection('pools').doc(poolID);
@@ -469,7 +442,8 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
       tags: tags,
       questions: questions,
     }).then(function() {
-      if (poolPic) {
+      // TODO: check if pool pic is valid if not set the default pic?
+      if (poolPicture) {
         var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
         poolPictureRef.put(poolPicture).then(function() {
           app.preloader.hide();
@@ -486,6 +460,8 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
             closeTimeout: 10000,
             closeButton: true
           });
+          app.popup.close(".pool-popup");
+          loadPools();
         });
       } else {
         app.preloader.hide();
@@ -498,11 +474,13 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
       }
     }).catch(function(error) {
       app.preloader.hide();
+      app.popup.close(".pool-popup");
       app.toast.show({
-        text: error,
+        text: "error" + error,
         closeTimeout: 10000,
         closeButton: true
       });
+      loadPools();
     });
 
   } else {

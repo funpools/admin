@@ -1,3 +1,28 @@
+function signIn(email, password) {
+  app.preloader.show();
+  firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
+    app.preloader.hide();
+    app.toast.show({
+      text: error,
+      closeTimeout: 10000,
+      closeButton: true
+    });
+  }).then(function() {
+    app.preloader.hide();
+    //Put any code that needs to happen after login here
+    console.log("Signed in!");
+  });
+}
+
+function signOut() {
+  firebase.auth().signOut().then(function() {
+    // Sign-out successful.
+  }).catch(function(error) {
+    throw (error);
+    console.log("Failed to sign out: " + error.message);
+  });
+}
+
 var loadedUsers = []; //
 function getUser(userID, callback) {
   //example usage
