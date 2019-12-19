@@ -70,7 +70,7 @@ $$('#n-question').on('click', function() {
   var questionNumb = makeid(10);
 
   //add the new question html to the page
-
+  addNumericQuestion(questionNumb, '');
 });
 
 // Hide pool button on click
@@ -112,21 +112,31 @@ $$('.pool-save').on('click', function() {
     var questionID = poolQuestions[i].id;
     console.log(questionID);
     var answers = {};
-    //Get the questions answers and store them in an object called answers
-    var answerEL = document.getElementsByClassName(questionID + "-answer");
-    for (var x = 0; x < answerEL.length; x++) {
-      answers[answerEL[x].id] = {
-        correct: false, // TODO: find the correct answer here
-        text: answerEL[x].value,
+
+    var numericAnswer = document.getElementById(questionID + "-numeric-answer");
+    //check to see if this question has a numeric answer if so then skip the check for other answers
+    if (numericAnswer != null) {
+      //Add this question to the questions object
+      questions[questionIDs[i]] = {
+        description: document.getElementById('question-description-' + questionID).value,
+        answer: numericAnswer.value,
+      };
+    } else {
+      //Get the questions answers and store them in an object called answers
+      var answerEL = document.getElementsByClassName(questionID + "-answer");
+      for (var x = 0; x < answerEL.length; x++) {
+        answers[answerEL[x].id] = {
+          correct: false, // TODO: find the correct answer here
+          text: answerEL[x].value,
+        };
+      }
+      //Add this question to the questions object
+      questions[questionIDs[i]] = {
+        description: document.getElementById('question-description-' + questionID).value,
+        answers: answers,
       };
     }
-    //Add this question to the questions object
-    questions[questionIDs[i]] = {
-      description: document.getElementById('question-description-' + questionID).value,
-      answers: answers,
-    };
   }
-
   console.log(questions);
 
   //Save the pool to the database
@@ -151,8 +161,6 @@ $$('.new-pool').on('click', function() {
   app.popup.open(".pool-popup");
 
 });
-
-
 
 var answerIDs = [];
 //Adds an answer to the html // NOTE: this only add the answer to the html not the data base
@@ -212,8 +220,8 @@ function addQuestion(questionID, description) {
   document.getElementById("question-description-" + questionID).value = description;
 }
 
-//
-function addNumericQuestion(questionID, description) {
+// This is adds a numeric question to the html // NOTE: This only adds the question to the html not the databasex
+function addNumericQuestion(questionID, description, answer) {
   // TODO: Check to see if this questionId has been added already if so dont add the question
   questionIDs.push(questionID);
 
@@ -238,7 +246,7 @@ function addNumericQuestion(questionID, description) {
         <div class="item-inner"><div>\
           <div class="item-title item-label">Answer</div>\
           <div class="item-input-wrap">\
-            <input id="' + questionID + '-answer" class="' + questionID + '-answer" type="number">\
+            <input id="' + questionID + '-numeric-answer" class="" type="number">\
           </div>\
         </div></div>\
       </li>\
@@ -247,6 +255,7 @@ function addNumericQuestion(questionID, description) {
 
   //Setup the question description
   document.getElementById("question-description-" + questionID).value = description;
+  document.getElementById(questionID + "-numeric-answer").value = answer;
 
 
 }
@@ -410,21 +419,28 @@ function loadPools() {
 
                 //For each question in the pool.
                 Object.keys(pool.questions).forEach(function(questionID) {
-                  //Add the question to the html
-                  addQuestion(questionID, pool.questions[questionID].description);
-                  //For each answer in the current question
-                  Object.keys(pool.questions[questionID].answers).forEach(function(answerID) {
-                    //Add the answer to the html
-                    addAnswer(questionID, answerID);
-                    //Set the answers text // TODO:  This may be able to be done in the addAnswer function
-                    document.getElementById(answerID).value = pool.questions[questionID].answers[answerID].text;
-                    //Check to see if this answer is the correct one
-                    if (pool.questions[questionID].answers[answerID].correct) {
-                      console.log("this answer is correct do somthing");
-                      //change the set answer function to user the answers id instead of the element
-                    }
 
-                  });
+                  //Check to see if the question is Numeric
+                  if (pool.questions[questionID].answer != null) {
+                    //Add the question to the html
+                    addNumericQuestion(questionID, pool.questions[questionID].description, pool.questions[questionID].answer);
+                  } else {
+                    //Add the question to the html
+                    addQuestion(questionID, pool.questions[questionID].description);
+                    //For each answer in the current question
+                    Object.keys(pool.questions[questionID].answers).forEach(function(answerID) {
+                      //Add the answer to the html
+                      addAnswer(questionID, answerID);
+                      //Set the answers text // TODO:  This may be able to be done in the addAnswer function
+                      document.getElementById(answerID).value = pool.questions[questionID].answers[answerID].text;
+                      //Check to see if this answer is the correct one
+                      if (pool.questions[questionID].answers[answerID].correct) {
+                        console.log("this answer is correct do somthing");
+                        //change the set answer function to user the answers id instead of the element
+                      }
+
+                    });
+                  }
                 });
               }
 
