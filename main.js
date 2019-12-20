@@ -100,7 +100,7 @@ $$('.pool-save').on('click', function() {
     tags.push(chips[i].innerHTML);
   }
 
-  var questions = {};
+  var questions = [];
   //For each question
   for (var i = 0; i < poolQuestions.length; i++) {
     var questionID = poolQuestions[i].id;
@@ -124,10 +124,11 @@ $$('.pool-save').on('click', function() {
         };
       }
       //Add this multiple choice question to the questions object
-      questions[questionIDs[i]] = {
+      questions.push({
+        id: questionID,
         description: document.getElementById('question-description-' + questionID).value,
         answers: answers,
-      };
+      });
     }
   }
   console.log(questions);
@@ -210,7 +211,7 @@ function addQuestion(questionID, description, answers) {
   //setup the add answer button
   $$('.mc-answer-' + questionID).on('click', function(event) {
     var answerID = makeid(10);
-    addAnswer(questionID, answerID);
+    addAnswer(questionID, answerID, '', false);
   });
   //Setup the question description
   document.getElementById("question-description-" + questionID).value = description;
@@ -374,6 +375,7 @@ function getPool(poolID, callback) {
       db.collection("pools").doc(poolID).get().then(function(poolData) {
         loadedPools[poolID] = {
           poolID: poolID,
+          id: poolID,
           name: poolData.get("name"),
           description: poolData.get("description"),
           date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
@@ -454,19 +456,20 @@ function loadPools() {
               correctAnswers = [];
               //Check to see if this pool has any questions. If so then load them // TODO: maybe if there are no questions then add a blank question at the bottom of the code?
               if (pool.questions != 'undefined' && pool.questions != null) {
-
+                console.log("Loaded pool : " + pool.id);
+                console.log(pool.questions);
                 //For each question in the pool.
-                Object.keys(pool.questions).forEach(function(questionID) {
+                for (var i = 0; i < pool.questions.length; i++) {
 
                   //Check to see if the question is Numeric
-                  if (pool.questions[questionID].answer != null) {
+                  if (pool.questions[i].answer != null) {
                     //Add the question to the html
-                    addNumericQuestion(questionID, pool.questions[questionID].description, pool.questions[questionID].answer);
+                    addNumericQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answer);
                   } else {
                     //Add the question to the html
-                    addQuestion(questionID, pool.questions[questionID].description, pool.questions[questionID].answers);
+                    addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
                   }
-                });
+                }
               }
 
               //add in tags
@@ -504,7 +507,8 @@ function loadPools() {
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions) {
 
-
+  console.log("editing pool: " + poolID);
+  console.log(questions);
   //If the poolID is not null and not 0 edit the data
   if (poolID && poolID != 0) {
     var poolRef = db.collection('pools').doc(poolID);
@@ -581,7 +585,6 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
           app.popup.close(".pool-popup");
           loadPools();
         }).catch(function(error) {
-          console.log("error with pic");
           app.preloader.hide();
           app.toast.show({
             text: error,
@@ -599,8 +602,6 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
         loadPools();
       }
     }).catch(function(error) {
-      console.log("error with pic");
-
       app.preloader.hide();
       app.toast.show({
         text: error.message,
