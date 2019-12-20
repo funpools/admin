@@ -92,7 +92,6 @@ $$('.pool-save').on('click', function() {
   var description = document.getElementById("pool-description").innerHTML;
   var pic = document.getElementById('pic-input').files[0];
   var timestamp = poolDateInput.getValue()[0];
-  console.log(timestamp);
   var poolQuestions = document.getElementsByClassName("question");
   //Get tags from the chips
   var tags = [];
@@ -100,8 +99,6 @@ $$('.pool-save').on('click', function() {
   for (var i = 0; i < chips.length; i++) {
     tags.push(chips[i].innerHTML);
   }
-
-  console.log(poolQuestions);
 
   var questions = {};
   //For each question
@@ -134,7 +131,6 @@ $$('.pool-save').on('click', function() {
     }
   }
   console.log(questions);
-
   //Save the pool to the database
   editPool(id, name, description, pic, timestamp, tags, questions);
 });
@@ -333,6 +329,7 @@ function setupMainPage() {
         profilePic: null //profilePic,// TODO: Load that here
       };
 
+      console.log(self.app.views.main.router.currentRoute.path);
       if (self.app.views.main.router.currentRoute.path != '/') {
         self.app.views.main.router.navigate('/home/');
         console.log("navigated to main page");
@@ -426,13 +423,12 @@ function loadPools() {
         pools.push(poolDAT);
         //once the array length is the same as the number of pools we have loaded sort the array then add all the pools top the html
         if (pools.length >= poolsSnapshot.size) {
-          console.log("loaded all the pool data");
-          pools.sort((a, b) => (a.name > b.name) ? 1 : -1);
+          pools.sort((a, b) => (a.name > b.name) ? 1 : -1); //Sort the array
+          console.log("Loaded and sorted all pool data");
           pools.forEach(function(pool) {
 
             var poolList = document.getElementById("pool-list");
-
-            var date = (pool.date != '') ? pool.date : "this pool has no date";
+            var date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
             //setup the pool card
             var a = document.createElement('div');
             a.classList.add("card");
