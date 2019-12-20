@@ -93,30 +93,24 @@ $$('.pool-save').on('click', function() {
   var pic = document.getElementById('pic-input').files[0];
   var timestamp = document.getElementById('pool-date').valueAsNumber + document.getElementById('pool-time').valueAsNumber;
   var poolQuestions = document.getElementsByClassName("question");
-
+  //Get tags from the chips
   var tags = [];
-  //Get tags
   var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
   for (var i = 0; i < chips.length; i++) {
     tags.push(chips[i].innerHTML);
-    console.log(chips[i].innerHTML);
   }
 
   console.log(poolQuestions);
 
-
   var questions = {};
   //For each question
   for (var i = 0; i < poolQuestions.length; i++) {
-
     var questionID = poolQuestions[i].id;
     console.log(questionID);
-    var answers = {};
-
     var numericAnswer = document.getElementById(questionID + "-numeric-answer");
-    //check to see if this question has a numeric answer if so then skip the check for other answers
+    //check to see if this question has a numeric answer
     if (numericAnswer != null) {
-      //Add this question to the questions object
+      //Add this numeric question to the questions object
       questions[questionIDs[i]] = {
         description: document.getElementById('question-description-' + questionID).value,
         answer: numericAnswer.value,
@@ -124,14 +118,14 @@ $$('.pool-save').on('click', function() {
     } else {
       //Get the questions answers and store them in an object called answers
       var answerEL = document.getElementsByClassName(questionID + "-answer");
+      var answers = {};
       for (var x = 0; x < answerEL.length; x++) {
-        console.log((correctAnswers[questionID] == answerEL[x].id));
         answers[answerEL[x].id] = {
-          correct: (correctAnswers[questionID] == answerEL[x].id),
+          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id the correct one
           text: answerEL[x].value,
         };
       }
-      //Add this question to the questions object
+      //Add this multiple choice question to the questions object
       questions[questionIDs[i]] = {
         description: document.getElementById('question-description-' + questionID).value,
         answers: answers,
@@ -164,8 +158,8 @@ $$('.new-pool').on('click', function() {
 });
 
 var answerIDs = [];
-//Adds an answer to the html // NOTE: this only add the answer to the html not the data base
-function addAnswer(questionID, answerID) {
+//Adds an answer to the html // NOTE: this only adds the answer to the html not the data base
+function addAnswer(questionID, answerID, answerText, correct) {
   // TODO: Check to see if this id is already in the database. If so dont add the answer
   answerIDs.push(answerID);
   $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
@@ -177,7 +171,7 @@ function addAnswer(questionID, answerID) {
       </div>\
     </div>\
     <div class="item-after">\
-    <button class="button" onclick="deleteAnswer(this)">Delete</button>\
+    <button id="' + answerID + '-deleteanswer" class="button" onclick="deleteAnswer(this)">Delete</button>\
       <button id="' + answerID + '-setanswer" class="button" >Correct</button>\
     </div>\
   </div>\
@@ -185,13 +179,16 @@ function addAnswer(questionID, answerID) {
   document.getElementById(answerID + "-setanswer").addEventListener("click", function() {
     setAnswer(this, questionID, answerID);
   });
+  document.getElementById(answerID).value = answerText;
+  if (correct) {
+    setAnswer(document.getElementById(answerID + "-setanswer"), questionID, answerID);
+  }
 }
 
 var questionIDs = [];
-// This is currently adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database // TODO: add Numeric questions as well
+// This is adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database // TODO: add Numeric questions as well
 function addQuestion(questionID, description, answers) {
   // TODO: Check to see if this questionId has been added already if so dont add the question
-  //
   questionIDs.push(questionID);
   // Add the question html to the pool questions element
   $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
@@ -222,69 +219,29 @@ function addQuestion(questionID, description, answers) {
   //Setup the question description
   document.getElementById("question-description-" + questionID).value = description;
 
-  // if the answers are valid
+  // if the answers array is valid
   if (answers != null && answers != []) {
+    console.log("validarray");
     var i = 0;
     //For each answer
     Object.keys(answers).forEach(function(answerID) {
-
-      //Check to see if this is the first answer if so then dont add the delete button
+      //Add the answer to the html
+      addAnswer(questionID, answerID, answers[answerID].text, answers[answerID].correct);
+      //Check to see if this is the first answer if so then remove the delete button
       if (i < 1) {
-        answerIDs.push(answerID);
-        $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
-        <div class="item-inner">\
-          <div>\
-            <div class="item-title item-label">Answer</div>\
-            <div class="item-input-wrap">\
-              <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
-            </div>\
-          </div>\
-          <div class="item-after">\
-            <button id="' + answerID + '-setanswer" class="button" onclick="setAnswer(this)">Correct</button>\
-          </div>\
-        </div>\
-        </li>');
-        document.getElementById(answerID + "-setanswer").addEventListener("click", function() {
-          setAnswer(this, questionID, answerID);
-        });
-        //If this answer is correct then set it as the correct answer in the html
-        if (answers[answerID].correct) {
-          setAnswer(document.getElementById(answerID + "-setanswer"), questionID, answerID);
-        }
-        document.getElementById(answerID).value = answers[answerID].text;
+        var deleteButton = document.getElementById(answerID + "-deleteanswer");
+        deleteButton.parentNode.removeChild(deleteButton);
       }
-      //else if its not the first answer add it normaly
-      else {
-        //Add the answer to the html
-        addAnswer(questionID, answerID);
-        //Set the answers text // TODO:  This may be able to be done in the addAnswer function
-        document.getElementById(answerID).value = answers[answerID].text;
-        //If this answer is correct then set it as the correct answer in the html
-        if (answers[answerID].correct) {
-          setAnswer(document.getElementById(answerID + "-setanswer"), questionID, answerID);
-        }
-      }
+
       i++;
     });
   } else {
-    //Add the default first answer
+    //Add the default first answer to the html
     answerID = makeid(10);
-    $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
-    <div class="item-inner">\
-      <div>\
-        <div class="item-title item-label">Answer</div>\
-        <div class="item-input-wrap">\
-          <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
-        </div>\
-      </div>\
-      <div class="item-after">\
-        <button id="' + answerID + '-setanswer" class="button">Correct</button>\
-      </div>\
-    </div>\
-    </li>');
-    document.getElementById(answerID + "-setanswer").addEventListener("click", function() {
-      setAnswer(this, questionID, answerID);
-    });
+    addAnswer(questionID, answerID, '', false);
+    //remove the answers delete button
+    var deleteButton = document.getElementById(answerID + "-deleteanswer");
+    deleteButton.parentNode.removeChild(deleteButton);
   }
 
 }
@@ -328,6 +285,7 @@ function addNumericQuestion(questionID, description, answer) {
 
 
 }
+
 
 // TODO: Change these to use the questionIDs and answerIDs
 //remove an answer from a multiple choice question
@@ -421,6 +379,7 @@ function getPool(poolID, callback) {
           poolID: poolID,
           name: poolData.get("name"),
           description: poolData.get("description"),
+          date: poolData.get("startDate"),
           pic: poolPic,
           tags: poolData.get("tags"),
           questions: poolData.get("questions"),
@@ -448,10 +407,8 @@ function loadPools() {
     poolsSnapshot.forEach(function(doc) {
       //Get the pool Data
       getPool(doc.id, function(poolDAT) {
-
         //Add the pool data to an array for later use
         pools.push(poolDAT);
-
         //once the array length is the same as the number of pools we have loaded sort the array then add all the pools top the html
         if (pools.length >= poolsSnapshot.size) {
           console.log("loaded all the pool data");
@@ -459,8 +416,8 @@ function loadPools() {
           pools.forEach(function(pool) {
 
             var poolList = document.getElementById("pool-list");
-            var date = new Date();
-
+            console.log(pool.date);
+            var date = ((pool.date != null && !isNaN(pool.date) && pool.date != 0) ? new Date(pool.date) : "This pool does not have a date");
             //setup the pool card
             var a = document.createElement('div');
             a.classList.add("card");
@@ -472,7 +429,7 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
-              var date = new Date(pool.time);
+              var date = new Date(pool.date);
               document.getElementById("pool-date").value = "";
               document.getElementById("pool-time").value = "";
 
