@@ -145,9 +145,8 @@ $$('.new-pool').on('click', function() {
   document.getElementById("pool-description").innerHTML = "";
   $$("#pool-tags").html("");
   $$("#pool-questions").html("");
+  poolDateInput.setValue([new Date()]); //Set the value of the date to be nothing
 
-  document.getElementById("pool-date").value = "";
-  document.getElementById("pool-time").value = "";
   console.log("aaa");
   //open the popup
   app.popup.open(".pool-popup");
@@ -440,7 +439,7 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
-              var date = (pool.date != '') ? pool.date : new Date();
+              var date2 = (pool.date != '') ? pool.date : new Date();
               // document.getElementById("pool-date").value = "";
               // document.getElementById("pool-time").value = "";
 
@@ -448,7 +447,7 @@ function loadPools() {
 
 
 
-              poolDateInput.setValue([date])
+              poolDateInput.setValue([date2])
               //Clear the question and answer IDs because we are loading a new page
               questionIDs = [];
               answerIDs = [];
@@ -505,8 +504,7 @@ function loadPools() {
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions) {
 
-  //Clear the loaded pools array this is to make sure we load the most up to date data
-  loadedPools = [];
+
   //If the poolID is not null and not 0 edit the data
   if (poolID && poolID != 0) {
     var poolRef = db.collection('pools').doc(poolID);
@@ -564,34 +562,53 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
     db.collection("pools").add({
       name: poolName,
       description: poolDescription,
-      startDate: poolStartDate,
+      date: poolStartDate,
       tags: tags,
+      questions: questions,
     }).then(function(doc) {
+      console.log(doc.id);
       var profilePictureRef = storageRef.child('pool-pictures').child(doc.id);
-      profilePictureRef.put(poolPicture).then(function() {
+      //If poolPicture is valid
+      if (poolPicture) {
+        profilePictureRef.put(poolPicture).then(function() {
+          console.log("error with pic");
+
+          app.preloader.hide();
+          app.toast.show({
+            text: "Pool Saved",
+            closeTimeout: 3000,
+          });
+          app.popup.close(".pool-popup");
+          loadPools();
+        }).catch(function(error) {
+          console.log("error with pic");
+          app.preloader.hide();
+          app.toast.show({
+            text: error,
+            closeTimeout: 10000,
+            closeButton: true
+          });
+        });
+      } else {
         app.preloader.hide();
         app.toast.show({
-          text: "Pool Saved",
+          text: "Pool Saved Without a Picture",
           closeTimeout: 3000,
         });
         app.popup.close(".pool-popup");
         loadPools();
-      }).catch(function(error) {
-        app.preloader.hide();
-        app.toast.show({
-          text: error,
-          closeTimeout: 10000,
-          closeButton: true
-        });
-      });
+      }
     }).catch(function(error) {
+      console.log("error with pic");
+
       app.preloader.hide();
       app.toast.show({
-        text: error,
+        text: error.message,
         closeTimeout: 10000,
         closeButton: true
       });
     });
+
   }
 
 }
