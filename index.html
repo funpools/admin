@@ -255,13 +255,8 @@
           <li class="item-content item-input">
             <div class="item-inner">
               <div class="item-title item-label">UTC Date & Time</div>
-              <div class="item-input-wrap row">
-                <div class="col">
-                  <input id="pool-date" type="date">
-                </div>
-                <div class="col">
-                  <input id="pool-time" type="time">
-                </div>
+              <div class="item-input-wrap">
+                <input type="text" placeholder="Select date and time" readonly="readonly" id="pool-date-input" />
               </div>
             </div>
           </li>
@@ -312,13 +307,13 @@
 
   <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
   <script src="js/firebase/firebase-app.js"></script>
-<!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
-<script src="js/firebase/firebase-analytics.js"></script>
-<!-- Add Firebase products that you want to use -->
-<script src="js/firebase/firebase-auth.js"></script>
-<script src="js/firebase/firebase-firestore.js"></script>
-<script src="js/firebase/firebase-storage.js"></script>
-<script src="js/firebase/firebase-database.js"></script>
+  <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+  <script src="js/firebase/firebase-analytics.js"></script>
+  <!-- Add Firebase products that you want to use -->
+  <script src="js/firebase/firebase-auth.js"></script>
+  <script src="js/firebase/firebase-firestore.js"></script>
+  <script src="js/firebase/firebase-storage.js"></script>
+  <script src="js/firebase/firebase-database.js"></script>
 
 
   <script>

@@ -91,7 +91,8 @@ $$('.pool-save').on('click', function() {
   var name = document.getElementById("pool-name").value;
   var description = document.getElementById("pool-description").innerHTML;
   var pic = document.getElementById('pic-input').files[0];
-  var timestamp = document.getElementById('pool-date').valueAsNumber + document.getElementById('pool-time').valueAsNumber;
+  var timestamp = poolDateInput.getValue()[0];
+  console.log(timestamp);
   var poolQuestions = document.getElementsByClassName("question");
   //Get tags from the chips
   var tags = [];
@@ -379,7 +380,7 @@ function getPool(poolID, callback) {
           poolID: poolID,
           name: poolData.get("name"),
           description: poolData.get("description"),
-          date: poolData.get("startDate"),
+          date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
           pic: poolPic,
           tags: poolData.get("tags"),
           questions: poolData.get("questions"),
@@ -391,6 +392,20 @@ function getPool(poolID, callback) {
 
   }
 }
+
+
+var poolDateInput = app.calendar.create({
+  inputEl: '#pool-date-input',
+  timePicker: true,
+  dateFormat: {
+    weekday: 'long',
+    month: 'long',
+    day: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  },
+});
 
 // This loads the pools. This can also be used to refresh the pools page
 function loadPools() {
@@ -416,8 +431,8 @@ function loadPools() {
           pools.forEach(function(pool) {
 
             var poolList = document.getElementById("pool-list");
-            console.log(pool.date);
-            var date = ((pool.date != null && !isNaN(pool.date) && pool.date != 0) ? new Date(pool.date) : "This pool does not have a date");
+
+            var date = (pool.date != '') ? pool.date : "this pool has no date";
             //setup the pool card
             var a = document.createElement('div');
             a.classList.add("card");
@@ -429,12 +444,15 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
-              var date = new Date(pool.date);
-              document.getElementById("pool-date").value = "";
-              document.getElementById("pool-time").value = "";
+              var date = (pool.date != '') ? pool.date : new Date();
+              // document.getElementById("pool-date").value = "";
+              // document.getElementById("pool-time").value = "";
 
               document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
 
+
+
+              poolDateInput.setValue([date])
               //Clear the question and answer IDs because we are loading a new page
               questionIDs = [];
               answerIDs = [];
@@ -477,6 +495,7 @@ function loadPools() {
             //Add the card to the pool list
             poolList.appendChild(a);
           });
+
         }
       });
 
@@ -499,7 +518,7 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
     poolRef.update({
       name: poolName,
       description: poolDescription,
-      startDate: poolStartDate,
+      date: poolStartDate,
       tags: tags,
       questions: questions,
     }).then(function() {
