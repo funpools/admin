@@ -139,6 +139,10 @@
   width: auto;
 }
 
+.correct-answer {
+background-color:rgba(76, 175, 80, .2);
+}
+
 .seporator {
   margin: 16px 0;
   height: 1px;
