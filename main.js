@@ -330,7 +330,7 @@ function setupMainPage() {
       };
 
       console.log(self.app.views.main.router.currentRoute.path);
-      if (self.app.views.main.router.currentRoute.path != '/') {
+      if (self.app.views.main.router.currentRoute.path != '/' && self.app.views.main.router.currentRoute.path != '/fun-sports-pools-admin/') {
         self.app.views.main.router.navigate('/home/');
         console.log("navigated to main page");
       }
