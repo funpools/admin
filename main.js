@@ -78,56 +78,7 @@ $$('#n-question').on('click', function() {
 // Save pool button on click
 $$('.pool-save').on('click', function() {
 
-  app.preloader.show();
-
-  //store all the values
-  var id = document.getElementById("pool-name").dataset.id;
-  var name = document.getElementById("pool-name").value;
-  var description = document.getElementById("pool-description").innerHTML;
-  var pic = document.getElementById('pic-input').files[0];
-  var timestamp = poolDateInput.getValue()[0];
-  var poolQuestions = document.getElementsByClassName("question");
-  //Get tags from the chips
-  var tags = [];
-  var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
-  for (var i = 0; i < chips.length; i++) {
-    tags.push(chips[i].innerHTML);
-  }
-
-  var questions = [];
-  //For each question
-  for (var i = 0; i < poolQuestions.length; i++) {
-    var questionID = poolQuestions[i].id;
-    console.log(questionID);
-    var numericAnswer = document.getElementById(questionID + "-numeric-answer");
-    //check to see if this question has a numeric answer
-    if (numericAnswer != null) {
-      //Add this numeric question to the questions object
-      questions[questionIDs[i]] = {
-        description: document.getElementById('question-description-' + questionID).value,
-        answer: numericAnswer.value,
-      };
-    } else {
-      //Get the questions answers and store them in an object called answers
-      var answerEL = document.getElementsByClassName(questionID + "-answer");
-      var answers = {};
-      for (var x = 0; x < answerEL.length; x++) {
-        answers[answerEL[x].id] = {
-          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id the correct one
-          text: answerEL[x].value,
-        };
-      }
-      //Add this multiple choice question to the questions object
-      questions.push({
-        id: questionID,
-        description: document.getElementById('question-description-' + questionID).value,
-        answers: answers,
-      });
-    }
-  }
-  console.log(questions);
-  //Save the pool to the database
-  editPool(id, name, description, pic, timestamp, tags, questions);
+  savePool();
 });
 
 // New pool button on click
@@ -402,6 +353,7 @@ var poolDateInput = app.calendar.create({
   },
 });
 
+var poolState = '';
 // This loads the pools. This can also be used to refresh the pools page
 function loadPools() {
 
@@ -438,7 +390,7 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
-
+              poolState = pool.state;
               var poolVisibilityDiv = document.getElementById("pool-visibility");
               console.log(pool.state);
               if (pool.state == "published" && pool.state != null) {
@@ -448,7 +400,9 @@ function loadPools() {
                 // Hide pool button on click
                 $$('.hide-confirm').on('click', function() {
                   app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
-                    app.popup.close(".pool-popup");
+
+                    poolState = 'hidden';
+                    savePool();
 
                     // TODO: Hide pool
                   });
@@ -458,8 +412,10 @@ function loadPools() {
                 poolVisibilityDiv.innerHTML = '<button id = "publish-button" class="button button-fill color-green show-confirm">Publish</button>';
                 // Show pool button on click
                 $$('.show-confirm').on('click', function() {
+                  poolState = 'hidden';
                   app.dialog.confirm('Publishing this pool means it will be visible to the public. You can always unpublish pools.', function() {
-                    app.popup.close(".pool-popup");
+                    poolState = 'published';
+                    savePool();
                     // TODO: Show pool
                   });
                 });
@@ -531,8 +487,60 @@ function loadPools() {
   });
 }
 
+function savePool() {
+  app.preloader.show();
+
+  //store all the values
+  var id = document.getElementById("pool-name").dataset.id;
+  var name = document.getElementById("pool-name").value;
+  var description = document.getElementById("pool-description").innerHTML;
+  var pic = document.getElementById('pic-input').files[0];
+  var timestamp = poolDateInput.getValue()[0];
+  var poolQuestions = document.getElementsByClassName("question");
+  //Get tags from the chips
+  var tags = [];
+  var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
+  for (var i = 0; i < chips.length; i++) {
+    tags.push(chips[i].innerHTML);
+  }
+
+  var questions = [];
+  //For each question
+  for (var i = 0; i < poolQuestions.length; i++) {
+    var questionID = poolQuestions[i].id;
+    console.log(questionID);
+    var numericAnswer = document.getElementById(questionID + "-numeric-answer");
+    //check to see if this question has a numeric answer
+    if (numericAnswer != null) {
+      //Add this numeric question to the questions object
+      questions[questionIDs[i]] = {
+        description: document.getElementById('question-description-' + questionID).value,
+        answer: numericAnswer.value,
+      };
+    } else {
+      //Get the questions answers and store them in an object called answers
+      var answerEL = document.getElementsByClassName(questionID + "-answer");
+      var answers = {};
+      for (var x = 0; x < answerEL.length; x++) {
+        answers[answerEL[x].id] = {
+          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id the correct one
+          text: answerEL[x].value,
+        };
+      }
+      //Add this multiple choice question to the questions object
+      questions.push({
+        id: questionID,
+        description: document.getElementById('question-description-' + questionID).value,
+        answers: answers,
+      });
+    }
+  }
+  console.log(questions);
+  //Save the pool to the database
+  editPool(id, name, description, pic, timestamp, tags, questions, poolState);
+}
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
-function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions) {
+function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions, state) {
 
   console.log("editing pool: " + poolID);
   console.log(questions);
@@ -546,6 +554,7 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
       date: poolStartDate,
       tags: tags,
       questions: questions,
+      state: state,
     }).then(function() {
       // TODO: check if pool pic is valid if not set the default pic?
       if (poolPicture) {
