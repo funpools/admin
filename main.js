@@ -73,13 +73,7 @@ $$('#n-question').on('click', function() {
   addNumericQuestion(questionNumb, '');
 });
 
-// Hide pool button on click
-$$('.hide-confirm').on('click', function() {
-  app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
-    app.popup.close(".pool-popup");
-    // TODO: Hide pool
-  });
-});
+
 
 // Save pool button on click
 $$('.pool-save').on('click', function() {
@@ -292,7 +286,7 @@ function deleteAnswer(el) {
 }
 
 var correctAnswers = [];
-//set the selected answer the correct answer for a multiple choice question
+//set the selected answer as the correct answer for a multiple choice question with ID questionID
 function setAnswer(el, questionID, answerID) {
   correctAnswers[questionID] = answerID;
   console.log(correctAnswers);
@@ -348,7 +342,8 @@ function setupMainPage() {
       if (sc)
         sc.parentElement.removeChild(sc);
     } else {
-      console.log("This user is not an admin!");
+      console.log("This user is not an admin! Signing out");
+      signOut();
     }
   });
 }
@@ -373,10 +368,12 @@ function getPool(poolID, callback) {
       poolPic = "https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg";
     }).then(function() {
       db.collection("pools").doc(poolID).get().then(function(poolData) {
+        // TODO: validate data here
         loadedPools[poolID] = {
           poolID: poolID,
-          id: poolID,
+          id: poolData.id,
           name: poolData.get("name"),
+          state: poolData.get("state"),
           description: poolData.get("description"),
           date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
           pic: poolPic,
@@ -441,6 +438,36 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
+
+              var poolVisibilityDiv = document.getElementById("pool-visibility");
+              console.log(pool.state);
+              if (pool.state == "published" && pool.state != null) {
+                //the pool is published
+                poolVisibilityDiv.innerHTML = '<button id = "unpublish-button" class="button button-fill color-red hide-confirm">Unpublish</button>';
+                console.log("this pool is visible");
+                // Hide pool button on click
+                $$('.hide-confirm').on('click', function() {
+                  app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
+                    app.popup.close(".pool-popup");
+
+                    // TODO: Hide pool
+                  });
+                });
+              } else {
+                //the pool is hidden
+                poolVisibilityDiv.innerHTML = '<button id = "publish-button" class="button button-fill color-green show-confirm">Publish</button>';
+                // Show pool button on click
+                $$('.show-confirm').on('click', function() {
+                  app.dialog.confirm('Publishing this pool means it will be visible to the public. You can always unpublish pools.', function() {
+                    app.popup.close(".pool-popup");
+                    // TODO: Show pool
+                  });
+                });
+              }
+
+
+
+
               var date2 = (pool.date != '') ? pool.date : new Date();
               // document.getElementById("pool-date").value = "";
               // document.getElementById("pool-time").value = "";
