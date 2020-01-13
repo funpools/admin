@@ -555,7 +555,7 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
       date: poolStartDate,
       tags: tags,
       questions: questions,
-      state: state,
+      state: (state) ? state : "hidden",
     }).then(function() {
       // TODO: check if pool pic is valid if not set the default pic?
       if (poolPicture) {
