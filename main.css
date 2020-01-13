@@ -1,8 +1,8 @@
 :root {
-  --f7-theme-color: #4CAF50;
-  --f7-theme-color-rgb: 76, 175, 80;
-  --f7-theme-color-shade: #409343;
-  --f7-theme-color-tint: #67bd6a;
+  --f7-theme-color: #357C5C;
+  --f7-theme-color-rgb: 53, 124, 92;
+  --f7-theme-color-shade: #295f47;
+  --f7-theme-color-tint: #419971;
 }
 
 @font-face {
@@ -140,7 +140,7 @@
 }
 
 .correct-answer {
-background-color:rgba(76, 175, 80, .2);
+  background-color: rgba(var(--f7-theme-color-rgb), .2);
 }
 
 .seporator {
@@ -157,7 +157,7 @@ background-color:rgba(76, 175, 80, .2);
 }
 
 .tab-link:hover {
-  background-color: rgba(76, 175, 80, .1);
+  background-color: rgba(var(--f7-theme-color-rgb), .1);
 }
 
 .tab-link-active {
@@ -187,6 +187,51 @@ background-color:rgba(76, 175, 80, .2);
 
 .pic-upload input[type=file] {
   display: none;
+}
+
+.accordion-item {
+  margin: 8px 0;
+}
+
+.accordion-item .item-link {
+  background-color: rgba(var(--f7-theme-color-rgb), 1);
+  color: white;
+  border-radius: 4px;
+  transition: background-color .1s !important;
+}
+
+.accordion-item .item-link:hover {
+  background-color: rgba(var(--f7-theme-color-rgb), .7) !important;
+}
+
+.accordion-item .item-inner::before {
+  color: white !important;
+}
+
+.accordion-item .item-inner::after {
+  height: 0;
+}
+
+.tag {
+  margin: 16px;
+  width: 200px;
+  background-color: var(--f7-card-bg-color);
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: 0 0 16px 2px rgba(0, 0, 0, .1);
+}
+
+.tag .media {
+  background-color: var(--f7-theme-color);
+  background-position: center;
+  background-size: cover;
+  height: 125px;
+  border-radius: 4px 4px 0 0;
+}
+
+.tag input[type=text] {
+  font-weight: bold;
+  font-size: .9rem;
 }
 
 @keyframes fadeIn {

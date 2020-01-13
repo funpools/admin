@@ -23,7 +23,8 @@
             <li><a href="#tab-1" class="tab-link tab-link-active">Reports</a></li>
             <li><a href="#tab-2" class="tab-link">Users</a></li>
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
-            <li><a href="#tab-4" class="tab-link">Change Password</a></li>
+            <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
+            <li><a href="#tab-5" class="tab-link">Change Password</a></li>
           </ul>
         </div>
         <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
@@ -189,6 +190,36 @@
               </div>
             </div>
             <div id="tab-4" class="tab">
+              <a href="#" onclick="newTag()" class="button button-fill" style="width: 50%; margin: 16px auto">New Tag</a>
+
+              <div class="block-card">
+                <div class="list no-hairlines no-margin">
+                  <ul>
+                    <li class="accordion-item accordion-item-opened no-margin-top"><a href="#" class="item-content item-link">
+                        <div class="item-inner">
+                          <div class="item-title">Favorite Sports</div>
+                        </div>
+                      </a>
+                      <div class="accordion-item-content">
+                        <div id="type-sport">
+                        </div>
+                      </div>
+                    </li>
+                    <li class="accordion-item no-margin-bottom"><a href="#" class="item-content item-link">
+                        <div class="item-inner">
+                          <div class="item-title">Favorite Teams</div>
+                        </div>
+                      </a>
+                      <div class="accordion-item-content">
+                        <div id="type-team">
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div id="tab-5" class="tab">
               <div class="block-card">
                 <div class="list no-hairlines no-margin">
                   <ul>
@@ -232,10 +263,10 @@
 
   <div class="popup pool-popup">
     <div class="block">
-      <label>
-        <div id="pic-preview" class="pic-upload">
-          <input id="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event)" />
-          <i id="pic-icon" class="material-icons" style="font-size: 50px">add_photo_alternate</i>
+      <label id="pool-pic">
+        <div class="pic-upload">
+          <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#pool-pic')" />
+          <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
         </div>
       </label>
       <div class="list inset">
@@ -287,7 +318,7 @@
       </div>
 
       <div class="row justify-content-space-around">
-        <div id ="pool-visibility" class="col">
+        <div id="pool-visibility" class="col">
 
 
         </div>
@@ -298,6 +329,49 @@
           <button class="button button-fill pool-save">Save</button>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <div class="popup tag-popup" style="height: 400px; width: 400px; margin: -200px; ">
+    <div class="block">
+      <label id="tag-pic">
+        <div class="pic-upload">
+          <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#tag-pic')" />
+          <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
+        </div>
+      </label>
+      <div class="list inset">
+        <ul>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">Tag Name</div>
+              <div class="item-input-wrap">
+                <input id="tag-name" type="text" placeholder="Tag name">
+                <span class="input-clear-button"></span>
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">Tag Type</div>
+              <div class="item-input-wrap input-dropdown-wrap">
+                <select id="tag-type" placeholder="Please choose...">
+                  <option value="sport">Favorite Sports</option>
+                  <option value="team">Favorite Teams</option>
+                </select>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="row justify-content-space-around">
+        <div class="col">
+          <button class="button button-fill popup-close">Cancel</button>
+        </div>
+        <div class="col">
+          <button class="button button-fill tag-save">Save</button>
+        </div>
       </div>
     </div>
   </div>

@@ -85,7 +85,8 @@ $$('.pool-save').on('click', function() {
 $$('.new-pool').on('click', function() {
 
   //clear any existing values in the popup
-  document.getElementById('pic-preview').style.backgroundImage = "";
+  $$(".pool-popup").find('.pic-upload').css("background-image", "");
+  $$(".pool-popup").find('.pic-icon').html("add_photo_alternate");
   document.getElementById("pool-name").value = "";
   document.getElementById("pool-name").dataset.id = "0";
   document.getElementById("pool-description").innerHTML = "";
@@ -386,7 +387,7 @@ function loadPools() {
             a.classList.add("col-30");
             //When the card is clicked fill the popup with data
             a.onclick = function() {
-              document.getElementById('pic-preview').style.backgroundImage = "url(" + pool.pic + ")";
+              $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
@@ -652,9 +653,9 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
 
 
 //displays uploaded picture on screen
-function previewPic(event) {
-  document.getElementById('pic-preview').style.backgroundImage = "url(" + URL.createObjectURL(event.target.files[0]) + ")";
-  document.getElementById('pic-icon').innerHTML = "edit";
+function previewPic(event, el) {
+  $$(el).find('.pic-upload').css("background-image", ("url(" + URL.createObjectURL(event.target.files[0]) + ")"));
+  $$(el).find('.pic-icon').html('edit');
 }
 
 //add a tag on edit pool page
@@ -673,7 +674,159 @@ function addTag(el) {
 
 }
 
-//delete tag on pool page
-function deleteTag(el) {
-  el.parentElement.removeChild(el);
+//load tags
+
+function loadTags() {
+  $$('.tag').remove();
+  app.preloader.show();
+  db.collection("tags").get().then(function(tags) {
+    tags.forEach(function(tag) {
+      //add to page
+      $$('#type-' + tag.get('type')).prepend('<div id="' + tag.id + '" class="tag"><label><div class="pic-upload no-margin">' +
+        '<input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, \'#' + tag.id + '\')" disabled><i class="material-icons pic-icon" style="font-size: 30px; color: rgba(0,0,0,0)">edit</i></div>' +
+        '</label><div class="list no-margin"><ul><li class="item-content item-input"><div class="item-inner"><div class="item-input-wrap text-align-center">' +
+        '<input class="text-align-center tag-name" type="text" placeholder="Tag name" value="' + tag.get("name") + '" readonly></div></div></li></ul></div>' +
+        '<p class="segmented no-margin"><button onclick="deleteTag(\'' + tag.id + '\')" class="button color-red">Delete</button><button class="button tag-edit" onclick=(editTag(\'' + tag.id + '\'))>Edit</button></p></div>');
+
+      //get picture
+      storageRef.child('tag-pictures').child(tag.id).getDownloadURL().then(function(url) {
+        $$('#' + tag.id).find('.pic-upload').css("background-image", "url('" + url + "')");
+      });
+    });
+    app.preloader.hide();
+  }).catch(function(error) {
+    console.error(error.message);
+    app.preloader.hide();
+  });
+
+}
+
+//open and clear popup
+function newTag() {
+  //clear dataset
+  $$('.tag-popup').find('.pic-upload').css("background-image", "");
+  $$('.tag-popup').find('.pic-icon').text("add_photo_alternate");
+  $$('#tag-name').val("");
+  $$('#tag-type').val("");
+  //open popup
+  app.popup.open(".tag-popup");
+}
+
+//actually save
+$$(".tag-save").click(function() {
+  app.preloader.show();
+  //add tag to database
+  db.collection("tags").add({
+    name: $$('#tag-name').val(),
+    type: $$('#tag-type').val()
+  }).then(function(doc) {
+    //then upload photo
+    var profilePictureRef = storageRef.child('tag-pictures').child(doc.id);
+    var pic = $$('.tag-popup').find('.pic-input').prop('files')[0];
+    //If poolPicture is valid
+    if (pic) {
+      profilePictureRef.put(pic).then(function() {
+        app.popup.close(".tag-popup");
+        app.preloader.hide();
+        loadTags();
+      }).catch(function(error) {
+        app.popup.close(".tag-popup");
+        app.preloader.hide();
+        app.toast.show({
+          text: error.message,
+          closeTimeout: 10000,
+          closeButton: true
+        });
+        loadTags();
+
+      });
+    } else {
+      app.popup.close(".tag-popup");
+      app.preloader.hide();
+      loadTags();
+
+    }
+  }).catch(function(error) {
+    app.popup.close(".tag-popup");
+    app.preloader.hide();
+    app.toast.show({
+      text: error.message,
+      closeTimeout: 10000,
+      closeButton: true
+    });
+    loadTags();
+
+  });
+});
+
+function editTag(id) {
+  tagEl = $$('#' + id);
+  tagEl.find('.tag-name').removeAttr('readonly');
+  tagEl.find('.pic-input').removeAttr('disabled');
+  tagEl.find('.pic-icon').css("color", "white");
+  tagEl.find('.tag-name').css("font-weight", 'normal');
+  tagEl.find('.tag-edit').text('Save');
+  tagEl.find('.tag-edit').click(function() {
+    app.preloader.show();
+    db.collection("tags").doc(id).update({
+      name: tagEl.find('.tag-name').val(),
+    }).then(function() {
+      //then upload photo
+      var profilePictureRef = storageRef.child('tag-pictures').child(id);
+      var pic = tagEl.find('.pic-input').prop('files')[0];
+      //If poolPicture is valid
+      if (pic) {
+        profilePictureRef.put(pic).then(function() {
+          app.preloader.hide();
+          loadTags();
+        }).catch(function(error) {
+          app.preloader.hide();
+          app.toast.show({
+            text: error.message,
+            closeTimeout: 10000,
+            closeButton: true
+          });
+          loadTags();
+
+        });
+      } else {
+        app.preloader.hide();
+        loadTags();
+      }
+    }).catch(function(error) {
+      app.preloader.hide();
+      app.toast.show({
+        text: error.message,
+        closeTimeout: 10000,
+        closeButton: true
+      });
+      loadTags();
+    });
+  });
+}
+
+function deleteTag(id) {
+  app.preloader.show();
+  db.collection("tags").doc(id).delete().then(function() {
+    storageRef.child('tag-pictures').child(id).delete().then(function() {
+      app.preloader.hide();
+      loadTags();
+    }).catch(function(error) {
+      app.preloader.hide();
+      app.toast.show({
+        text: error.message,
+        closeTimeout: 10000,
+        closeButton: true
+      });
+      loadTags();
+    });
+  }).catch(function(error) {
+    app.preloader.hide();
+    app.toast.show({
+      text: error.message,
+      closeTimeout: 10000,
+      closeButton: true
+    });
+    loadTags();
+  });
 }
