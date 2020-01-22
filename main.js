@@ -82,8 +82,7 @@ $$('.pool-save').on('click', function() {
 });
 
 // New pool button on click
-$$('.new-pool').on('click', function() {
-
+function newPool() {
   //clear any existing values in the popup
   $$(".pool-popup").find('.pic-upload').css("background-image", "");
   $$(".pool-popup").find('.pic-icon').html("add_photo_alternate");
@@ -94,11 +93,10 @@ $$('.new-pool').on('click', function() {
   $$("#pool-questions").html("");
   poolDateInput.setValue([new Date()]); //Set the value of the date to be nothing
 
-  console.log("aaa");
   //open the popup
   app.popup.open(".pool-popup");
 
-});
+}
 
 var answerIDs = [];
 //Adds an answer to the html // NOTE: this only adds the answer to the html not the data base
@@ -518,7 +516,7 @@ function savePool() {
   var id = document.getElementById("pool-name").dataset.id;
   var name = document.getElementById("pool-name").value;
   var description = document.getElementById("pool-description").innerHTML;
-  var pic = document.getElementById('pic-input').files[0];
+  var pic = $$('.pool-popup').find('.pic-input')[0].files[0];
   var timestamp = poolDateInput.getValue()[0];
   var poolQuestions = document.getElementsByClassName("question");
   //Get tags from the chips
@@ -687,7 +685,7 @@ function addTag(el) {
   if (el.value.includes(",")) {
     var tag = el.value.split(',')[0].toLowerCase();
     var chip = document.createElement("div");
-    chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + tag + '</div><a href="#" class="chip-delete"></a></div>';
+    chip.innerHTML = '<div class="chip" onclick="$$(this).remove()"><div class="chip-label">' + tag + '</div><a href="#" class="chip-delete"></a></div>';
     chipsDiv.appendChild(chip.childNodes[0]);
     el.value = "";
     el.focus();
