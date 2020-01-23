@@ -518,7 +518,7 @@ function savePool() {
   var id = document.getElementById("pool-name").dataset.id;
   var name = document.getElementById("pool-name").value;
   var description = document.getElementById("pool-description").innerHTML;
-  var pic = document.getElementById('pic-input').files[0];
+  var pic = (document.getElementById('pic-input') != null) ? document.getElementById('pic-input').files[0] : null;
   var timestamp = poolDateInput.getValue()[0];
   var poolQuestions = document.getElementsByClassName("question");
   //Get tags from the chips
@@ -545,7 +545,11 @@ function savePool() {
       //Get the questions answers and store them in an object called answers
       var answerEL = document.getElementsByClassName(questionID + "-answer");
       var answers = {};
+      var correctAnswer = '';
       for (var x = 0; x < answerEL.length; x++) {
+        if (correctAnswers[questionID] == answerEL[x].id) { //This is the correct answer for this question
+          correctAnswer = answerEL[x].id;
+        }
         answers[answerEL[x].id] = {
           correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id the correct one
           text: answerEL[x].value,
@@ -556,6 +560,7 @@ function savePool() {
         id: questionID,
         description: document.getElementById('question-description-' + questionID).value,
         answers: answers,
+        correctAnswer: correctAnswer,
       });
     }
   }
