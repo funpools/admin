@@ -375,7 +375,6 @@ var poolDateInput = app.calendar.create({
   },
 });
 
-var poolState = '';
 // This loads the pools. This can also be used to refresh the pools page
 function loadPools() {
 
@@ -412,36 +411,8 @@ function loadPools() {
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
               document.getElementById("pool-description").innerHTML = pool.description;
-              poolState = pool.state;
               var poolVisibilityDiv = document.getElementById("pool-visibility");
-              console.log(pool.state);
-              if (pool.state == "published" && pool.state != null) {
-                //the pool is published
-                poolVisibilityDiv.innerHTML = '<button id = "unpublish-button" class="button button-fill color-red hide-confirm">Unpublish</button>';
-                console.log("this pool is visible");
-                // Hide pool button on click
-                $$('.hide-confirm').on('click', function() {
-                  app.dialog.confirm('Unpublishing this pool means it will no longer be visible to the public. You can always republish pools.', function() {
-
-                    poolState = 'hidden';
-                    savePool();
-
-                    // TODO: Hide pool
-                  });
-                });
-              } else {
-                //the pool is hidden
-                poolVisibilityDiv.innerHTML = '<button id = "publish-button" class="button button-fill color-green show-confirm">Publish</button>';
-                // Show pool button on click
-                $$('.show-confirm').on('click', function() {
-                  poolState = 'hidden';
-                  app.dialog.confirm('Publishing this pool means it will be visible to the public. You can always unpublish pools.', function() {
-                    poolState = 'published';
-                    savePool();
-                    // TODO: Show pool
-                  });
-                });
-              }
+              $$("#pool-visibility").val(pool.state).change();
 
 
 
@@ -519,6 +490,7 @@ function savePool() {
   var pic = $$('.pool-popup').find('.pic-input')[0].files[0];
   var timestamp = poolDateInput.getValue()[0];
   var poolQuestions = document.getElementsByClassName("question");
+  var poolState = $$("#pool-visibility").val();
   //Get tags from the chips
   var tags = [];
   var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
