@@ -296,9 +296,22 @@
           </div>
           <li class="item-content item-input">
             <div class="item-inner">
-              <div class="item-title item-label">UTC Date & Time</div>
+              <div class="item-title item-label">Local Date & Time</div>
               <div class="item-input-wrap">
                 <input type="text" placeholder="Select date and time" readonly="readonly" id="pool-date-input" />
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
+            <div class="item-inner">
+              <div class="item-title item-label">Visibility</div>
+              <div class="item-input-wrap input-dropdown-wrap">
+                <select id="pool-visibility">
+                  <option value="draft">Draft</option>
+                  <option value="open">Open</option>
+                  <option value="active">Active</option>
+                  <option value="closed">Closed</option>
+                </select>
               </div>
             </div>
           </li>
@@ -329,10 +342,6 @@
       </div>
 
       <div class="row justify-content-space-around">
-        <div id="pool-visibility" class="col">
-
-
-        </div>
         <div class="col">
           <button class="button button-fill popup-close">Cancel</button>
         </div>
