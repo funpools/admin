@@ -507,10 +507,11 @@ function savePool() {
     //check to see if this question has a numeric answer
     if (numericAnswer != null) {
       //Add this numeric question to the questions object
-      questions[questionIDs[i]] = {
+      questions.push({
+        id: questionID,
         description: document.getElementById('question-description-' + questionID).value,
         answer: numericAnswer.value,
-      };
+      });
     } else {
       //Get the questions answers and store them in an object called answers
       var answerEL = document.getElementsByClassName(questionID + "-answer");
