@@ -105,7 +105,7 @@ function addAnswer(questionID, answerID, answerText, correct) {
   answerIDs.push(answerID);
   $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
   <div class="item-inner">\
-    <div>\
+    <div style="width: 100%">\
       <div class="item-title item-label">Answer</div>\
       <div class="item-input-wrap">\
         <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
@@ -136,7 +136,7 @@ function addQuestion(questionID, description, answers) {
   <ul>\
     <li class="item-content item-input">\
       <div class="item-inner">\
-      <div>\
+      <div style="width: 100%">\
         <div class="item-title item-label">Multiple Choice Question</div>\
         <div class="item-input-wrap">\
           <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
@@ -197,7 +197,7 @@ function addNumericQuestion(questionID, description, answer) {
     <ul>\
       <li class="item-content item-input">\
       <div class="item-inner">\
-      <div>\
+      <div style="width: 100%">\
         <div class="item-title item-label">Numeric Question</div>\
         <div class="item-input-wrap">\
           <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
@@ -210,7 +210,7 @@ function addNumericQuestion(questionID, description, answer) {
       </li>\
       <div class="seporator"></div>\
       <li class="item-content item-input">\
-        <div class="item-inner"><div>\
+        <div class="item-inner"><div style="width: 100%">\
           <div class="item-title item-label">Answer</div>\
           <div class="item-input-wrap">\
             <input id="' + questionID + '-numeric-answer" class="" type="number">\
