@@ -248,3 +248,18 @@
   -webkit-animation-name: fadeIn;
   animation-name: fadeIn;
 }
+
+.picture {
+  width: 32px;
+  height: 32px;
+  background-position: center;
+  background-size: cover;
+  background-color: var(--f7-theme-color);
+  border-radius: 50%;
+}
+
+.hairline {
+  background-color: var(--f7-list-item-border-color);
+  height: 1px;
+  margin: 16px 0;
+}

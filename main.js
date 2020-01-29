@@ -305,21 +305,60 @@ function setupMainPage() {
         hour: '2-digit',
         minute: '2-digit'
       };
+      let messageIndex = 0;
       snapshot.forEach(function(doc) {
 
         getUser(doc.get('sender'), function(user) {
-          console.log(user);
-          $$('#' + doc.get("type")).append('<li><a href="#" class="item-link item-content"><div class="item-inner"><div class="item-title-row">' +
-            '<div class="item-title">Message from ' + user.firstName + ' ' + user.lastName + ' (' + user.username + ')' +
-            '</div><div class="item-after">' + doc.get("timestamp").toDate().toLocaleString('en-us', options) + '</div></div>' +
-            '<div class="item-text">' + doc.get("message") + '</div></div></a></li><li>');
-        });
+          var message = {
+            sender: user,
+            email: doc.get("email"),
+            subject: doc.get("subject"),
+            message: doc.get("message"),
+            date: doc.get("timestamp").toDate().toLocaleString('en-us', options),
+            message: doc.get("message"),
+            type: doc.get("type"),
+          };
 
+          //store feedback messages in an array to access later
+          messages.push(message);
+
+          //add feedback to page
+          $$('#' + doc.get("type")).append('<li><a href="#" onclick="showFeedback(\'' + messageIndex + '\')" class="item-link item-content"><div class="item-inner"><div class="item-title-row">' +
+            '<div class="item-title">' + user.username +
+            '</div><div class="item-after">' + message.date + '</div></div>' +
+            '<div class="item-text">' + message.subject + '</div></div></a></li><li>');
+          messageIndex++;
+        });
       });
     });
 
   });
 }
+//////*******feeback section********\\\\\\\
+
+//array of feedback messages
+var messages = [];
+
+//show a popup of message when a feedback list item is clicked
+function showFeedback(index) {
+  var message = messages[index];
+
+  var popup = app.popup.create({
+    content: '<div class="popup">' +
+      '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
+      '<div class="row justify-content-space-between align-items-center">' +
+      '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
+      '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
+      '</div><div class="hairline no-margin-bottom"></div></div>' +
+      '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
+      message.message +
+      '</div>' +
+      '</div>',
+  });
+  popup.open();
+
+}
+
 
 
 //////*******Pools section********\\\\\\\
