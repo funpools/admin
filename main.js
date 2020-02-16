@@ -127,10 +127,11 @@ function addAnswer(questionID, answerID, answerText, correct) {
 }
 
 var questionIDs = [];
-// This is adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database // TODO: add Numeric questions as well
+// This is adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database
 function addQuestion(questionID, description, answers) {
   // TODO: Check to see if this questionId has been added already if so dont add the question
   questionIDs.push(questionID);
+
   // Add the question html to the pool questions element
   $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
   <ul>\
@@ -152,35 +153,36 @@ function addQuestion(questionID, description, answers) {
   <button class = "button mc-answer-' + questionID + '" > Add Answer </button>\
    </div>');
 
-  //setup the add answer button
+  //Setup the add answer button
   $$('.mc-answer-' + questionID).on('click', function(event) {
     var answerID = makeid(10);
     addAnswer(questionID, answerID, '', false);
   });
+
   //Setup the question description
   document.getElementById("question-description-" + questionID).value = description;
 
-  // if the answers array is valid
+  // If the answers array is valid
   if (answers != null && answers != []) {
-    console.log("validarray");
-    var i = 0;
-    //For each answer
-    Object.keys(answers).forEach(function(answerID) {
-      //Add the answer to the html
-      addAnswer(questionID, answerID, answers[answerID].text, answers[answerID].correct);
-      //Check to see if this is the first answer if so then remove the delete button
+    let i = 0;
+    //Add each answer to the html
+    answers.forEach(function(answer) {
+      addAnswer(questionID, answer.id, answer.text, answer.correct);
+
+      //If this is the first answer remove the delete button
       if (i < 1) {
-        var deleteButton = document.getElementById(answerID + "-deleteanswer");
+        var deleteButton = document.getElementById(answer.id + "-deleteanswer");
         deleteButton.parentNode.removeChild(deleteButton);
       }
-
       i++;
     });
+
   } else {
-    //Add the default first answer to the html
+    //Add a empty first answer to the html
     answerID = makeid(10);
     addAnswer(questionID, answerID, '', false);
-    //remove the answers delete button
+
+    //Remove the Answers delete button
     var deleteButton = document.getElementById(answerID + "-deleteanswer");
     deleteButton.parentNode.removeChild(deleteButton);
   }
@@ -227,7 +229,6 @@ function addNumericQuestion(questionID, description, answer) {
 
 }
 
-
 // TODO: Change these to use the questionIDs and answerIDs
 //remove an answer from a multiple choice question
 function deleteAnswer(el) {
@@ -236,7 +237,7 @@ function deleteAnswer(el) {
 }
 
 var correctAnswers = [];
-//set the selected answer as the correct answer for a multiple choice question with ID questionID
+//Set the selected answer as the correct answer for a multiple choice question with ID questionID
 function setAnswer(el, questionID, answerID) {
   correctAnswers[questionID] = answerID;
   console.log(correctAnswers);
@@ -380,6 +381,8 @@ function getPool(poolID, callback) {
       poolPic = "https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg";
     }).then(function() {
       db.collection("pools").doc(poolID).get().then(function(poolData) {
+        let data = poolData.data();
+
         // TODO: validate data here
         loadedPools[poolID] = {
           poolID: poolID,
@@ -389,7 +392,7 @@ function getPool(poolID, callback) {
           description: poolData.get("description"),
           date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
           pic: poolPic,
-          tags: poolData.get("tags"),
+          tags: (data.tags) ? data.tags : [],
           questions: poolData.get("questions"),
         };
 
@@ -399,7 +402,6 @@ function getPool(poolID, callback) {
 
   }
 }
-
 
 var poolDateInput = app.calendar.create({
   inputEl: '#pool-date-input',
@@ -419,31 +421,38 @@ function loadPools() {
 
   //Close any open pool popup
   app.popup.close(".pool-popup");
-  //Remove any old pool data from th html.// TODO: also remove the data from the loadedPools array. This will ensure that we have the most up to date data avalible
+
+  //Remove any old pool data from
   loadedPools = [];
   document.getElementById("pool-list").innerHTML = '';
 
   var pools = [];
-  //Then get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
+
+  //Get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
   db.collection("pools").get().then(function(poolsSnapshot) {
     poolsSnapshot.forEach(function(doc) {
-      //Get the pool Data
+
+      //Get the pool's Data
       getPool(doc.id, function(poolDAT) {
         //Add the pool data to an array for later use
         pools.push(poolDAT);
-        //once the array length is the same as the number of pools we have loaded sort the array then add all the pools top the html
+        //Once the array length is the same as the number of pools we need to load, sort the array then add all the pools to the html
         if (pools.length >= poolsSnapshot.size) {
           pools.sort((a, b) => (a.name > b.name) ? 1 : -1); //Sort the array
+
           console.log("Loaded and sorted all pool data");
+
           pools.forEach(function(pool) {
 
             var poolList = document.getElementById("pool-list");
-            var date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
-            //setup the pool card
+            let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
+
+            //Setup the pool card
             var a = document.createElement('div');
             a.classList.add("card");
             a.classList.add("pool-card");
             a.classList.add("col-30");
+
             //When the card is clicked fill the popup with data
             a.onclick = function() {
               $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
@@ -453,41 +462,36 @@ function loadPools() {
               var poolVisibilityDiv = document.getElementById("pool-visibility");
               $$("#pool-visibility").val(pool.state).change();
 
+              let date2 = (pool.date != '') ? pool.date : new Date();
+              poolDateInput.setValue([date2])
 
-
-
-              var date2 = (pool.date != '') ? pool.date : new Date();
               // document.getElementById("pool-date").value = "";
               // document.getElementById("pool-time").value = "";
 
               document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
 
-
-
-              poolDateInput.setValue([date2])
               //Clear the question and answer IDs because we are loading a new page
               questionIDs = [];
               answerIDs = [];
               correctAnswers = [];
-              //Check to see if this pool has any questions. If so then load them // TODO: maybe if there are no questions then add a blank question at the bottom of the code?
+
+              //Check to see if this pool has any questions. If so then load them
               if (pool.questions != 'undefined' && pool.questions != null) {
-                console.log("Loaded pool : " + pool.id);
                 console.log(pool.questions);
                 //For each question in the pool.
                 for (var i = 0; i < pool.questions.length; i++) {
-
-                  //Check to see if the question is Numeric
+                  //Check to see if the question is Numeric then add it to the html
                   if (pool.questions[i].answer != null) {
-                    //Add the question to the html
                     addNumericQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answer);
                   } else {
-                    //Add the question to the html
                     addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
                   }
                 }
+              } else {
+                // TODO: maybe add a question?
               }
 
-              //add in tags
+              //Add in the tags
               var chipsDiv = document.getElementById("pool-tags");
               chipsDiv.innerHTML = "";
               for (var i = 0; i < pool.tags.length; i++) {
@@ -523,48 +527,58 @@ function savePool() {
   app.preloader.show();
 
   //store all the values
-  var id = document.getElementById("pool-name").dataset.id;
-  var name = document.getElementById("pool-name").value;
-  var description = document.getElementById("pool-description").innerHTML;
-  var pic = $$('.pool-popup').find('.pic-input')[0].files[0];
-  var timestamp = poolDateInput.getValue()[0];
-  var poolQuestions = document.getElementsByClassName("question");
-  var poolState = $$("#pool-visibility").val();
+  let id = document.getElementById("pool-name").dataset.id;
+  let name = document.getElementById("pool-name").value;
+  let description = document.getElementById("pool-description").innerHTML;
+  let pic = $$('.pool-popup').find('.pic-input')[0].files[0];
+  let timestamp = poolDateInput.getValue()[0];
+  let poolState = $$("#pool-visibility").val();
+  let poolQuestions = document.getElementsByClassName("question");
+
+  let tags = [];
   //Get tags from the chips
-  var tags = [];
   var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
   for (var i = 0; i < chips.length; i++) {
     tags.push(chips[i].innerHTML);
   }
 
-  var questions = [];
+  let questions = [];
   //For each question
   for (var i = 0; i < poolQuestions.length; i++) {
+
     var questionID = poolQuestions[i].id;
-    console.log(questionID);
+
     var numericAnswer = document.getElementById(questionID + "-numeric-answer");
-    //check to see if this question has a numeric answer
+    //Check to see if this question has a numeric answerif so add it otherwise treat it as a multiple choice question
     if (numericAnswer != null) {
-      //Add this numeric question to the questions object
       questions.push({
         id: questionID,
         description: document.getElementById('question-description-' + questionID).value,
         answer: numericAnswer.value,
       });
     } else {
-      //Get the questions answers and store them in an object called answers
-      var answerEL = document.getElementsByClassName(questionID + "-answer");
-      var answers = {};
-      var correctAnswer = '';
-      for (var x = 0; x < answerEL.length; x++) {
-        if (correctAnswers[questionID] == answerEL[x].id) { //This is the correct answer for this question
+      //Get all this questions answers and store them in an object called answers
+      let answerEL = document.getElementsByClassName(questionID + "-answer");
+      let answers = [];
+      let correctAnswer = '';
+
+      //For each answer in this question
+      for (let x = 0; x < answerEL.length; x++) {
+
+        //This is the correct answer for this question set it in the question array
+        if (correctAnswers[questionID] == answerEL[x].id) {
           correctAnswer = answerEL[x].id;
         }
-        answers[answerEL[x].id] = {
-          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id the correct one
+
+        //ADD this answer to the question
+        answers.push({
+          id: answerEL[x].id,
+          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id is the correct one
           text: answerEL[x].value,
-        };
+        });
+
       }
+
       //Add this multiple choice question to the questions object
       questions.push({
         id: questionID,
@@ -713,7 +727,6 @@ function addTag(el) {
 }
 
 //load tags
-
 function loadTags() {
   $$('.tag').remove();
   app.preloader.show();
