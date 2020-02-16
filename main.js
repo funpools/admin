@@ -387,13 +387,13 @@ function getPool(poolID, callback) {
         loadedPools[poolID] = {
           poolID: poolID,
           id: poolData.id,
-          name: poolData.get("name"),
-          state: poolData.get("state"),
-          description: poolData.get("description"),
+          name: (data.name) ? data.name : 'Draft Pool',
+          state: (data.state) ? data.state : 'draft',
+          description: (data.description) ? data.description : '',
           date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
           pic: poolPic,
           tags: (data.tags) ? data.tags : [],
-          questions: poolData.get("questions"),
+          questions: (data.questions) ? data.questions : [],
         };
 
         callback(loadedPools[poolID]);
@@ -455,6 +455,7 @@ function loadPools() {
 
             //When the card is clicked fill the popup with data
             a.onclick = function() {
+              console.log(pool);
               $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
               document.getElementById("pool-name").value = pool.name;
               document.getElementById("pool-name").dataset.id = pool.poolID;
