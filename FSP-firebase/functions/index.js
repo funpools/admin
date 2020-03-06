@@ -289,9 +289,9 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
       childPools: admin.firestore.FieldValue.arrayUnion(doc.id),
     })
     return {
-      data:data,
-      message:'made pool, id:'+doc.id,
-      id:doc.id,
+      data: data,
+      message: 'made pool, id:' + doc.id,
+      id: doc.id,
     };
 
   });
@@ -308,6 +308,108 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
 
 });
 
+async function sendNotification(uid, message) {
+
+  await db.collection("users").doc(uid).collection('updates').doc(message.type + '-' + message.id).set(message);
+
+  return "Successfully sent the notification!";
+}
+
+//Requests to be freinds with the specified user
+exports.freindRequest = functions.https.onCall((data, context) => {
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'while authenticated.');
+  }
+
+  // Authentication / user information is automatically added to the request.
+  const UserID = context.auth.uid;
+  // const name = context.auth.token.name || null;
+  // const picture = context.auth.token.picture || null;
+  // const email = context.auth.token.email || null;
+
+
+  console.log(data);
+  return sendNotification(data.uid, {
+    id: UserID,
+    text: "Click here to accept or reject their request.",
+    title: data.firstName + ' ' + data.lastName + " has requested to be your friend.",
+    type: "friend-request",
+    senderID: UserID,
+  }).then(function(result) {
+    console.log(result);
+    return {
+      result: result,
+      uid: UserID
+    };
+  });
+});
+
+
+//Resolves pending freind requests by accepting or rejecting them
+exports.resolveFreindRequest = functions.https.onCall(async function(data, context) {
+
+  /*
+  Data{
+    accept:true/false,
+    uid://the uid of the person whose frend request we want to accept
+  }
+  */
+
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'while authenticated.');
+  }
+
+  // Authentication user information is automatically added to the request.
+  const userID = context.auth.uid;
+  const uid = data.uid; //The uid whose freind request we are accepting
+  //TODO: if the user really requested this
+
+  let operations = []; //Array of promises for the operations we are currently running
+
+  console.log(userID, uid);
+  //Update this users freinds list
+  operations.push(db.collection('users').doc(userID).update({
+    friends: admin.firestore.FieldValue.arrayUnion(uid),
+    pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
+  }).catch(function(error) {
+    throw new functions.https.HttpsError('Error updating recevers docs', error);
+  }));
+
+  //Update the person who sent the freind request
+  operations.push(db.collection('users').doc(uid).update({
+    friends: admin.firestore.FieldValue.arrayUnion(userID),
+    pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
+  }).catch(function(error) {
+    throw new functions.https.HttpsError('Error updating requester docs', error);
+  }));
+
+  return Promise.all(operations).then(function(results) {
+    //notify user that their friend request has been accepted
+    return sendNotification(uid, {
+      id: userID,
+      title: data.firstName + ' ' + data.lastName + " Has accepted your friend request.",
+      text: "Click here to view " + data.firstName + "\'s profile.",
+      link: "/user/?id=" + userID,
+      type: "friend-accept",
+      senderID: userID,
+    }).then(function(result) {
+      console.log(result);
+      return {
+        uid: userID,
+        notificationResult: result,
+        data: data,
+      };
+    });
+
+  });
+
+});
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
