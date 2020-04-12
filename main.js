@@ -1,6 +1,6 @@
 var app = new Framework7({
   root: '#app',
-  name: 'Fun Sports Pools Admin',
+  name: 'Fun Pools Admin',
   id: 'com.myapp.test',
   theme: 'aurora',
   routes: [{
@@ -189,10 +189,11 @@ function addQuestion(questionID, description, answers) {
 
 }
 
+let tiebreakerIDs = [];
 // This is adds a numeric question to the html // NOTE: This only adds the question to the html not the databasex
 function addNumericQuestion(questionID, description, answer) {
   // TODO: Check to see if this questionId has been added already if so dont add the question
-  questionIDs.push(questionID);
+  tiebreakerIDs.push(questionID);
 
   // Add the question html to the pool questions element
   $$('#pool-questions').append('<div  id="' + questionID + '"  class="question n-question list no-hairlines no-hairlines-between">\
@@ -239,15 +240,29 @@ function deleteAnswer(el) {
 var correctAnswers = [];
 //Set the selected answer as the correct answer for a multiple choice question with ID questionID
 function setAnswer(el, questionID, answerID) {
-  correctAnswers[questionID] = answerID;
-  console.log(correctAnswers);
-  var answer = el.parentElement.parentElement.parentElement;
-  var answers = answer.parentElement.childNodes;
+  //If the correct answer is clicked again set it as false
+  if (correctAnswers[questionID] == answerID) {
+    console.log("answer clicked twice");
+    delete correctAnswers[questionID];
+    console.log(correctAnswers);
+    var answer = el.parentElement.parentElement.parentElement;
+    var answers = answer.parentElement.childNodes;
 
-  for (var i = 0; i < answers.length; i++) {
-    answers[i].style = "";
+    for (var i = 0; i < answers.length; i++) {
+      answers[i].style = "";
+    }
+
+  } else {
+    correctAnswers[questionID] = answerID;
+    console.log(correctAnswers);
+    var answer = el.parentElement.parentElement.parentElement;
+    var answers = answer.parentElement.childNodes;
+
+    for (var i = 0; i < answers.length; i++) {
+      answers[i].style = "";
+    }
+    answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
   }
-  answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
 }
 
 //remove a question from the list
@@ -257,7 +272,6 @@ function deleteQuestion(el) {
 
 
 function setupMainPage() {
-  //direct user to main page if not already there
   db.collection("admins").doc(uid).get().catch(function(error) {
     console.log(error.message);
   }).then(function(userData) {
@@ -275,13 +289,15 @@ function setupMainPage() {
       };
 
       console.log(self.app.views.main.router.currentRoute.path);
+      //direct user to main page if not already there
       if (self.app.views.main.router.currentRoute.path != '/' && self.app.views.main.router.currentRoute.path != '/fun-sports-pools-admin/') {
         self.app.views.main.router.navigate('/home/');
         console.log("navigated to main page");
       }
       loadPools();
       //editUser('Administrator', 'test', 'user', null, null);
-      document.getElementById("username").innerHTML = "Hi, " + User.username;
+      $$('#username').html('Hi, ' + User.firstName);
+      console.log(User.username);
       var panel = app.panel.create({
         el: '.panel-left',
         resizable: true,
@@ -289,9 +305,7 @@ function setupMainPage() {
       });
 
       //hide splash screen
-      var sc = document.getElementById("splash-screen");
-      if (sc)
-        sc.parentElement.removeChild(sc);
+      $$('#splash-screen').hide();
     } else {
       console.log("This user is not an admin! Signing out");
       signOut();
@@ -299,6 +313,8 @@ function setupMainPage() {
 
     //load Feedback
     db.collection("feedback").get().then(function(snapshot) {
+
+      $$('.skeleton-feedback').hide();
       var options = {
         year: 'numeric',
         month: 'short',
@@ -343,67 +359,135 @@ var messages = [];
 //show a popup of message when a feedback list item is clicked
 function showFeedback(index) {
   var message = messages[index];
-
-  var popup = app.popup.create({
-    content: '<div class="popup">' +
-      '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
-      '<div class="row justify-content-space-between align-items-center">' +
-      '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
-      '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
-      '</div><div class="hairline no-margin-bottom"></div></div>' +
-      '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
-      message.message +
-      '</div>' +
-      '</div>',
-  });
-  popup.open();
-
-}
-
-
-
-//////*******Pools section********\\\\\\\
-var loadedPools = []; //An array of all the pools we have loaded
-// An asyc method to get pool data
-function getPool(poolID, callback) {
-  //If we have already loaded this users data then return it else load it from the database
-  if (poolID in loadedPools) {
-    console.log("found pool in array");
-    callback(loadedPools[poolID]);
-  } else {
-    var poolPic = "";
-    // Create a reference to the file we want to download
-    var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
-    // Get the download URL for the picture
-    poolPictureRef.getDownloadURL().then(function(url) {
-      poolPic = url;
-    }).catch(function(error) {
-      poolPic = "https://cdn.framework7.io/placeholder/nature-1000x600-3.jpg";
-    }).then(function() {
-      db.collection("pools").doc(poolID).get().then(function(poolData) {
-        let data = poolData.data();
-
-        // TODO: validate data here
-        loadedPools[poolID] = {
-          poolID: poolID,
-          id: poolData.id,
-          name: (data.name) ? data.name : 'Draft Pool',
-          state: (data.state) ? data.state : 'draft',
-          description: (data.description) ? data.description : '',
-          date: ((poolData.get("date")) ? poolData.get("date").toDate() : ''),
-          pic: poolPic,
-          tags: (data.tags) ? data.tags : [],
-          questions: (data.questions) ? data.questions : [],
-        };
-
-        callback(loadedPools[poolID]);
+  switch (message.type) {
+    case "delete-account":
+      console.log('Delete account request');
+      var popup = app.popup.create({
+        content: '<div class="popup">' +
+          '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
+          '<div class="row justify-content-space-between align-items-center">' +
+          '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
+          '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
+          '</div><div class="hairline no-margin-bottom"></div></div>' +
+          '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
+          '<a id="delete-account-button" href="#" class="button button-fill" >Delete Account</a>' +
+          '</div>' +
+          '</div>',
       });
-    });
+      popup.open();
 
+      $$('#delete-account-button').click(function() {
+        deleteAccount(message.sender.uid)
+      });
+
+      break;
+    default:
+      var popup = app.popup.create({
+        content: '<div class="popup">' +
+          '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
+          '<div class="row justify-content-space-between align-items-center">' +
+          '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
+          '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
+          '</div><div class="hairline no-margin-bottom"></div></div>' +
+          '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
+          message.message +
+          '</div>' +
+          '</div>',
+      });
+      popup.open();
   }
 }
 
-var poolDateInput = app.calendar.create({
+function deleteAccount(userID) {
+  console.log("TODO Delete account here", userID);
+}
+
+//////*******Pools section********\\\\\\\
+
+let loadedPools = [];
+// An asyc method to get pool data
+async function getPool(poolID, callback) {
+  //If we have already loaded this users data then return it else load it from the database
+  if (poolID in loadedPools) {
+    console.log("found pool in array");
+    //We call the callback and return it for backwards compatability
+    (callback) ? callback(loadedPools[poolID]): null;
+    return loadedPools[poolID];
+  } else {
+    // Create a reference to the file we want to download
+    var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
+    // Get the download URL for the picture
+    let poolPic = poolPictureRef.getDownloadURL().catch(function(error) {
+      // TODO: add filler picture
+      poolPic = "";
+    });
+    let poolData = db.collection("pools").doc(poolID).get();
+
+    poolData = await poolData;
+    poolPic = await poolPic;
+
+    poolData = poolData.data();
+
+    if (poolData == null) {
+      console.log("Invalid pool returning");
+      (callback) ? callback(invalidPool): null;
+      return invalidPool;
+    }
+
+    //If the pool is a private/child pool get the needed data from the parentPool
+    if (poolData.private) {
+      getPool(poolData.parentPool, function(parentData) {
+        loadedPools[poolID] = {
+          poolID: poolID,
+          tags: parentData.tags,
+          name: poolData.name,
+          description: poolData.description,
+          state: parentData.state,
+          date: parentData.state,
+          pic: parentData.pic,
+          questions: parentData.questions,
+          tiebreakers: parentData.tiebreakers,
+          winners: (poolData.winners) ? poolData.winners : [],
+          id: poolID,
+          private: true,
+          bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+          pendingUsers: poolData.pendingUsers ? poolData.pendingUsers : [],
+          allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+          admins: poolData.admins ? poolData.admins : [],
+        };
+        (callback) ? callback(loadedPools[poolID]): null;
+        //console.log(loadedPools[poolID]);
+        return loadedPools[poolID];
+      });
+    } else {
+      loadedPools[poolID] = {
+        poolID: poolID,
+        tags: poolData.tags,
+        name: poolData.name,
+        description: poolData.description,
+        state: poolData.state,
+        date: ((poolData.date) ? poolData.date.toDate() : ''),
+        pic: poolPic,
+        questions: poolData.questions,
+        tiebreakers: poolData.tiebreakers,
+        winners: (poolData.winners) ? poolData.winners : [],
+        id: poolID,
+        private: false,
+        pendingUsers: poolData.pendingUsers ? poolData.pendingUsers : [],
+        bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+        allowShares: poolData.allowShares ? poolData.allowShares : true,
+        admins: poolData.admins ? poolData.admins : [],
+      };
+      (callback) ? callback(loadedPools[poolID]): null;
+      //console.log(loadedPools[poolID]);
+      return loadedPools[poolID];
+
+    }
+  }
+}
+
+//Setup the date format for pools
+let poolDateInput = app.calendar.create({
   inputEl: '#pool-date-input',
   timePicker: true,
   dateFormat: {
@@ -434,6 +518,7 @@ function loadPools() {
 
       //Get the pool's Data
       getPool(doc.id, function(poolDAT) {
+
         //Add the pool data to an array for later use
         pools.push(poolDAT);
         //Once the array length is the same as the number of pools we need to load, sort the array then add all the pools to the html
@@ -443,177 +528,196 @@ function loadPools() {
           console.log("Loaded and sorted all pool data");
 
           pools.forEach(function(pool) {
+            if (pool.private) {
+              console.log('private pool not displaying.');
+            } else {
+              var poolList = document.getElementById("pool-list");
+              let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
 
-            var poolList = document.getElementById("pool-list");
-            let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
+              //Setup the pool card
+              var a = document.createElement('div');
+              a.classList.add("card");
+              a.classList.add("pool-card");
+              a.classList.add("col-30");
 
-            //Setup the pool card
-            var a = document.createElement('div');
-            a.classList.add("card");
-            a.classList.add("pool-card");
-            a.classList.add("col-30");
+              //When the card is clicked fill the popup with data
+              a.onclick = function() {
+                console.log(pool);
+                $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
+                document.getElementById("pool-name").value = pool.name;
+                document.getElementById("pool-name").dataset.id = pool.poolID;
+                document.getElementById("pool-description").innerHTML = pool.description;
+                var poolVisibilityDiv = document.getElementById("pool-visibility");
+                $$("#pool-visibility").val(pool.state).change();
 
-            //When the card is clicked fill the popup with data
-            a.onclick = function() {
-              console.log(pool);
-              $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
-              document.getElementById("pool-name").value = pool.name;
-              document.getElementById("pool-name").dataset.id = pool.poolID;
-              document.getElementById("pool-description").innerHTML = pool.description;
-              var poolVisibilityDiv = document.getElementById("pool-visibility");
-              $$("#pool-visibility").val(pool.state).change();
+                let date2 = (pool.date != '') ? pool.date : new Date();
+                poolDateInput.setValue([date2])
 
-              let date2 = (pool.date != '') ? pool.date : new Date();
-              poolDateInput.setValue([date2])
+                // document.getElementById("pool-date").value = "";
+                // document.getElementById("pool-time").value = "";
 
-              // document.getElementById("pool-date").value = "";
-              // document.getElementById("pool-time").value = "";
+                document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
 
-              document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
+                //Clear the question and answer IDs because we are loading a new page
+                questionIDs = [];
+                tiebreakerIDs = [];
+                answerIDs = [];
+                correctAnswers = [];
 
-              //Clear the question and answer IDs because we are loading a new page
-              questionIDs = [];
-              answerIDs = [];
-              correctAnswers = [];
-
-              //Check to see if this pool has any questions. If so then load them
-              if (pool.questions != 'undefined' && pool.questions != null) {
-                console.log(pool.questions);
-                //For each question in the pool.
-                for (var i = 0; i < pool.questions.length; i++) {
-                  //Check to see if the question is Numeric then add it to the html
-                  if (pool.questions[i].answer != null) {
-                    addNumericQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answer);
-                  } else {
+                //Check to see if this pool has any questions. If so then load them
+                if (pool.questions != null) {
+                  console.log(pool.questions);
+                  for (let i = 0; i < pool.questions.length; i++) {
                     addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
                   }
+                } else { //There are no questions in this pool
+                  // TODO: maybe add a question?
                 }
-              } else {
-                // TODO: maybe add a question?
-              }
 
-              //Add in the tags
-              var chipsDiv = document.getElementById("pool-tags");
-              chipsDiv.innerHTML = "";
-              for (var i = 0; i < pool.tags.length; i++) {
-                var chip = document.createElement("div");
-                chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
-                chipsDiv.appendChild(chip.childNodes[0]);
-              }
+                //Check to see if this pool has any tiebreakers. If so then load them
+                if (pool.tiebreakers != null) {
+                  console.log(pool.tiebreakers);
+                  //For each tiebreaker in the pool.
+                  for (let i = 0; i < pool.tiebreakers.length; i++) {
+                    console.log("dsfkjhsgdfjkh");
+                    addNumericQuestion(pool.tiebreakers[i].id, pool.tiebreakers[i].description, pool.tiebreakers[i].answer);
+                  }
+                }
 
-              app.popup.open(".pool-popup");
-            };
+                //Add in the tags
+                var chipsDiv = document.getElementById("pool-tags");
+                chipsDiv.innerHTML = "";
+                for (var i = 0; i < pool.tags.length; i++) {
+                  var chip = document.createElement("div");
+                  chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
+                  chipsDiv.appendChild(chip.childNodes[0]);
+                }
 
-            //Setup the card's inner html
-            a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
-              '<div class="card-content card-content-padding">' +
-              '  <p class="date">' + date.toLocaleString() + '</p>' +
-              '  <p> ' + pool.description + '</p>' +
-              '</div>';
-            //Add the card to the pool list
-            poolList.appendChild(a);
+                app.popup.open(".pool-popup");
+              };
+
+              //Setup the card's inner html
+              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end">' + pool.name + '</div>' +
+                '<div class="card-content card-content-padding">' +
+                '  <p class="date">' + date.toLocaleString() + '</p>' +
+                '  <p> ' + pool.description + '</p>' +
+                '</div>';
+              //Add the card to the pool list
+              poolList.appendChild(a);
+            }
           });
 
         }
       });
 
-
       ///
 
     });
   });
+
 }
 
 function savePool() {
   app.preloader.show();
 
-  //store all the values
+  //Get all the needed values from the html
   let id = document.getElementById("pool-name").dataset.id;
   let name = document.getElementById("pool-name").value;
   let description = document.getElementById("pool-description").innerHTML;
   let pic = $$('.pool-popup').find('.pic-input')[0].files[0];
   let timestamp = poolDateInput.getValue()[0];
   let poolState = $$("#pool-visibility").val();
-  let poolQuestions = document.getElementsByClassName("question");
+  let poolQuestions = document.getElementsByClassName("mc-question");
+  let poolTieBreakers = document.getElementsByClassName("n-question");
 
-  let tags = [];
   //Get tags from the chips
-  var chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
+  let tags = [];
+  let chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
   for (var i = 0; i < chips.length; i++) {
     tags.push(chips[i].innerHTML);
   }
 
   let questions = [];
   //For each question
-  for (var i = 0; i < poolQuestions.length; i++) {
+  for (let i = 0; i < poolQuestions.length; i++) {
 
-    var questionID = poolQuestions[i].id;
+    let questionID = poolQuestions[i].id;
+    let answerEL = document.getElementsByClassName(questionID + "-answer");
+    let answers = [];
 
-    var numericAnswer = document.getElementById(questionID + "-numeric-answer");
-    //Check to see if this question has a numeric answerif so add it otherwise treat it as a multiple choice question
-    if (numericAnswer != null) {
-      questions.push({
-        id: questionID,
-        description: document.getElementById('question-description-' + questionID).value,
-        answer: numericAnswer.value,
-      });
-    } else {
-      //Get all this questions answers and store them in an object called answers
-      let answerEL = document.getElementsByClassName(questionID + "-answer");
-      let answers = [];
-      let correctAnswer = '';
-
-      //For each answer in this question
-      for (let x = 0; x < answerEL.length; x++) {
-
-        //This is the correct answer for this question set it in the question array
-        if (correctAnswers[questionID] == answerEL[x].id) {
-          correctAnswer = answerEL[x].id;
-        }
-
-        //ADD this answer to the question
-        answers.push({
-          id: answerEL[x].id,
-          correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id is the correct one
-          text: answerEL[x].value,
-        });
-
-      }
-
-      //Add this multiple choice question to the questions object
-      questions.push({
-        id: questionID,
-        description: document.getElementById('question-description-' + questionID).value,
-        answers: answers,
-        correctAnswer: correctAnswer,
+    //For each answer in this question
+    for (let x = 0; x < answerEL.length; x++) {
+      //ADD this answer to the question object
+      answers.push({
+        id: answerEL[x].id,
+        correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id is the correct one
+        text: answerEL[x].value,
       });
     }
+
+    //Add this multiple choice question to the questions object
+    questions.push({
+      id: questionID,
+      description: document.getElementById('question-description-' + questionID).value,
+      answers: answers,
+      correctAnswer: correctAnswers[questionID],
+    });
   }
   console.log(questions);
+
+  let tieBreakers = [];
+
+  //For each tiebreaker
+  for (let i = 0; i < poolTieBreakers.length; i++) {
+
+    let questionID = poolTieBreakers[i].id;
+    let numericAnswer = document.getElementById(questionID + "-numeric-answer");
+
+    tieBreakers.push({
+      id: questionID,
+      description: document.getElementById('question-description-' + questionID).value,
+      answer: (numericAnswer.value) ? numericAnswer.value : null,
+    });
+
+  }
+
+  console.log(tieBreakers);
+
   //Save the pool to the database
-  editPool(id, name, description, pic, timestamp, tags, questions, poolState);
+  editPool({
+    poolID: id,
+    poolName: name,
+    poolDescription: description,
+    poolPicture: pic,
+    poolStartDate: timestamp,
+    tags: tags,
+    questions: questions,
+    state: poolState,
+    tiebreakers: tieBreakers
+  });
 }
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
-function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate, tags, questions, state) {
+function editPool(poolData) {
 
-  console.log("editing pool: " + poolID);
-  console.log(questions);
+  console.log("editing pool: " + poolData.poolID + " with data: ", poolData);
   //If the poolID is not null and not 0 edit the data
-  if (poolID && poolID != 0) {
-    var poolRef = db.collection('pools').doc(poolID);
+  if (poolData.poolID != null && poolData.poolID != 0) {
+    var poolRef = db.collection('pools').doc(poolData.poolID);
+
 
     poolRef.update({
-      name: poolName,
-      description: poolDescription,
-      date: poolStartDate,
-      tags: tags,
-      questions: questions,
-      state: (state) ? state : "hidden",
+      name: (poolData.poolName) ? poolData.poolName : "No name given",
+      description: (poolData.poolDescription) ? poolData.poolDescription : "No Description",
+      date: (poolData.poolStartDate) ? poolData.poolStartDate : new Date(),
+      tags: (poolData.tags) ? poolData.tags : [],
+      questions: poolData.questions,
+      tiebreakers: poolData.tiebreakers,
+      state: (poolData.state) ? poolData.state : "hidden",
     }).then(function() {
       // TODO: check if pool pic is valid if not set the default pic?
-      if (poolPicture) {
+      if (poolData.poolPicture) {
         var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
-        poolPictureRef.put(poolPicture).then(function() {
+        poolPictureRef.put(poolData.poolPicture).then(function() {
           app.preloader.hide();
           app.toast.show({
             text: "Pool Saved",
@@ -654,17 +758,19 @@ function editPool(poolID, poolName, poolDescription, poolPicture, poolStartDate,
   } else {
     //the pool does not exist so create a pool and set its information
     db.collection("pools").add({
-      name: poolName,
-      description: poolDescription,
-      date: poolStartDate,
-      tags: tags,
-      questions: questions,
+      name: poolData.poolName,
+      description: poolData.poolDescription,
+      date: poolData.poolStartDate,
+      tags: poolData.tags,
+      questions: poolData.questions,
+      tiebreakers: poolData.tiebreakers,
+      state: (poolData.state) ? poolData.state : "hidden",
     }).then(function(doc) {
       console.log(doc.id);
       var profilePictureRef = storageRef.child('pool-pictures').child(doc.id);
       //If poolPicture is valid
-      if (poolPicture) {
-        profilePictureRef.put(poolPicture).then(function() {
+      if (poolData.poolPicture) {
+        profilePictureRef.put(poolData.poolPicture).then(function() {
           console.log("error with pic");
 
           app.preloader.hide();

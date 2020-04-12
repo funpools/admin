@@ -71,6 +71,7 @@
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
@@ -87,6 +88,7 @@
 }
 
 .pool-card {
+  min-width: 400px;
   border: 2px solid rgba(0, 0, 0, 0);
   box-shadow: none;
   transition: .1s;
@@ -101,6 +103,7 @@
   height: 20vh;
   background-size: cover;
   background-position: center;
+  background-color: var(--f7-theme-color);
   color: #fff;
 }
 

@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
-  <title>Fun Sports Pools Admin</title>
+  <title>Fun Pools Admin</title>
   <link rel="shortcut icon" href="favicon.ico" />
   <link rel="stylesheet" href="framework7.bundle.css">
   <link rel="stylesheet" href="main.css">
@@ -13,6 +13,11 @@
 <body>
   <div id="splash-screen">
     <img src="logo.png" width="150px" />
+    <div class="preloader" style="margin-top: 32px">
+      <span class="preloader-inner">
+        <span class="preloader-inner-circle"></span>
+      </span>
+    </div>
   </div>
   <div id="app">
     <div class="panel panel-left">
@@ -23,7 +28,7 @@
             <li><a href="#tab-1" class="tab-link tab-link-active">Reports</a></li>
             <li><a href="#tab-2" class="tab-link">Users</a></li>
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
-            <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
+            <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li> -->
             <li><a href="#tab-5" class="tab-link">Change Password</a></li>
           </ul>
         </div>
@@ -38,36 +43,45 @@
               <div class="block-card">
                 <h3 class="title no-margin-top">Analytics</h3>
                 <!-- TODO: add analytics -->
-                ...
+                Coming Soon!<br>Current analytics can be found <a href="https://console.firebase.google.com" target="_blank" class="link external">here</a>.
               </div>
               <div class="block-card">
-                <h3 class="title no-margin-top">User Reports</h3>
-                <div class="list no-hairlines no-margin">
-                  <ul id="reports-list">
+                <h3 class="title no-margin-top">Reported Issues</h3>
+                <div class="list media-list no-hairlines">
+                  <ul id="issue"></ul>
+                </div>
+                <div class="list media-list no-hairlines skeleton-text skeleton-effect-blink skeleton-feedback">
+                  <ul>
                     <li>
                       <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
                         <div class="item-inner">
-                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                          <div class="item-after">8:47 PM</div>
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longer</div>
                         </div>
                       </a>
                     </li>
                     <li>
                       <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
                         <div class="item-inner">
-                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                          <div class="item-after">8:47 PM</div>
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be</div>
                         </div>
                       </a>
                     </li>
                     <li>
                       <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
                         <div class="item-inner">
-                          <div class="item-description">Ivan Petrov reported the profile of mr_brown_pants</div>
-                          <div class="item-after">8:47 PM</div>
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longerrrrr</div>
                         </div>
                       </a>
                     </li>
@@ -75,21 +89,132 @@
                 </div>
               </div>
               <div class="block-card">
-                <h3 class="title no-margin-top">Reported Issues</h3>
-                <div class="list media-list no-hairlines">
-                  <ul id="issue"></ul>
-                </div>
-              </div>
-              <div class="block-card">
                 <h3 class="title no-margin-top">Feature Requests</h3>
                 <div class="list media-list no-hairlines">
                   <ul id="feature"></ul>
+                </div>
+                <div class="list media-list no-hairlines skeleton-text skeleton-effect-blink skeleton-feedback">
+                  <ul>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longer</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longerrrrr</div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
                 </div>
               </div>
               <div class="block-card">
                 <h3 class="title no-margin-top">General Feedback</h3>
                 <div class="list media-list no-hairlines">
                   <ul id="feedback"></ul>
+                </div>
+                <div class="list media-list no-hairlines skeleton-text skeleton-effect-blink skeleton-feedback">
+                  <ul>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longer</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longerrrrr</div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="block-card">
+                <h3 class="title no-margin-top">Account Deletion Requests</h3>
+                <div class="list media-list no-hairlines">
+                  <ul id="delete-account"></ul>
+                </div>
+                <div class="list media-list no-hairlines skeleton-text skeleton-effect-blink skeleton-feedback">
+                  <ul>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longer</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is datethis is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be</div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" class="item-link item-content">
+                        <div class="item-inner">
+                          <div class="item-title-row">
+                            <div class="item-title">this is title</div>
+                            <div class="item-after">this is date!!!!!!!</div>
+                          </div>
+                          <div class="item-text">this is subject and should be longerrrrr</div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -309,7 +434,7 @@
                 <select id="pool-visibility">
                   <option value="draft">Draft</option>
                   <option value="open">Open</option>
-                  <option value="active">Closed - Game in Progress</option>
+                  <option value="active">Active - Game in Progress</option>
                   <option value="closed">Closed</option>
                 </select>
               </div>
@@ -451,9 +576,7 @@
         app.panel.destroy('.panel-left');
 
         //hide splash screen
-        var sc = document.getElementById("splash-screen");
-        if (sc)
-          sc.parentElement.removeChild(sc);
+        $$('#splash-screen').hide();
 
         //show login page
         self.app.views.main.router.navigate('/login/', {
