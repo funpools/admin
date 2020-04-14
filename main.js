@@ -6,24 +6,27 @@ var app = new Framework7({
   routes: [{
       path: '/home/',
       url: 'index.html',
+      options: {
+        transition: 'f7-dive',
+      },
       on: {
-        pageInit: function(e, page) {
-
-        },
+        pageBeforeIn: function() {
+          app.preloader.hide();
+        }
       }
     },
     {
       path: '/login/',
       url: 'pages/login.html',
+      options: {
+        transition: 'f7-dive',
+      },
       on: {
         pageInit: function(e, page) {
           //When the pages is Initialized setup the signIn button
-          document.getElementById('log-in-button').addEventListener('click', function() {
-            var email = document.getElementById("uname").value;
-            var password = document.getElementById("pword").value;
-            signIn(email, password);
+          $$('#log-in').click(function(event) {
+            signIn($$('#uname').val(), $$('#pword').val());
           });
-
         },
       }
     },
@@ -273,7 +276,7 @@ function deleteQuestion(el) {
 
 function setupMainPage() {
   db.collection("admins").doc(uid).get().catch(function(error) {
-    console.log(error.message);
+    console.log(error);
   }).then(function(userData) {
     //If the user exist then this user is an admin so load the main page
     if (userData.exists) {

@@ -1,47 +1,37 @@
 <div class="page no-navbar no-toolbar no-swipeback">
   <div class="page-content login-screen-content">
-    <div>
+    <div style="display: flex; flex-direction: column; justify-content: center">
+      <img src="./logo.png" width="150px" style="margin: 32px auto" />
       <div class="login-screen-title">Sign In</div>
-      <div class="row justify-content-center">
-        <div class="login-icon si">
-          <div class="square"></div>
-          <div class="arrow-head"></div>
-          <div class="arrow-tail"></div>
-        </div>
-      </div>
     </div>
-    <div class="animate fadeIn">
 
-      <div class="block">
-        <form>
-          <div class="list">
-            <ul>
-              <li class="item-content item-input">
-                <div class="item-inner">
-                  <div class="item-input-wrap">
-                    <input id="uname" type="text" name="email" placeholder="Email address">
-                  </div>
+    <div class="block">
+      <form onsubmit="return false">
+        <div class="list">
+          <ul>
+            <li class="item-content item-input">
+              <div class="item-inner">
+                <div class="item-input-wrap">
+                  <input id="uname" type="text" name="email" placeholder="Email address">
                 </div>
-              </li>
-              <li class="item-content item-input">
-                <div class="item-inner">
-                  <div class="item-input-wrap">
-                    <input id="pword" type="password" placeholder="Password">
-                  </div>
+              </div>
+            </li>
+            <li class="item-content item-input">
+              <div class="item-inner">
+                <div class="item-input-wrap">
+                  <input id="pword" type="password" placeholder="Password">
                 </div>
-              </li>
-            </ul>
-          </div>
-          <a id="log-in-button" class="button button-fill button-round">Log In</a>
-        </form>
-      </div>
-    </div>
-    <div class="animate fadeIn">
-      <div class="block">
-        <div class="block-footer">
-
-          <a href="#" class="link">Forgot Password?</a>
+              </div>
+            </li>
+          </ul>
         </div>
+        <input type="submit" id="log-in" class="button button-fill button-round" value="Log In" />
+      </form>
+    </div>
+    <div class="block">
+      <div class="block-footer">
+
+        <a href="#" onclick="forgotPassword()" class="link">Forgot Password?</a>
       </div>
     </div>
   </div>

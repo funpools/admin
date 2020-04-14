@@ -8,7 +8,6 @@ function signIn(email, password) {
       closeButton: true
     });
   }).then(function() {
-    app.preloader.hide();
     //Put any code that needs to happen after login here
     console.log("Signed in!");
   });
@@ -40,14 +39,14 @@ function getUser(userID, callback) {
     profilePictureRef.getDownloadURL().then(function(url) {
       profilePic = url;
     }).catch(function(error) {
-      profilePic = "https://www.keypointintelligence.com/img/anonymous.png";
+      profilePic = "./unknown.jpg";
     }).then(function() {
       db.collection("users").doc(userID).get().then(function(userData) {
         loadedUsers[userID] = {
           uid: userID,
-          username: userData.get("username"),
-          firstName: userData.get("firstName"),
-          lastName: userData.get("lastName"),
+          username: userData.get("username") ? userData.get("username") : 'undefined',
+          firstName: userData.get("firstName") ? capitalizeFirstLetter(userData.get("firstName")) : 'undefined',
+          lastName: userData.get("lastName") ? capitalizeFirstLetter(userData.get("lastName")) : 'undefined',
           picURL: profilePic,
         };
         console.log("loaded user: " + userID);
@@ -55,6 +54,12 @@ function getUser(userID, callback) {
       });
     });
   }
+}
+
+function banUser(uid) {
+  app.toast.show({
+    text: "This feature is coming soon!"
+  });
 }
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
@@ -127,28 +132,48 @@ function searchUsers() {
   var usersList = document.getElementById("all-users-list");
 
   usersList.innerHTML = 'Searching...';
-  var search = document.getElementById('user-search').value;
+  var search = document.getElementById('user-search').value.toLowerCase();
   console.log('searched for ' + search);
-  db.collection('users').where("username", ">=", search).get().catch(function(error) {
-    console.log(error);
-  }).then(function(users) {
+  db.collection('users').where("username", "==", search).get().then(function(users) {
     usersList.innerHTML = "";
-    if (users.size === 0)
+    if (users.size == 0)
       usersList.innerHTML = "No users matching \"" + search + "\" were found.";
-    console.log(users.size);
     users.forEach(function(userDoc) {
       getUser(userDoc.id, function(user) {
         var li = document.createElement('li');
-        li.innerHTML = '<a href="#" class="item-link item-content">' +
-          '<div class="item-media"><img src="' + user.picURL + '" width="32px" style="border-radius: 50%" /></div>' +
+        li.innerHTML = '<div class="item-content">' +
+          '<div class="item-media"><div class="picture" style="background-image: url(' + user.picURL + ')"></div></div>' +
           '<div class="item-inner">' +
-          '<div class="item-description">' + user.username + '</div>' +
-          '</div>' +
-          '</a>';
+          '<div class="item-title-row"><div class="item-title">' + user.username + '</div><div class="item-after"><a href="#" onclick="banUser(\'' + user.uid + '\')" class="button color-red">Ban User</a></div></div>' +
+          '<div class="item-text">' + user.firstName + ' ' + user.lastName + '</div>' +
+          '</div></div>';
         usersList.appendChild(li);
         console.log(user);
       });
     });
   });
 
+}
+
+function forgotPassword() {
+  //show prompt dialog
+  app.dialog.prompt('What is your email address?', function(email) {
+
+    //show loading dialog
+    app.dialog.preloader('Sending reset email...');
+
+    //attempt to send reset email
+    firebase.auth().sendPasswordResetEmail(email).then(function() {
+      app.dialog.close();
+      app.dialog.alert('A password reset email was sent to your address.');
+    }).catch(function(error) {
+      app.dialog.close();
+      app.dialog.alert(error.message);
+      console.error(error.message);
+    });
+  });
+}
+
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }

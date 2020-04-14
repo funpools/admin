@@ -28,8 +28,9 @@
             <li><a href="#tab-1" class="tab-link tab-link-active">Reports</a></li>
             <li><a href="#tab-2" class="tab-link">Users</a></li>
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
-            <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li> -->
-            <li><a href="#tab-5" class="tab-link">Change Password</a></li>
+            <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
+            <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
+            <li><a href="#" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
           </ul>
         </div>
         <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
@@ -231,33 +232,8 @@
                     <span id="user-search-button" onclick="searchUsers()" class="searchbar-disable-button">Search</span>
                   </div>
                 </form>
-                <div class="list no-hairlines">
+                <div class="list media-list no-hairlines">
                   <ul id="all-users-list">
-                    <li>
-                      <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                        <div class="item-inner">
-                          <div class="item-description">Ivan Petrovs</div>
-                        </div>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                        <div class="item-inner">
-                          <div class="item-description">mr_brown_pants</div>
-                        </div>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" class="item-link item-content">
-                        <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
-                        <div class="item-inner">
-                          <div class="item-description">Kanye West</div>
-                        </div>
-                      </a>
-                    </li>
-
                   </ul>
                 </div>
               </div>
@@ -275,7 +251,7 @@
                 </form>
                 <div class="list search-list searchbar-found no-hairlines">
                   <ul id="banned-users-list">
-                    <li>
+                    <!--<li>
                       <a href="#" class="item-link item-content">
                         <div class="item-media"><img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fclipart-library.com%2Fimages%2FATbrxjpyc.jpg&f=1&nofb=1" width="32px" style="border-radius: 50%" /></div>
                         <div class="item-inner">
@@ -310,7 +286,7 @@
                           <div class="item-after"><button class="button">Lift Ban</button></div>
                         </div>
                       </a>
-                    </li>
+                    </li>-->
                   </ul>
                 </div>
                 <div class="block searchbar-not-found">
@@ -357,38 +333,7 @@
             </div>
             <div id="tab-5" class="tab">
               <div class="block-card">
-                <div class="list no-hairlines no-margin">
-                  <ul>
-                    <li class="item-content item-input">
-                      <div class="item-inner">
-                        <div class="item-title item-label">Current Password</div>
-                        <div class="item-input-wrap">
-                          <input type="password" placeholder="Your current password">
-                          <span class="input-clear-button"></span>
-                        </div>
-                      </div>
-                    </li>
-                    <li class="item-content item-input">
-                      <div class="item-inner">
-                        <div class="item-title item-label">New Password</div>
-                        <div class="item-input-wrap">
-                          <input type="password" placeholder="Your new password">
-                          <span class="input-clear-button"></span>
-                        </div>
-                      </div>
-                    </li>
-                    <li class="item-content item-input">
-                      <div class="item-inner">
-                        <div class="item-title item-label">Confirm Password</div>
-                        <div class="item-input-wrap">
-                          <input type="password" placeholder="Your new password again">
-                          <span class="input-clear-button"></span>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                <a href="#" class="button">Save</a>
+                <a href="#" onclick="forgotPassword()" class="button">Reset Your Password</a>
               </div>
             </div>
           </div>
