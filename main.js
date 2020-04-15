@@ -101,6 +101,7 @@ function newPool() {
 
 }
 
+let questionAnswers = {};
 var answerIDs = [];
 //Adds an answer to the html // NOTE: this only adds the answer to the html not the data base
 function addAnswer(questionID, answerID, answerText, correct) {
@@ -120,12 +121,13 @@ function addAnswer(questionID, answerID, answerText, correct) {
     </div>\
   </div>\
   </li>');
-  document.getElementById(answerID + "-setanswer").addEventListener("click", function() {
-    setAnswer(this, questionID, answerID);
+
+  $$('#' + answerID + "-setanswer").click(function() {
+    setAnswer(questionID, answerID);
   });
   document.getElementById(answerID).value = answerText;
   if (correct) {
-    setAnswer(document.getElementById(answerID + "-setanswer"), questionID, answerID);
+    setAnswer(questionID, answerID);
   }
 }
 
@@ -241,38 +243,32 @@ function deleteAnswer(el) {
 }
 
 var correctAnswers = [];
-//Set the selected answer as the correct answer for a multiple choice question with ID questionID
-function setAnswer(el, questionID, answerID) {
-  //If the correct answer is clicked again set it as false
-  if (correctAnswers[questionID] == answerID) {
-    console.log("answer clicked twice");
+
+function setAnswer(questionID, answerID) { //Set the selected answer as the correct answer for a multiple choice question with ID questionID
+
+  let el = $$('#' + answerID + "-setanswer")[0]; //Get the element of the button(Correct/Undo)
+  let answer = el.parentElement.parentElement.parentElement;
+
+  //Set the previously selected answers state and color to the default
+  $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
+  $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
+
+
+  if (correctAnswers[questionID] == answerID) { //If this is already marked as the correct answer(eg. the admin has pressed undo in the panel) then remove it from the correct answers
     delete correctAnswers[questionID];
-    console.log(correctAnswers);
-    var answer = el.parentElement.parentElement.parentElement;
-    var answers = answer.parentElement.childNodes;
-
-    for (var i = 0; i < answers.length; i++) {
-      answers[i].style = "";
-    }
-
-  } else {
+    console.log("Undo set answer as correct");
+  } else { //Else add the answer to the list of correct answers and set its html to the correct color and state
     correctAnswers[questionID] = answerID;
-    console.log(correctAnswers);
-    var answer = el.parentElement.parentElement.parentElement;
-    var answers = answer.parentElement.childNodes;
-
-    for (var i = 0; i < answers.length; i++) {
-      answers[i].style = "";
-    }
+    el.innerHTML = "Undo";
     answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
   }
+  console.log(correctAnswers);
+
 }
 
-//remove a question from the list
-function deleteQuestion(el) {
+function deleteQuestion(el) { //remove a question from the list
   deleteAnswer(el.parentElement.parentElement);
 }
-
 
 function setupMainPage() {
   db.collection("admins").doc(uid).get().catch(function(error) {
