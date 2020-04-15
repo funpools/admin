@@ -129,30 +129,81 @@ function editUser(username, firstName, lastName, pic, password) {
 }
 
 function searchUsers() {
-  var usersList = document.getElementById("all-users-list");
 
-  usersList.innerHTML = 'Searching...';
-  var search = document.getElementById('user-search').value.toLowerCase();
-  console.log('searched for ' + search);
-  db.collection('users').where("username", "==", search).get().then(function(users) {
-    usersList.innerHTML = "";
-    if (users.size == 0)
-      usersList.innerHTML = "No users matching \"" + search + "\" were found.";
-    users.forEach(function(userDoc) {
-      getUser(userDoc.id, function(user) {
-        var li = document.createElement('li');
-        li.innerHTML = '<div class="item-content">' +
+  $$('.search-user-preloader').show();
+  $$('#all-users-list').html('');
+
+  //get query
+  let query = $$('#user-search').val().toLowerCase();
+
+  //where we will store the results
+  var foundUsers = {};
+
+  //an array to store our query promises
+  let querys = [];
+
+  //Add the querys
+  querys.push(db.collection('users').where("username", "==", query).get());
+  querys.push(db.collection('users').where("firstName", "==", query).get());
+  querys.push(db.collection('users').where("lastName", "==", query).get());
+
+  //Await all the the querys then add their results
+  Promise.all(querys).catch(function(error) {
+
+    $$('.search-user-preloader').hide();
+    $$('#all-users-list').html('There was an error loading results. Please try again later.');
+
+    console.error(error.message);
+    return;
+  }).then(function(queryDoc) {
+    queryDoc.forEach(function(queryResults) {
+      queryResults.forEach(function(userDoc) {
+        //If this user has already been found add to its priority
+        if (foundUsers[userDoc.id]) {
+          foundUsers[userDoc.id] += 2;
+        } else {
+          foundUsers[userDoc.id] = 2;
+        }
+      });
+    });
+
+    //Sort by priority
+    var sortable = [];
+    for (var user in foundUsers) {
+      sortable.push([user, foundUsers[user]]);
+    }
+
+    //If nothing is found
+    if (sortable.length < 1) {
+      $$('#all-users-list').html('There were no users matching \"' + query + '\"');
+      $$('.search-user-preloader').hide();
+      return;
+    }
+
+    sortable.sort(function(a, b) {
+      return b[1] - a[1];
+    });
+
+    //get user info and display on list
+    let lastUser = sortable[sortable.length - 1][0];
+    sortable.forEach(function(userDoc) {
+      getUser(userDoc[0], function(user) {
+        $$('#all-users-list').append('<li><div class="item-content">' +
           '<div class="item-media"><div class="picture" style="background-image: url(' + user.picURL + ')"></div></div>' +
           '<div class="item-inner">' +
           '<div class="item-title-row"><div class="item-title">' + user.username + '</div><div class="item-after"><a href="#" onclick="banUser(\'' + user.uid + '\')" class="button color-red">Ban User</a></div></div>' +
           '<div class="item-text">' + user.firstName + ' ' + user.lastName + '</div>' +
-          '</div></div>';
-        usersList.appendChild(li);
-        console.log(user);
+          '</div></div></li>');
+
+        //hide preloader on last result
+        if (user.uid == lastUser) {
+          $$('.search-user-preloader').hide();
+        }
       });
+
+
     });
   });
-
 }
 
 function forgotPassword() {
