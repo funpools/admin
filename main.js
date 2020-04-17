@@ -715,7 +715,7 @@ function savePool() {
       id: questionID,
       description: document.getElementById('question-description-' + questionID).value,
       answers: answers,
-      correctAnswer: correctAnswers[questionID],
+      correctAnswer: (correctAnswers[questionID]) ? correctAnswers[questionID] : null,
     });
   }
   console.log(questions);
@@ -759,18 +759,18 @@ function editPool(poolData) {
   if (poolData.poolID != null && poolData.poolID != 0) {
     var poolRef = db.collection('pools').doc(poolData.poolID);
 
-
+    console.log(poolData.questions);
     poolRef.update({
       name: (poolData.poolName) ? poolData.poolName : "No name given",
       description: (poolData.poolDescription) ? poolData.poolDescription : "No Description",
       date: (poolData.poolStartDate) ? poolData.poolStartDate : new Date(),
       tags: (poolData.tags) ? poolData.tags : [],
-      questions: poolData.questions,
-      tiebreakers: poolData.tiebreakers,
+      questions: (poolData.questions) ? poolData.questions : [],
+      tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
       state: (poolData.state) ? poolData.state : "hidden",
     }).then(function() {
       // TODO: check if pool pic is valid if not set the default pic?
-      if (poolData.poolPicture) {
+      if (poolData.poolPicture && poolData.poolPicture != null) {
         var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
         poolPictureRef.put(poolData.poolPicture).then(function() {
           app.preloader.hide();
@@ -799,6 +799,7 @@ function editPool(poolData) {
         app.popup.close(".pool-popup");
         loadPools();
       }
+
     }).catch(function(error) {
       app.preloader.hide();
       app.popup.close(".pool-popup");
