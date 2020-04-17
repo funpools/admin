@@ -297,6 +297,75 @@
             <div id="tab-3" class="tab">
               <div class="block">
                 <button class="button button-fill" onclick="newPool()" style="width: 50%; margin: 16px auto">New Pool</button>
+
+
+                <ul>
+                  <div class="accordion-item">
+                    <div class="accordion-item-toggle">
+                      <i class="icon icon-plus">+</i>
+                      <i class="icon icon-minus">-</i>
+                      <span>Item 1</span>
+                    </div>
+                    <div class="accordion-item-content">
+                      <p>Item 1 content. Lorem ipsum dolor sit amet...</p>
+                    </div>
+                  </div>
+                  <!-- Active pools accordion -->
+                  <li class="accordion-item accordion-item-opened no-margin-top">
+                    <a href="#" class="item-content item-link">
+                      <div class="item-inner">
+                        <div class="item-title" style="color:green;">Active</div>
+                      </div>
+                    </a>
+                    <div class="accordion-item-content">
+                      <div id="active-pools" class="row justify-content-flex-start">
+
+                      </div>
+                    </div>
+                  </li>
+                  <!-- Open pools accordion -->
+                  <li class="accordion-item accordion-item-opened no-margin-top">
+                    <a href="#" class="item-content item-link">
+                      <div class="item-inner">
+                        <div class="item-title" style="color:green;">Open</div>
+                      </div>
+                    </a>
+                    <div class="accordion-item-content">
+                      <div id="open-pools" class="row justify-content-flex-start">
+
+                      </div>
+                    </div>
+                  </li>
+                  <!-- Draft pools accordion -->
+                  <li class="accordion-item accordion-item-opened no-margin-top">
+                    <a href="#" class="item-content item-link">
+                      <div class="item-inner">
+                        <div class="item-title" style="color:green;">Drafts</div>
+                      </div>
+                    </a>
+                    <div class="accordion-item-content">
+                      <div id="draft-pools" class="row justify-content-flex-start">
+
+                      </div>
+                    </div>
+                  </li>
+                  <!-- Closed pools accordion -->
+                  <li class="accordion-item accordion-item-opened no-margin-top">
+                    <a href="#" class="item-content item-link">
+                      <div class="item-inner">
+                        <div class="item-title" style="color:green;">Closed</div>
+                      </div>
+                    </a>
+                    <div class="accordion-item-content">
+                      <div id="closed-pools" class="row justify-content-flex-start">
+
+                      </div>
+                    </div>
+                  </li>
+
+                </ul>
+
+
                 <div id="pool-list" class="row justify-content-flex-start">
                 </div>
               </div>

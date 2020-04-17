@@ -507,7 +507,14 @@ function loadPools() {
 
   //Remove any old pool data from
   loadedPools = [];
-  document.getElementById("pool-list").innerHTML = '';
+
+  //Clear any old pool cards
+  $$("#active-pools").html("");
+  $$("#open-pools").html("");
+  $$("#draft-pools").html("");
+  $$("#closed-pools").html("");
+
+
 
   var pools = [];
 
@@ -602,7 +609,25 @@ function loadPools() {
                 '  <p> ' + pool.description + '</p>' +
                 '</div>';
               //Add the card to the pool list
-              poolList.appendChild(a);
+              //poolList.appendChild(a);
+              console.log(pool.state);
+              switch (pool.state) {
+                case "active":
+                  $$("#active-pools").append(a);
+                  break;
+                case "open":
+                  $$("#open-pools").append(a);
+                  break;
+                case "draft":
+                  $$("#draft-pools").append(a);
+                  break;
+                case "closed":
+                  $$("#closed-pools").append(a);
+                  break;
+                default:
+                  $$("#draft-pools").append(a);
+              }
+
             }
           });
 
