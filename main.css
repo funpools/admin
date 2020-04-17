@@ -266,3 +266,10 @@
   height: 1px;
   margin: 16px 0;
 }
+
+.popup .body {
+  height: calc(100% - 128px);
+  padding: 16px;
+  overflow: auto;
+  margin: 0;
+}

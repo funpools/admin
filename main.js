@@ -326,20 +326,20 @@ function setupMainPage() {
 
         getUser(doc.get('sender'), function(user) {
           var message = {
+            id: doc.id,
             sender: user,
-            email: doc.get("email"),
-            subject: doc.get("subject"),
-            message: doc.get("message"),
-            date: doc.get("timestamp").toDate().toLocaleString('en-us', options),
-            message: doc.get("message"),
-            type: doc.get("type"),
+            email: doc.get("email") ? doc.get("email") : 'No email provided',
+            subject: doc.get("subject") ? doc.get("subject") : 'No subject',
+            message: doc.get("message") ? doc.get("message") : 'No message',
+            date: doc.get("timestamp") ? doc.get("timestamp").toDate().toLocaleString('en-us', options) : '',
+            type: doc.get("type") ? doc.get("type") : 'feedback',
           };
 
           //store feedback messages in an array to access later
           messages.push(message);
 
           //add feedback to page
-          $$('#' + doc.get("type")).append('<li><a href="#" onclick="showFeedback(\'' + messageIndex + '\')" class="item-link item-content"><div class="item-inner"><div class="item-title-row">' +
+          $$('#' + doc.get("type")).append('<li class="fb-' + message.id + '"><a href="#" onclick="showFeedback(\'' + messageIndex + '\')" class="item-link item-content"><div class="item-inner"><div class="item-title-row">' +
             '<div class="item-title">' + user.username +
             '</div><div class="item-after">' + message.date + '</div></div>' +
             '<div class="item-text">' + message.subject + '</div></div></a></li><li>');
@@ -360,41 +360,72 @@ function showFeedback(index) {
   var message = messages[index];
   switch (message.type) {
     case "delete-account":
-      console.log('Delete account request');
-      var popup = app.popup.create({
-        content: '<div class="popup">' +
-          '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
-          '<div class="row justify-content-space-between align-items-center">' +
-          '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
-          '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
-          '</div><div class="hairline no-margin-bottom"></div></div>' +
-          '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
-          '<a id="delete-account-button" href="#" class="button button-fill" >Delete Account</a>' +
-          '</div>' +
-          '</div>',
-      });
-      popup.open();
+      app.dialog.create({
+        text: 'Are you sure you want to delete this account?',
+        buttons: [{
+            text: 'Cancel',
+          },
+          {
+            text: 'Delete',
+            color: 'red',
+            onClick: function() {
+              deleteAccount(message.sender.uid)
 
-      $$('#delete-account-button').click(function() {
-        deleteAccount(message.sender.uid)
-      });
-
+            },
+          },
+        ],
+        verticalButtons: false,
+      }).open();
       break;
     default:
+      let mailto = message.email == "No email provided" ? 'No email provided' : '<a href="mailto:' + message.email + '" class="link external">' + message.email + '</a>';
       var popup = app.popup.create({
         content: '<div class="popup">' +
-          '<div style="padding: 16px; padding-bottom: 0"><a href="#" class="link icon-only float-right popup-close" style="margin-left: 16px"><i class="material-icons" style="font-size:1.5rem">close</i></a>' +
+          '<div style="padding: 16px; padding-bottom: 0"><div class="float-right" style="margin-left: 16px"><a href="#" class="button button-outline popup-close">Close</a><a href="#" class="button button-fill resolve-' + message.id + '" style="margin-top: 8px">Resolve</a></div>' +
           '<div class="row justify-content-space-between align-items-center">' +
-          '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong><a href="mailto:' + message.email + '" class="link">' + message.email + '</a></p></div>' +
+          '<div><p class="no-margin"><strong>From: </strong>' + message.sender.username + '<br><strong>Subject: </strong>' + message.subject + '<br><strong>Reply-To: </strong>' + mailto + '</p></div>' +
           '<div><p style="opacity: .5; margin: 0 0 4px 0">' + message.date + '</p><div class="display-flex justify-content-flex-end"><div class="picture" style="background-image: url(\'' + message.sender.picURL + '\')"></div></div></div>' +
           '</div><div class="hairline no-margin-bottom"></div></div>' +
-          '<div style="padding: 16px; height: 100%; overflow-y: auto">' +
+          '<div class="body">' +
           message.message +
           '</div>' +
           '</div>',
       });
       popup.open();
+
+      //update feedback type in database
+      $$('.resolve-' + message.id).click(function() {
+
+        app.preloader.show();
+
+        db.collection("feedback").doc(message.id).update({
+          type: 'resolved'
+        }).catch(function(error) {
+
+          console.log(error.message);
+          app.preloader.hide();
+          app.toast.show({
+            text: "There was an error resolving feedback. please try agian later."
+          });
+
+        }).then(function() {
+
+          app.preloader.hide();
+          popup.close();
+
+          //move to other card
+          $$('.fb-' + message.id).appendTo('#resolved');
+
+          //update local copy
+          messages[index].type = "resolved";
+
+        });
+
+      });
   }
+
+  //hide resolve button if already resolved
+  if (message.type == "resolved") $$('.resolve-' + message.id).hide();
 }
 
 function deleteAccount(userID) {
