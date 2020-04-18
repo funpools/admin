@@ -234,11 +234,11 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
   /*
     data=
     {
-    name: "",
-    description: "",
-    parentPool: "",
-    admins: [],
-    allowShares: bool,
+      name: "",
+      description: "",
+      parentPool: "",
+      admins: [],
+      allowShares: bool,
     }
   */
 
@@ -430,6 +430,7 @@ async function sendNotification(uid, message) {
         *link: "",//"/pool/?id=" + poolID,
     }
 
+//// NOTE: These types are not used notifications currently use old nameing
     Notification types:
       PU-(Pool update)
       PI-(Pool invite)
@@ -446,7 +447,6 @@ async function sendNotification(uid, message) {
   user = (await user).data();
   let exludedNotifications = (user.exludedNotifications) ? user.exludedNotifications : [];
 
-
   // TODO: check if the user wants to get this notification
   if (exludedNotifications.includes(message.type)) {
     console.log("THE BLASTED NOTIFICATION IS BANNED");
@@ -456,11 +456,11 @@ async function sendNotification(uid, message) {
     //Setup the notification message
     let notificationMessage = {
       notification: {
-        title: message.title,
-        body: message.body,
+        title: (message.title) ? message.title : 'No Title',
+        body: (message.text) ? message.text : 'No Body',
       },
       data: {
-        link: message.link,
+        link: (message.link) ? message.link : '',
       },
       topic: 'user-' + uid,
     };
@@ -499,11 +499,10 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
   const userID = context.auth.uid; //The uid of the user who requested this operation
   const uid = data.uid; //the uid of the user whom the requestt is targeted
   const accepted = data.accept; //If this user wishes to be freind with the requested user
-  let userData = db.collection('users').doc(userID).get(); //our user data
-  let doc = db.collection('users').doc(uid).get(); //their user document
+  let userData = db.collection('users').doc(userID).get(); //The current user's data
+  let doc = db.collection('users').doc(uid).get(); //The targeted user's data
 
-  userData = await userData;
-  userData = userData.data();
+  userData = (await userData).data();
   doc = await doc;
 
   var pendingFreinds = (doc.data().pendingFriends) ? doc.data().pendingFriends : [];
@@ -580,7 +579,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
 
     }
 
-  } else {
+  } else { //The other user has not requested to be freinds
 
     if (accepted) { //User wishes to be freinds with uid so send freind request
 
@@ -639,8 +638,6 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
   }
 
 });
-
-
 
 async function getPool(poolID) {
 
