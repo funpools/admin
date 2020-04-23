@@ -80,8 +80,11 @@ $$('#n-question').on('click', function() {
 
 // Save pool button on click
 $$('.pool-save').on('click', function() {
-
   savePool();
+});
+//Duplicate pool button
+$$('.pool-duplicate').click(function() {
+  duplicatePool();
 });
 
 // New pool button on click
@@ -531,7 +534,7 @@ let poolDateInput = app.calendar.create({
 });
 
 // This loads the pools. This can also be used to refresh the pools page
-function loadPools() {
+function loadPools(callback) {
 
   //Close any open pool popup
   app.popup.close(".pool-popup");
@@ -544,8 +547,6 @@ function loadPools() {
   $$("#open-pools").html("");
   $$("#draft-pools").html("");
   $$("#closed-pools").html("");
-
-
 
   var pools = [];
 
@@ -572,14 +573,18 @@ function loadPools() {
               let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
 
               //Setup the pool card
-              var a = document.createElement('div');
+              let a = document.createElement('div');
+              a.id = "poolcard-" + pool.id;
               a.classList.add("card");
               a.classList.add("pool-card");
               a.classList.add("col-30");
 
               //When the card is clicked fill the popup with data
               a.onclick = function() {
-                console.log(pool);
+                console.log('Opening pool popup for pool: ', pool);
+
+
+
                 $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
                 document.getElementById("pool-name").value = pool.name;
                 document.getElementById("pool-name").dataset.id = pool.poolID;
@@ -642,6 +647,7 @@ function loadPools() {
               //Add the card to the pool list
               //poolList.appendChild(a);
               console.log(pool.state);
+              //Add the pool to the html depending on its state
               switch (pool.state) {
                 case "active":
                   $$("#active-pools").append(a);
@@ -661,6 +667,8 @@ function loadPools() {
 
             }
           });
+          //We are done loading the pools so call the callback
+          (callback) ? callback(): null;
 
         }
       });
@@ -741,129 +749,122 @@ function savePool() {
   //Save the pool to the database
   editPool({
     poolID: id,
-    poolName: name,
-    poolDescription: description,
-    poolPicture: pic,
-    poolStartDate: timestamp,
+    name: name,
+    description: description,
+    picture: pic,
+    date: timestamp,
     tags: tags,
     questions: questions,
     state: poolState,
     tiebreakers: tieBreakers
   });
 }
+
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
-function editPool(poolData) {
-
+async function editPool(poolData, callback) {
   console.log("editing pool: " + poolData.poolID + " with data: ", poolData);
-  //If the poolID is not null and not 0 edit the data
-  if (poolData.poolID != null && poolData.poolID != 0) {
-    var poolRef = db.collection('pools').doc(poolData.poolID);
-
-    console.log(poolData.questions);
-    poolRef.update({
-      name: (poolData.poolName) ? poolData.poolName : "No name given",
-      description: (poolData.poolDescription) ? poolData.poolDescription : "No Description",
-      date: (poolData.poolStartDate) ? poolData.poolStartDate : new Date(),
-      tags: (poolData.tags) ? poolData.tags : [],
-      questions: (poolData.questions) ? poolData.questions : [],
-      tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
-      state: (poolData.state) ? poolData.state : "hidden",
-    }).then(function() {
-      // TODO: check if pool pic is valid if not set the default pic?
-      if (poolData.poolPicture && poolData.poolPicture != null) {
-        var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
-        poolPictureRef.put(poolData.poolPicture).then(function() {
-          app.preloader.hide();
-          app.toast.show({
-            text: "Pool Saved",
-            closeTimeout: 3000,
-          });
-          app.popup.close(".pool-popup");
-          loadPools();
-        }).catch(function(error) {
-          app.preloader.hide();
-          app.toast.show({
-            text: error,
-            closeTimeout: 10000,
-            closeButton: true
-          });
-          app.popup.close(".pool-popup");
-          loadPools();
-        });
-      } else {
-        app.preloader.hide();
-        app.toast.show({
-          text: "Pool Saved",
-          closeTimeout: 3000,
-        });
-        app.popup.close(".pool-popup");
-        loadPools();
+  try {
+    //If the poolID is valid edit the data
+    if (poolData.poolID != null && poolData.poolID != 0) {
+      let poolRef = db.collection('pools').doc(poolData.poolID);
+      //Update the pools data
+      await poolRef.update({
+        name: (poolData.name) ? poolData.name : "No name given",
+        description: (poolData.description) ? poolData.description : "No Description",
+        date: (poolData.date) ? poolData.date : new Date(),
+        tags: (poolData.tags) ? poolData.tags : [],
+        questions: (poolData.questions) ? poolData.questions : [],
+        tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
+        state: (poolData.state) ? poolData.state : "hidden",
+      });
+      //Update the picture if it exists
+      if (poolData.picture && poolData.picture != null) {
+        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture);
+      }
+    } else { //The pool does not exist so create a pool and set its information
+      //Add the pool to the database
+      let doc = await db.collection("pools").add({
+        name: (poolData.name) ? poolData.name : "No name given",
+        description: (poolData.description) ? poolData.description : "No Description",
+        date: (poolData.date) ? poolData.date : new Date(),
+        tags: (poolData.tags) ? poolData.tags : [],
+        questions: (poolData.questions) ? poolData.questions : [],
+        tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
+        state: (poolData.state) ? poolData.state : "hidden",
+      });
+      //Upload the picture if it exists
+      if (poolData.picture && poolData.picture != null) {
+        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture);
       }
 
-    }).catch(function(error) {
-      app.preloader.hide();
-      app.popup.close(".pool-popup");
-      app.toast.show({
-        text: "error" + error,
-        closeTimeout: 10000,
-        closeButton: true
-      });
-      loadPools();
+      console.log('Created pool with id: ' + doc.id);
+    }
+
+    //Close the uneeded UI and notify the admin that the pool was saved
+    app.preloader.hide();
+    app.toast.show({
+      text: "Pool Saved",
+      closeTimeout: 3000,
+    });
+    app.popup.close(".pool-popup");
+
+    //We are done editing the pool so reload the pools then call any callbacks and return
+    loadPools(function() {
+      (callback) ? callback(doc.id): null;
+      return doc.id;
     });
 
-  } else {
-    //the pool does not exist so create a pool and set its information
-    db.collection("pools").add({
-      name: poolData.poolName,
-      description: poolData.poolDescription,
-      date: poolData.poolStartDate,
+  } catch (error) {
+    console.error(error);
+    app.preloader.hide();
+    app.toast.show({
+      text: error,
+      closeTimeout: 10000,
+      closeButton: true
+    });
+    app.popup.close(".pool-popup");
+  }
+  /*//Unused code for calculating name intersection
+  async function getPoolName(name, id, i) { //Generates a username for the user based on the given name and last name
+
+    let nameToTry = name + ((i != null) ? ' ' + i : '');
+
+    console.log('Trying: ' + nameToTry);
+    let pools = await db.collection('pools').where("name", "==", nameToTry).get();
+    console.log(pools.docs[0].id, " id: " + id);
+    if (pools.size > 0 && pools.docs[0].id != id) {
+
+      (i != null) ? i++ : i = 2;
+
+      console.log('poolName: "' + nameToTry + '" already taken trying again.');
+      return await getPoolName(name, id, i);
+    } else {
+      return nameToTry;
+    }
+
+  }
+  */
+}
+
+function duplicatePool() { //Duplicates the specified pool then opens the popup
+  let id = document.getElementById("pool-name").dataset.id;
+  console.log('Duplicating pool: ' + id);
+  getPool(id).then(function(poolData) {
+    let newPool = {
+      name: poolData.name + '(Copy)',
+      description: poolData.description,
       tags: poolData.tags,
       questions: poolData.questions,
       tiebreakers: poolData.tiebreakers,
-      state: (poolData.state) ? poolData.state : "hidden",
-    }).then(function(doc) {
-      console.log(doc.id);
-      var profilePictureRef = storageRef.child('pool-pictures').child(doc.id);
-      //If poolPicture is valid
-      if (poolData.poolPicture) {
-        profilePictureRef.put(poolData.poolPicture).then(function() {
-          console.log("error with pic");
-
-          app.preloader.hide();
-          app.toast.show({
-            text: "Pool Saved",
-            closeTimeout: 3000,
-          });
-          app.popup.close(".pool-popup");
-          loadPools();
-        }).catch(function(error) {
-          app.preloader.hide();
-          app.toast.show({
-            text: error,
-            closeTimeout: 10000,
-            closeButton: true
-          });
-        });
-      } else {
-        app.preloader.hide();
-        app.toast.show({
-          text: "Pool Saved Without a Picture",
-          closeTimeout: 3000,
-        });
-        app.popup.close(".pool-popup");
-        loadPools();
-      }
-    }).catch(function(error) {
-      app.preloader.hide();
-      app.toast.show({
-        text: error.message,
-        closeTimeout: 10000,
-        closeButton: true
-      });
+      state: 'draft',
+    };
+    editPool(newPool, function(editedPoolID) {
+      console.log("Made a new duplicater poool (callback)?callback:null: " + editedPoolID);
+      $$('#poolcard-' + editedPoolID)[0].click();
     });
 
-  }
-
+    console.log('Duplicate Pool: ', newPool);
+  });
 }
 
 
