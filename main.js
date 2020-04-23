@@ -763,9 +763,12 @@ function savePool() {
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 async function editPool(poolData, callback) {
   console.log("editing pool: " + poolData.poolID + " with data: ", poolData);
+  app.preloader.show();
   try {
+    let id;
     //If the poolID is valid edit the data
     if (poolData.poolID != null && poolData.poolID != 0) {
+      id = poolData.poolID;
       let poolRef = db.collection('pools').doc(poolData.poolID);
       //Update the pools data
       await poolRef.update({
@@ -798,20 +801,20 @@ async function editPool(poolData, callback) {
       }
 
       console.log('Created pool with id: ' + doc.id);
+      id = doc.id;
     }
-
-    //Close the uneeded UI and notify the admin that the pool was saved
-    app.preloader.hide();
-    app.toast.show({
-      text: "Pool Saved",
-      closeTimeout: 3000,
-    });
-    app.popup.close(".pool-popup");
 
     //We are done editing the pool so reload the pools then call any callbacks and return
     loadPools(function() {
-      (callback) ? callback(doc.id): null;
-      return doc.id;
+      //Close the uneeded UI and notify the admin that the pool was saved
+      app.preloader.hide();
+      app.toast.show({
+        text: "Pool Saved",
+        closeTimeout: 3000,
+      });
+      app.popup.close(".pool-popup");
+      (callback) ? callback(id): null;
+      return id;
     });
 
   } catch (error) {
@@ -859,11 +862,9 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       state: 'draft',
     };
     editPool(newPool, function(editedPoolID) {
-      console.log("Made a new duplicater poool (callback)?callback:null: " + editedPoolID);
+      console.log("Made a new duplicate pool with ID: " + editedPoolID);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
-
-    console.log('Duplicate Pool: ', newPool);
   });
 }
 
