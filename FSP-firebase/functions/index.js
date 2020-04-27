@@ -251,38 +251,55 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
   // const picture = context.auth.token.picture || null;
   // const email = context.auth.token.email || null;
   console.log(data);
+  return db.collection("pools").doc(data.parentPool).get().then(function(doc) {
 
-  return db.collection("pools").add({
-    name: data.name,
-    description: data.description,
-    parentPool: data.parentPool,
-    admins: data.admins,
-    allowShares: data.allowShares,
-    private: true,
-  }).then(function(doc) {
+    console.log(doc.data());
+    console.log('Parent pool state',doc.data.state);
 
-    //Add the pool to the parent pools children
-    db.collection("pools").doc(data.parentPool).update({
-      childPools: admin.firestore.FieldValue.arrayUnion(doc.id),
-    });
+    if (doc.exists && (doc.data()).state == 'open') {
 
-    //Join the pool
-    db.collection("users").doc(uid).update({
-      pools: admin.firestore.FieldValue.arrayUnion(doc.id),
-    });
-    db.collection("pools").doc(doc.id).update({
-      users: admin.firestore.FieldValue.arrayUnion({
-        uid: uid,
-        score: 0,
-        isWinner: false,
-      }),
-    });
+      return db.collection("pools").add({
+        name: data.name,
+        description: data.description,
+        parentPool: data.parentPool,
+        admins: data.admins,
+        allowShares: data.allowShares,
+        private: true,
+      }).then(function(doc) {
 
-    return {
-      data: data,
-      message: 'made pool, id:' + doc.id,
-      id: doc.id,
-    };
+        //Add the pool to the parent pools children
+        db.collection("pools").doc(data.parentPool).update({
+          childPools: admin.firestore.FieldValue.arrayUnion(doc.id),
+        });
+
+        //Join the pool
+        db.collection("users").doc(uid).update({
+          pools: admin.firestore.FieldValue.arrayUnion(doc.id),
+        });
+        db.collection("pools").doc(doc.id).update({
+          users: admin.firestore.FieldValue.arrayUnion({
+            uid: uid,
+            score: 0,
+            isWinner: false,
+          }),
+        });
+
+        return {
+          data: data,
+          result:'success',
+          message: 'made pool, id:' + doc.id,
+          id: doc.id,
+        };
+
+      });
+    } else {
+      return {
+        data: data,
+        result:'error',
+        message: 'error',
+        id: doc.id,
+      };
+    }
 
   });
 
@@ -451,6 +468,20 @@ async function sendNotification(uid, message) {
     } else {
       message.user = uid;
       console.log("uid: ", uid, " message: ", message);
+
+      //Set the channel id
+      let channelID = 'default';
+      switch (message.type) {
+        case 'CU':
+          channelID = 'CU';
+          break;
+        case 'PU':
+          channelID = 'PU';
+          break;
+        default:
+          channelID = 'default';
+      }
+
       //Setup the notification message
       let notificationMessage = {
         notification: {
@@ -459,6 +490,12 @@ async function sendNotification(uid, message) {
         },
         data: {
           link: (message.link) ? message.link : '',
+          notification_foreground: "true",
+        },
+        android: {
+          notification: {
+            channel_id: channelID,
+          },
         },
         topic: 'user-' + uid,
       };
