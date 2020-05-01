@@ -26,14 +26,12 @@ exports.poolUpdate = functions.firestore
       let pool = getPool(poolID);
       let users = [];
 
-      let poolData = poolRef.get();
-
       // All user documents in this pool
       let userDocs = poolRef.collection("users").get();
 
       pool = await pool;
       console.log(pool);
-      poolData = await poolData;
+
       userDocs = await userDocs;
 
       poolData = poolData.data();
@@ -42,12 +40,10 @@ exports.poolUpdate = functions.firestore
       //If this is a child pool then load the needed data from the parent pool
       if (pool.private) {
         poolLog += " This is a child pool!"; //Logging
-        //let parentPoolData = (await db.collection("pools").doc(poolData.parentPool).get()).data(); //Get the parent pool data
-        //questions = parentPoolData.questions;
       }
 
       poolLog += 'users scores:{'; //Logging
-      //for each user in the pool grade their answers
+      //for each user in the pool grade their answers // TODO: Change this to user the pools user arrat
       userDocs.forEach(function(userDoc) {
 
         poolLog += userDoc.id + ': { ';
@@ -56,7 +52,7 @@ exports.poolUpdate = functions.firestore
         let score = 0; //This is this users total score
 
         //If the user answered any questions grade them otherwise their score is 0
-        if (answers) {
+        if (answers != null) {
           //Go through each question and compare the correct answer with the users answer
           for (let i = 0; i < questions.length; i++) {
             if (answers[questions[i].id]) {
@@ -254,7 +250,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
   return db.collection("pools").doc(data.parentPool).get().then(function(doc) {
 
     console.log(doc.data());
-    console.log('Parent pool state',doc.data.state);
+    console.log('Parent pool state', doc.data.state);
 
     if (doc.exists && (doc.data()).state == 'open') {
 
@@ -286,7 +282,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
 
         return {
           data: data,
-          result:'success',
+          result: 'success',
           message: 'made pool, id:' + doc.id,
           id: doc.id,
         };
@@ -295,7 +291,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
     } else {
       return {
         data: data,
-        result:'error',
+        result: 'error',
         message: 'error',
         id: doc.id,
       };
@@ -430,7 +426,7 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
 });
 
 async function sendNotification(uid, message) {
-
+  //Usage
   /*
     uid is the id of the targeted user
 
@@ -462,9 +458,9 @@ async function sendNotification(uid, message) {
 
     let exludedNotifications = (user.exludedNotifications) ? user.exludedNotifications : [];
 
-    // TODO: check if the user wants to get this notification
-    if (exludedNotifications.includes(message.type)) {
+    if (exludedNotifications.includes(message.type)) { //If the user has requested to not receve these types of notifications the dont send anything
       console.log("THE BLASTED NOTIFICATION IS BANNED");
+      return "Failed to send the notification. The user has requested to to see these notifications";
     } else {
       message.user = uid;
       console.log("uid: ", uid, " message: ", message);
@@ -520,8 +516,9 @@ async function sendNotification(uid, message) {
 
 }
 
-async function removeNotification() {
-
+async function removeNotification(uid, notificationID) {
+  //Delete the notificatoin specified for the given uid
+  await db.collection("users").doc(uid).collection('updates').doc(notificationID).delete();
   return "Succesfully removed notification";
 }
 
@@ -548,6 +545,9 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
 
 
   if (pendingFreinds.includes(userID)) { //If the other user has requested to be freinds
+
+    //Remove the frind request notification that was sent to this user
+    removeNotification(userID, 'friend-request-' + uid);
 
     if (accepted) { //If both users have requested to be freinds set them as freinds in each of their docs. (Other user has sent a freind request and this user has rejected it)
 
@@ -619,6 +619,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
     }
 
   } else { //The other user has not requested to be freinds
+    removeNotification(userID, 'friend-accept-' + userID);
 
     if (accepted) { //User wishes to be freinds with uid so send freind request
 
@@ -738,7 +739,6 @@ async function getPool(poolID) {
     };
   }
 }
-
 
 exports.joinPool = functions.https.onCall(async function(data, context) {
   /*
