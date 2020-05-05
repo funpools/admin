@@ -34,7 +34,6 @@ exports.poolUpdate = functions.firestore
 
       userDocs = await userDocs;
 
-      poolData = poolData.data();
       let questions = pool.questions;
 
       //If this is a child pool then load the needed data from the parent pool
@@ -219,6 +218,23 @@ exports.poolUpdate = functions.firestore
     return 0;
   });
 
+exports.poolClosing = functions.pubsub.schedule('every 10 minutes').onRun(async function(context) {
+  console.log('Checking for any pools that are closing soon!');
+
+  let querySnapshot = await db.collection('pools').where('private', '==', false).where('date', '>', db.timestamp.now()).get();
+
+  async function closeWarning() {
+
+  }
+
+  querySnapshot.forEach(function(doc) {
+    console.log(doc.id, ' => ', doc.data());
+    console.log("timestamp", admin.Firestore.Timestamp.now());
+
+  });
+
+  return null;
+});
 
 //Creates a private pool with given data
 exports.createPrivatePool = functions.https.onCall((data, context) => {
@@ -424,6 +440,8 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
   }
 
 });
+
+
 
 async function sendNotification(uid, message) {
   //Usage

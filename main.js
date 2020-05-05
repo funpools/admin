@@ -779,6 +779,7 @@ async function editPool(poolData, callback) {
         questions: (poolData.questions) ? poolData.questions : [],
         tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
         state: (poolData.state) ? poolData.state : "hidden",
+        private: false,
       });
       //Update the picture if it exists
       if (poolData.picture && poolData.picture != null) {
@@ -794,6 +795,7 @@ async function editPool(poolData, callback) {
         questions: (poolData.questions) ? poolData.questions : [],
         tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
         state: (poolData.state) ? poolData.state : "hidden",
+        private: false,
       });
       //Upload the picture if it exists
       if (poolData.picture && poolData.picture != null) {
