@@ -119,7 +119,7 @@ function addAnswer(questionID, answerID, answerText, correct) {
       </div>\
     </div>\
     <div class="item-after">\
-    <button id="' + answerID + '-deleteanswer" class="button" onclick="deleteAnswer(this)">Delete</button>\
+    <button id="' + answerID + '-deleteanswer" class="button delete-button" onclick="deleteAnswer(this)">Delete</button>\
       <button id="' + answerID + '-setanswer" class="button" >Correct</button>\
     </div>\
   </div>\
@@ -146,13 +146,13 @@ function addQuestion(questionID, description, answers) {
     <li class="item-content item-input">\
       <div class="item-inner">\
       <div style="width: 100%">\
-        <div class="item-title item-label">Multiple Choice Question</div>\
+        <div class="item-title item-label question-title">Multiple Choice Question</div>\
         <div class="item-input-wrap">\
           <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
         </div>\
         </div>\
         <div class="item-after">\
-          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
         </div>\
       </div>\
     </li>\
@@ -194,7 +194,7 @@ function addQuestion(questionID, description, answers) {
     var deleteButton = document.getElementById(answerID + "-deleteanswer");
     deleteButton.parentNode.removeChild(deleteButton);
   }
-
+  updateQuestionNumbers();
 }
 
 let tiebreakerIDs = [];
@@ -209,13 +209,13 @@ function addNumericQuestion(questionID, description, answer) {
       <li class="item-content item-input">\
       <div class="item-inner">\
       <div style="width: 100%">\
-        <div class="item-title item-label">Numeric Question</div>\
+        <div class="item-title item-label question-title">Numeric Question</div>\
         <div class="item-input-wrap">\
           <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
         </div>\
         </div>\
         <div class="item-after">\
-          <button class="button" onclick="deleteQuestion(this)">Delete</button>\
+          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
         </div>\
       </div>\
       </li>\
@@ -235,7 +235,13 @@ function addNumericQuestion(questionID, description, answer) {
   document.getElementById("question-description-" + questionID).value = description;
   document.getElementById(questionID + "-numeric-answer").value = answer;
 
+  updateQuestionNumbers();
+}
 
+function updateQuestionNumbers() {
+  $$('.question-title').forEach(function(question, i) {
+    $$(question).text('Question ' + (i + 1));
+  });
 }
 
 // TODO: Change these to use the questionIDs and answerIDs
@@ -243,6 +249,7 @@ function addNumericQuestion(questionID, description, answer) {
 function deleteAnswer(el) {
   var answer = el.parentElement.parentElement.parentElement;
   answer.parentElement.removeChild(answer);
+  updateQuestionNumbers();
 }
 
 var correctAnswers = [];
@@ -634,6 +641,9 @@ function loadPools(callback) {
                   chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
                   chipsDiv.appendChild(chip.childNodes[0]);
                 }
+
+                if (pool.state === "active" || pool.state === "closed") {}
+                $$('.delete-button').hide();
 
                 app.popup.open(".pool-popup");
               };
