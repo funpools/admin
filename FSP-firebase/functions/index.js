@@ -18,7 +18,7 @@ exports.poolUpdate = functions.firestore
 
     //async function to grade the pool
     async function gradePool(poolID) {
-      let poolLog = "Graded pool: " + poolID;
+      let poolLog = "Graded pool: ";
       let highestScore = 0; //This is used to determin the winner(s)
       let winners = []; //Stores the winner(s). If there is a tie then their can be multiple winners in the array
       let poolRef = db.collection("pools").doc(poolID); //reference to the pools document
@@ -30,19 +30,17 @@ exports.poolUpdate = functions.firestore
       let userDocs = poolRef.collection("users").get();
 
       pool = await pool;
-      console.log(pool);
-
+      poolLog += ' ' + pool;
       userDocs = await userDocs;
 
       let questions = pool.questions;
 
-      //If this is a child pool then load the needed data from the parent pool
       if (pool.private) {
         poolLog += " This is a child pool!"; //Logging
       }
 
       poolLog += 'users scores:{'; //Logging
-      //for each user in the pool grade their answers // TODO: Change this to user the pools user arrat
+      //for each user in the pool grade their answers // TODO: Change this to user the pools user array
       userDocs.forEach(function(userDoc) {
 
         poolLog += userDoc.id + ': { ';
@@ -69,6 +67,7 @@ exports.poolUpdate = functions.firestore
         //Notifiy the user that they have been graded
         sendNotification(userDoc.id, {
           id: poolID,
+          poolID: poolID,
           link: "/pool/?id=" + poolID,
           title: "Your score has been updated",
           text: "Your score in " + pool.name + " has been updated!",
@@ -184,9 +183,11 @@ exports.poolUpdate = functions.firestore
 
     if (newData.state === "active") { // TODO:If the pool has questions and is live
 
-      //If the questions and the state have not changed dont grade the pool
-      if ((JSON.stringify(newData.questions) === JSON.stringify(previousData.questions)) && (previousData.state === newData.state)) {
-        log = log + 'Questions were not changed and state has not changed';
+      //If the questions,tie tieBreakers and the state have not changed dont grade the pool
+      console.log("Tiebreaker");
+      console.log("tieBreakers: ", newData.tiebreakers);
+      if ((JSON.stringify(newData.questions) === JSON.stringify(previousData.questions)) && (JSON.stringify(newData.tiebreakers) === JSON.stringify(previousData.tiebreakers)) && (previousData.state === newData.state)) {
+        log = log + 'Questions were not changed and state has not changed!';
       } else {
         log = log + 'State or questions were changed. New questions object: ' + JSON.stringify(newData.questions);
 
@@ -195,7 +196,7 @@ exports.poolUpdate = functions.firestore
           console.log("Successfully graded ", result);
         }));
 
-        //If this pool has children then add them to the grade list
+        //If this pool has children then add them to the list of pools to grade
         if (newData.childPools) {
           newData.childPools.forEach(function(poolID) {
             poolPromises.push(gradePool(poolID).then(function(result) {
@@ -209,6 +210,7 @@ exports.poolUpdate = functions.firestore
         });
 
       }
+
     } else {
       log = log + " Pool is not active";
     }
@@ -221,7 +223,7 @@ exports.poolUpdate = functions.firestore
 exports.poolClosing = functions.pubsub.schedule('every 10 minutes').onRun(async function(context) {
   console.log('Checking for any pools that are closing soon!');
 
-  let querySnapshot = await db.collection('pools').where('private', '==', false).where('date', '>', db.timestamp.now()).get();
+  let querySnapshot = await db.collection('pools').where('private', '==', false).where('date', '>', admin.firestore.FieldValue.serverTimestamp()).get();
 
   async function closeWarning() {
 
@@ -481,6 +483,8 @@ async function sendNotification(uid, message) {
       return "Failed to send the notification. The user has requested to to see these notifications";
     } else {
       message.user = uid;
+      message.timestamp = admin.firestore.FieldValue.serverTimestamp();
+
       console.log("uid: ", uid, " message: ", message);
 
       //Set the channel id
