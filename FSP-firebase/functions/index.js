@@ -79,7 +79,7 @@ exports.poolUpdate = functions.firestore
             poolID: poolID,
             link: "/pool/?id=" + poolID,
             title: "Your score has been updated",
-            text: "Your score in " + pool.name + " has been updated!",
+            text: "A question in " + pool.name + " pool has been updated—check here for your score!",
             type: "PU",
           });
         }
