@@ -17,7 +17,16 @@ exports.poolUpdate = functions.firestore
     let log = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' was changed! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
 
     //async function to grade the pool
-    async function gradePool(poolID, notifyUsers) {
+    async function gradePool(poolID, messageType) {
+      /*
+        function usage
+        Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
+        Valid message types are:
+          "active"//This will let the users know that the pool is now active
+          "score-update"//This notifys the pools users of there new score
+          "none"//This will not send a notification
+      */
+
 
       let poolLog = "Graded pool: ";
       let highestScore = 0; //This is used to determin the winner(s)
@@ -36,7 +45,7 @@ exports.poolUpdate = functions.firestore
       //If this pool has children then add them to the list of pools to grade
       if (pool.childPools != null) {
         pool.childPools.forEach(function(cpoolID) {
-          poolPromises.push(gradePool(cpoolID, notifyUsers).then(function(result) {
+          poolPromises.push(gradePool(cpoolID, messageType).then(function(result) {
             console.log("Successfully graded child pool ", result);
           }));
         });
@@ -46,84 +55,110 @@ exports.poolUpdate = functions.firestore
 
       let questions = pool.questions;
 
-      poolLog += ' User scores:{'; //Logging
+      if (pool.users != null) { //If there are any users in this pool
+        poolLog += ' User scores:{'; //Logging
 
-      //Grade each user in the pool
-      pool.users.forEach((user, i) => {
-        let score = 0; //This users total score
-        let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
-        //console.log("Tryed to load user doc for user with id: " + user.uid + " UsersDoc is : ", userDoc);
-        poolLog += user.uid + ': { ';
+        //Grade each user in the pool
+        pool.users.forEach((user, i) => {
+          let score = 0; //This users total score
+          let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
+          //console.log("Tryed to load user doc for user with id: " + user.uid + " UsersDoc is : ", userDoc);
+          poolLog += user.uid + ': { ';
 
-        if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
-          let answers = userDoc.get("answers");
-          //Go through each question and compare the correct answer with the users answered
-          for (let i = 0; i < questions.length; i++) {
-            if (answers[questions[i].id] != null) { //If the user answerd this question
-              if (answers[questions[i].id] == questions[i].correctAnswer) {
-                score++;
+          if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
+            let answers = userDoc.get("answers");
+            //Go through each question and compare the correct answer with the users answered
+            for (let i = 0; i < questions.length; i++) {
+              if (answers[questions[i].id] != null) { //If the user answerd this question
+                if (answers[questions[i].id] == questions[i].correctAnswer) {
+                  score++;
+                }
+              } else {
+                poolLog += ' User did not answer question: ' + questions[i].id;
               }
-            } else {
-              poolLog += ' User did not answer question: ' + questions[i].id;
             }
+
+          } else {
+            poolLog += ' This user does not have any answers score is: ' + score;
           }
 
-        } else {
-          poolLog += ' This user does not have any answers score is: ' + score;
-        }
-        //Send the notifications
-        if (notifyUsers) {
-          //Notifiy the user that they have been graded
-          sendNotification(user.uid, {
-            id: poolID,
-            poolID: poolID,
-            link: "/pool/?id=" + poolID,
-            title: "Your score has been updated",
-            text: "A question in " + pool.name + " pool has been updated—check here for your score!",
-            type: "PU",
+          //Decide which type of notification to send to the user
+          switch (messageType) {
+            case "active":
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: pool.name + " is now active",
+                text: pool.name + " is now active. Click here to veiw the pool! ",
+                type: "PU",
+              });
+              break;
+            case "score-update":
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: "Your score has been updated",
+                text: "A question in " + pool.name + " pool has been updated—check here for your score!",
+                type: "PU",
+              });
+              break;
+            default:
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: "Pool has been updated",
+                text: "Pool " + pool.name + "has been updated!",
+                type: "PU",
+              });
+          }
+
+          //Add the user to the array
+          users.push({
+            uid: user.uid,
+            score: score,
+            isWinner: false,
           });
-        }
-        //Add the user to the array
-        users.push({
-          uid: user.uid,
-          score: score,
-          isWinner: false,
+
+          poolLog += ' Updated users score final score is: ' + score + '}, ';
+
+          //Check to see if this user is the winner
+          if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
+            highestScore = score;
+            winners = [user.uid];
+          } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
+            winners.push(user.uid);
+          }
+
         });
 
-        poolLog += ' Updated users score final score is: ' + score + '}, ';
+        //sort the graded users by score
+        users.sort((a, b) => a.score - b.score);
 
-        //Check to see if this user is the winner
-        if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
-          highestScore = score;
-          winners = [user.uid];
-        } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
-          winners.push(user.uid);
+        //If there is a tie try and resolve it
+        if (winners.length > 1) {
+          poolLog += "More than one winner attempting tie resolution between: " + winners;
+          let tieWinners = (await resolveTie(poolID, winners, pool.tiebreakers)); //Get the tie winners
+          winners = tieWinners;
         }
-
-      });
-
-      //sort the graded users by score
-      users.sort((a, b) => a.score - b.score);
-
-      //If there is a tie try and resolve it
-      if (winners.length > 1) {
-        poolLog += "More than one winner attempting tie resolution between: " + winners;
-        let tieWinners = (await resolveTie(poolID, winners, pool.tiebreakers)); //Get the tie winners
-        winners = tieWinners;
-      }
-      console.log("Setting winner/winners to: ", winners);
-      //Set the pool winners
-      for (var i = 0; i < users.length; i++) {
-        if (winners.includes(users[i].uid)) {
-          users[i].isWinner = true;
+        console.log("Setting winner/winners to: ", winners);
+        //Set the pool winners
+        for (var i = 0; i < users.length; i++) {
+          if (winners.includes(users[i].uid)) {
+            users[i].isWinner = true;
+          }
         }
-      }
-      console.log("Pools final user array is: ", users);
+        console.log("Pools final user array is: ", users);
 
-      //Wait for the pools doc to finish updating
-      await db.collection("pools").doc(poolID).update({
-        users: users,
-      });
+        //Wait for the pools doc to finish updating
+        await db.collection("pools").doc(poolID).update({
+          users: users,
+        });
+      } else {
+        poolLog += "error no users."
+      }
 
       //Wait for the child pool to be graded
       await Promise.all(poolPromises).then(function() {
@@ -193,16 +228,16 @@ exports.poolUpdate = functions.firestore
         case "active":
           console.log("Pool now active!");
           //Notify the users of this pool that it is now active
-          notifyPoolUsers(context.params.poolID, { //todo send notificatoin to all child pools
-            id: context.params.poolID,
-            poolID: context.params.poolID,
-            link: "/pool/?id=" + context.params.poolID,
-            title: newData.name + " is now active",
-            text: newData.name + " is now active. Click here to veiw the pool! ",
-            type: "PU",
-          });
+          // notifyPoolUsers(context.params.poolID, { //todo send notificatoin to all child pools
+          //   id: context.params.poolID,
+          //   poolID: context.params.poolID,
+          //   link: "/pool/?id=" + context.params.poolID,
+          //   title: newData.name + " is now active",
+          //   text: newData.name + " is now active. Click here to veiw the pool! ",
+          //   type: "PU",
+          // });
           //Grade the pool but dont send notifications to users about their grade
-          return gradePool(context.params.poolID, false)
+          return gradePool(context.params.poolID, "active");
 
           break;
         case "closed":
@@ -217,7 +252,7 @@ exports.poolUpdate = functions.firestore
           console.log("Pool has stayed active!");
           if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers))) { //If the questions/tiebreakers have changed
             //grade the pool and send notifications to users about their grade
-            return gradePool(context.params.poolID, true).then(function(result) {
+            return gradePool(context.params.poolID, "score-update").then(function(result) {
               console.log("Successfully graded ", result);
             });
           }
@@ -280,7 +315,6 @@ exports.poolClosing = functions.pubsub.schedule('every 10 minutes').onRun(async 
   querySnapshot.forEach(function(doc) {
     console.log(doc.id, ' => ', doc.data());
     console.log("timestamp", admin.firestore.FieldValue.serverTimestamp());
-
   });
 
   return null;
@@ -557,6 +591,9 @@ async function sendNotification(uid, message) {
         data: {
           link: (message.link) ? message.link : '',
           notification_foreground: "true",
+          notification_id: message.type + '-' + message.id, //this is the id of the notificatoin as it is in the users updates collection
+          //rawMessage:message,//This is the message object
+
         },
         android: {
           notification: {
@@ -957,10 +994,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               }));
 
               //Remove the notification from the user if any
-              ops.push(removeNotification(targetUid, {
-                type: "PR",
-                id: poolID,
-              }));
+              ops.push(removeNotification(targetUid, "pool-request-" + poolID));
 
               ops.push(sendNotification(targetUid, {
                 user: targetUid,
