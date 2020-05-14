@@ -613,7 +613,7 @@ async function sendNotification(uid, message) {
         },
         data: {
           link: (message.link) ? message.link : '',
-          notification_foreground: "true",
+          notification_foreground: true,
           notification_id: message.type + '-' + message.id, //this is the id of the notificatoin as it is in the users updates collection
           //rawMessage:message,//This is the message object
 
