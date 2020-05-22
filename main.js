@@ -77,11 +77,54 @@ $$('#n-question').on('click', function() {
 });
 
 
+// Delete pool button on click
+$$('.pool-delete').on('click', function() {
+  let idToDelete = document.getElementById("pool-name").dataset.id;
+
+  app.dialog.create({
+    text: 'Are you sure you want to delete this pool? This action can not be undone.',
+    buttons: [{
+        text: 'Cancel',
+      },
+      {
+        text: 'Delete',
+        color: 'red',
+        onClick: function() {
+          console.log("Deleting pool: ", idToDelete);
+          app.preloader.show();
+          deletePool({
+            poolID: idToDelete,
+          }).then(function() {
+            app.toast.show({
+              text: "Succesfully deleted pool.",
+              closeTimeout: 5000,
+            });
+          }).catch(function(error) {
+            app.toast.show({
+              text: "There was an error deleting your pool. Please try again later.",
+              closeTimeout: 5000,
+              closeButton: true
+            });
+          }).finally(function(result) {
+            //Close the uneeded UI and notify the admin that the pool was saved
+            loadPools(function() {
+              app.preloader.hide();
+              app.popup.close(".pool-popup");
+            });
+
+          });
+        }
+      },
+    ],
+  }).open();
+
+});
 
 // Save pool button on click
 $$('.pool-save').on('click', function() {
   savePool();
 });
+
 //Duplicate pool button
 $$('.pool-duplicate').click(function() {
   duplicatePool();
@@ -590,8 +633,6 @@ function loadPools(callback) {
               a.onclick = function() {
                 console.log('Opening pool popup for pool: ', pool);
 
-
-
                 $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
                 document.getElementById("pool-name").value = pool.name;
                 document.getElementById("pool-name").dataset.id = pool.poolID;
@@ -769,6 +810,7 @@ function savePool() {
     tiebreakers: tieBreakers
   });
 }
+
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 async function editPool(poolData, callback) {

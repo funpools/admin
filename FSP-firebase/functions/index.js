@@ -31,9 +31,10 @@ exports.poolUpdate = functions.firestore
       let poolLog = "Graded pool: ";
       let highestScore = 0; //This is used to determin the winner(s)
       let winners = []; //Stores the winner(s). If there is a tie then their can be multiple winners in the array
-      let poolRef = db.collection("pools").doc(poolID); //reference to the pools document
 
+      let poolRef = db.collection("pools").doc(poolID); //reference to the pools document
       let pool = getPool(poolID);
+
       let userDocs = poolRef.collection("users").get(); // All user documents in this pool
       let users = []; //The array of graded users
 
@@ -74,10 +75,21 @@ exports.poolUpdate = functions.firestore
                 poolLog += ' User did not answer question correctly: ' + questions[i].id;
               }
             }
+
+            //Check to see if this user is the current winner
+            if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
+              highestScore = score;
+              winners = [user.uid];
+            } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
+              winners.push(user.uid);
+            }
+
+            poolLog += ' Updated users score final score is: ' + score + '}, ';
+
           } else {
+            score = null;
             poolLog += ' This user does not have any answers score is: ' + score;
           }
-
           //Add the graded user to the array
           users.push({
             uid: user.uid,
@@ -85,15 +97,6 @@ exports.poolUpdate = functions.firestore
             isWinner: false,
           });
 
-          poolLog += ' Updated users score final score is: ' + score + '}, ';
-
-          //Check to see if this user is the current winner
-          if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
-            highestScore = score;
-            winners = [user.uid];
-          } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
-            winners.push(user.uid);
-          }
         });
 
 
@@ -441,26 +444,37 @@ exports.deletePool = functions.https.onCall(async function(data, context) {
     throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
       'while authenticated.');
   }
-  // Authentication / user information is automatically added to the request.
-  // const name = context.auth.token.name || null;
-  // const picture = context.auth.token.picture || null;
-  // const email = context.auth.token.email || null;
+
   const uid = context.auth.uid;
   console.log(data);
 
-  let poolData = db.collection("pools").doc(data.poolID).get();
-  let poolUsers = db.collection("pools").doc(data.poolID).collection('users').get();
-
-  poolData = (await poolData).data();
-
+  let poolData = getPool(data.poolID);
+  poolData = (await poolData);
+  let admin = db.collection("admins").doc(uid).get();
+  admin = await admin;
   //If the user requesting the delete operation is an admin of the pool allow the delete otherwise permission denied
-  if (poolData.admins.includes(uid)) {
-
-    console.log(await poolUsers);
+  if (admin.exists || poolData.admins.includes(uid)) {
+    let poolUsers = db.collection("pools").doc(data.poolID).collection('users').get();
+    let poolMessages = db.collection("pools").doc(data.poolID).collection('messages').get();
 
     //Move the pool to the deleted collection
     await db.collection("deletedPools").doc(data.poolID).set(poolData);
     await db.collection("pools").doc(data.poolID).delete();
+
+    poolUsers = await poolUsers;
+    console.log(poolUsers);
+
+    let operations = [];
+    poolUsers.forEach((userDoc, i) => {
+      operations.push(db.collection("pools").doc(data.poolID).collection('users').doc(userDoc.id).delete());
+    });
+
+    poolMessages = await poolMessages;
+    poolMessages.forEach((messageDoc, i) => {
+      operations.push(db.collection("pools").doc(data.poolID).collection('messages').doc(messageDoc.id).delete());
+    });
+
+    await Promise.all(operations);
 
     return {
       data: data,
@@ -613,16 +627,15 @@ async function sendNotification(uid, message) {
         },
         data: {
           link: (message.link) ? message.link : '',
-          notification_foreground: true,
+          //notification_foreground: true,
           notification_id: message.type + '-' + message.id, //this is the id of the notificatoin as it is in the users updates collection
           //rawMessage:message,//This is the message object
-
         },
         android: {
           //collapse_key:"12345678910wasd",
           //collapseKey:"12345678910wasd",
           notification: {
-            tag:message.type + '' + message.id,
+            tag: message.type + '' + message.id,
             channel_id: channelID,
           },
         },
@@ -875,14 +888,14 @@ async function getPool(poolID) {
 }
 
 exports.joinPool = functions.https.onCall(async function(data, context) {
-  /*
-  This function must be called with the data param containing
-  {
-    uid:""//The id of the user to join this pool,
-    poolID:""//The id of the pool that sould be joined
-    join:true//True if the user should join the pool false if the user should leave the pool
-  }
-  */
+  /**
+   * This function must be called with the data param containing
+   * {
+   *    uid:""//The id of the user to join this pool,
+   *    poolID:""//The id of the pool that sould be joined
+   *    join:true//True if the user should join the pool false if the user should leave the pool
+   * }
+   */
   console.log("Join pool function called with data: ", data);
 
 
@@ -950,6 +963,10 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               pendingPools: admin.firestore.FieldValue.arrayUnion(poolID),
             });
 
+            await db.collection("pools").doc(poolID).update({
+              pendingUsers: admin.firestore.FieldValue.arrayUnion(userID),
+            });
+
             //Send request to the pool admin/admins to join the pool
             //// TODO: Send request to other admins
             let adminT = pool.admins[0];
@@ -959,7 +976,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               senderID: userID,
               poolID: poolID,
               id: userID + poolID,
-              link: "", //"/pool/?id=" + poolID,
+              link: "/pool/?id=" + poolID,
               title: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join your pool.",
               text: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join " + pool.name + ". Click to accept or reject.",
               type: "pool-request",
@@ -985,14 +1002,13 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
           //Remove the user from the pool//// QUESTION: Should we also delete thier answers?
           await db.collection("pools").doc(poolID).update({
             users: admin.firestore.FieldValue.arrayRemove(userToRemove),
+            pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
           });
-
           return {
             uid: userID,
             result: "Successfully left the pool",
             data: data,
           };
-
         }
 
       } else { //The user is requesting the operation on another user
@@ -1005,6 +1021,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
             if (targetUser.pendingPools.includes(poolID)) { //If the specified user has requested to join this pool
               //Add the user to the allowedUsers and to the users array
               ops.push(db.collection("pools").doc(poolID).update({
+                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
                 allowedUsers: admin.firestore.FieldValue.arrayUnion(targetUid),
                 users: admin.firestore.FieldValue.arrayUnion({
                   uid: targetUid,
@@ -1081,6 +1098,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               }
               //Remove the user from the allowed users and pool users
               ops.push(db.collection("pools").doc(poolID).update({
+                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
                 allowedUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
                 users: admin.firestore.FieldValue.arrayRemove(userToKick),
               }));

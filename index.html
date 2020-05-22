@@ -450,6 +450,7 @@
     </div>
   </div>
 
+  <!-- Pool popup -->
   <div class="popup pool-popup">
     <div class="block">
       <label id="pool-pic">
@@ -521,13 +522,16 @@
 
       <div class="row justify-content-space-around">
         <div class="col">
+          <button class="button button-fill pool-delete color-red">Delete</button>
+        </div>
+        <div class="col">
           <button class="button button-fill popup-close">Cancel</button>
         </div>
         <div class="col">
           <button class="button button-fill pool-save">Save</button>
         </div>
         <div class="col">
-          <button class="button button-fill pool-duplicate">Duplicate Pool</button>
+          <button class="button button-fill pool-duplicate">Duplicate</button>
         </div>
 
       </div>
@@ -590,6 +594,8 @@
   <script src="js/firebase/firebase-firestore.js"></script>
   <script src="js/firebase/firebase-storage.js"></script>
   <script src="js/firebase/firebase-database.js"></script>
+  <script src="js/firebase/firebase-functions.js"></script>
+
 
 
   <script>
@@ -607,6 +613,12 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     firebase.analytics();
+
+    functions = firebase.functions();
+
+    //Declare firebase functions
+    deletePool = firebase.functions().httpsCallable('deletePool');
+
 
     //Get refs for media storage
     var storage = firebase.storage();
