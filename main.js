@@ -147,181 +147,7 @@ function newPool() {
 
 }
 
-let questionAnswers = {};
-var answerIDs = [];
-//Adds an answer to the html // NOTE: this only adds the answer to the html not the data base
-function addAnswer(questionID, answerID, answerText, correct) {
-  // TODO: Check to see if this id is already in the database. If so dont add the answer
-  answerIDs.push(answerID);
-  $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
-  <div class="item-inner">\
-    <div style="width: 100%">\
-      <div class="item-title item-label">Answer</div>\
-      <div class="item-input-wrap">\
-        <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
-      </div>\
-    </div>\
-    <div class="item-after">\
-    <button id="' + answerID + '-deleteanswer" class="button delete-button" onclick="deleteAnswer(this)">Delete</button>\
-      <button id="' + answerID + '-setanswer" class="button" >Correct</button>\
-    </div>\
-  </div>\
-  </li>');
 
-  $$('#' + answerID + "-setanswer").click(function() {
-    setAnswer(questionID, answerID);
-  });
-  document.getElementById(answerID).value = answerText;
-  if (correct) {
-    setAnswer(questionID, answerID);
-  }
-}
-
-var questionIDs = [];
-// This is adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database
-function addQuestion(questionID, description, answers) {
-  // TODO: Check to see if this questionId has been added already if so dont add the question
-  questionIDs.push(questionID);
-
-  // Add the question html to the pool questions element
-  $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
-  <ul>\
-    <li class="item-content item-input">\
-      <div class="item-inner">\
-      <div style="width: 100%">\
-        <div class="item-title item-label question-title">Multiple Choice Question</div>\
-        <div class="item-input-wrap">\
-          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
-        </div>\
-        </div>\
-        <div class="item-after">\
-          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
-        </div>\
-      </div>\
-    </li>\
-    <div class="seporator"></div>\
- </ul>\
-  <button class = "button mc-answer-' + questionID + '" > Add Answer </button>\
-   </div>');
-
-  //Setup the add answer button
-  $$('.mc-answer-' + questionID).on('click', function(event) {
-    var answerID = makeid(10);
-    addAnswer(questionID, answerID, '', false);
-  });
-
-  //Setup the question description
-  document.getElementById("question-description-" + questionID).value = description;
-
-  // If the answers array is valid
-  if (answers != null && answers != []) {
-    let i = 0;
-    //Add each answer to the html
-    answers.forEach(function(answer) {
-      addAnswer(questionID, answer.id, answer.text, answer.correct);
-
-      //If this is the first answer remove the delete button
-      if (i < 1) {
-        var deleteButton = document.getElementById(answer.id + "-deleteanswer");
-        deleteButton.parentNode.removeChild(deleteButton);
-      }
-      i++;
-    });
-
-  } else {
-    //Add a empty first answer to the html
-    answerID = makeid(10);
-    addAnswer(questionID, answerID, '', false);
-
-    //Remove the Answers delete button
-    var deleteButton = document.getElementById(answerID + "-deleteanswer");
-    deleteButton.parentNode.removeChild(deleteButton);
-  }
-  updateQuestionNumbers();
-}
-
-let tiebreakerIDs = [];
-// This is adds a numeric question to the html // NOTE: This only adds the question to the html not the databasex
-function addNumericQuestion(questionID, description, answer) {
-  // TODO: Check to see if this questionId has been added already if so dont add the question
-  tiebreakerIDs.push(questionID);
-
-  // Add the question html to the pool questions element
-  $$('#pool-questions').append('<div  id="' + questionID + '"  class="question n-question list no-hairlines no-hairlines-between">\
-    <ul>\
-      <li class="item-content item-input">\
-      <div class="item-inner">\
-      <div style="width: 100%">\
-        <div class="item-title item-label question-title">Numeric Question</div>\
-        <div class="item-input-wrap">\
-          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
-        </div>\
-        </div>\
-        <div class="item-after">\
-          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
-        </div>\
-      </div>\
-      </li>\
-      <div class="seporator"></div>\
-      <li class="item-content item-input">\
-        <div class="item-inner"><div style="width: 100%">\
-          <div class="item-title item-label">Answer</div>\
-          <div class="item-input-wrap">\
-            <input id="' + questionID + '-numeric-answer" class="" type="number">\
-          </div>\
-        </div></div>\
-      </li>\
-    </ul>\
-  </div>');
-
-  //Setup the question description
-  document.getElementById("question-description-" + questionID).value = description;
-  document.getElementById(questionID + "-numeric-answer").value = answer;
-
-  updateQuestionNumbers();
-}
-
-function updateQuestionNumbers() {
-  $$('.question-title').forEach(function(question, i) {
-    $$(question).text('Question ' + (i + 1));
-  });
-}
-
-// TODO: Change these to use the questionIDs and answerIDs
-//remove an answer from a multiple choice question
-function deleteAnswer(el) {
-  var answer = el.parentElement.parentElement.parentElement;
-  answer.parentElement.removeChild(answer);
-  updateQuestionNumbers();
-}
-
-var correctAnswers = [];
-
-function setAnswer(questionID, answerID) { //Set the selected answer as the correct answer for a multiple choice question with ID questionID
-
-  let el = $$('#' + answerID + "-setanswer")[0]; //Get the element of the button(Correct/Undo)
-  let answer = el.parentElement.parentElement.parentElement;
-
-  //Set the previously selected answers state and color to the default
-  $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
-  $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
-
-
-  if (correctAnswers[questionID] == answerID) { //If this is already marked as the correct answer(eg. the admin has pressed undo in the panel) then remove it from the correct answers
-    delete correctAnswers[questionID];
-    console.log("Undo set answer as correct");
-  } else { //Else add the answer to the list of correct answers and set its html to the correct color and state
-    correctAnswers[questionID] = answerID;
-    el.innerHTML = "Undo";
-    answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
-  }
-  console.log(correctAnswers);
-
-}
-
-function deleteQuestion(el) { //remove a question from the list
-  deleteAnswer(el.parentElement.parentElement);
-}
 
 function setupMainPage() {
   db.collection("admins").doc(uid).get().catch(function(error) {
@@ -485,6 +311,184 @@ function deleteAccount(userID) {
   console.log("TODO Delete account here", userID);
 }
 
+///////****Question and answer section****\\\\\\\\\
+let questionAnswers = {};
+var answerIDs = [];
+
+function addAnswer(questionID, answerID, answerText, correct) { //Adds an answer to the html // NOTE: this only adds the answer to the html not the data base
+  // TODO: Check to see if this id is already in the database. If so dont add the answer
+  answerIDs.push(answerID);
+  $$('.mc-answer-' + questionID).prev().append('<li class="item-content item-input">\
+  <div class="item-inner">\
+    <div style="width: 100%">\
+      <div class="item-title item-label">Answer</div>\
+      <div class="item-input-wrap">\
+        <input id="' + answerID + '" class="' + questionID + '-answer" type="text" placeholder="Your answer">\
+      </div>\
+    </div>\
+    <div class="item-after">\
+    <button id="' + answerID + '-deleteanswer" class="button delete-button" onclick="deleteAnswer(this)">Delete</button>\
+      <button id="' + answerID + '-setanswer" class="button" >Correct</button>\
+    </div>\
+  </div>\
+  </li>');
+
+  $$('#' + answerID + "-setanswer").click(function() {
+    setAnswer(questionID, answerID);
+  });
+  document.getElementById(answerID).value = answerText;
+  if (correct) {
+    setAnswer(questionID, answerID);
+  }
+}
+
+var questionIDs = [];
+
+function addQuestion(questionID, description, answers) { //Adds a multiple choice question to the html // NOTE: This only adds the question to the html not the database
+  // TODO: Check to see if this questionId has been added already if so dont add the question
+  questionIDs.push(questionID);
+
+  // Add the question html to the pool questions element
+  $$('#pool-questions').append('<div id=' + questionID + ' class="question mc-question list no-hairlines no-hairlines-between">\
+  <ul>\
+    <li class="item-content item-input">\
+      <div class="item-inner">\
+      <div style="width: 100%">\
+        <div class="item-title item-label question-title">Multiple Choice Question</div>\
+        <div class="item-input-wrap">\
+          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
+        </div>\
+        </div>\
+        <div class="item-after">\
+          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
+        </div>\
+      </div>\
+    </li>\
+    <div class="seporator"></div>\
+ </ul>\
+  <button class = "button mc-answer-' + questionID + '" > Add Answer </button>\
+   </div>');
+
+  //Setup the add answer button
+  $$('.mc-answer-' + questionID).on('click', function(event) {
+    var answerID = makeid(10);
+    addAnswer(questionID, answerID, '', false);
+  });
+
+  //Setup the question description
+  document.getElementById("question-description-" + questionID).value = description;
+
+  // If the answers array is valid
+  if (answers != null && answers.length > 0) {
+    let i = 0;
+    //Add each answer to the html
+    answers.forEach(function(answer) {
+      addAnswer(questionID, answer.id, answer.text, answer.correct);
+
+      if (i < 1) { //If this is the first answer remove the delete button
+        var deleteButton = document.getElementById(answer.id + "-deleteanswer");
+        deleteButton.parentNode.removeChild(deleteButton);
+      }
+
+      i++;
+    });
+
+  } else {
+    //Add a empty first answer to the html
+    answerID = makeid(10);
+    addAnswer(questionID, answerID, '', false);
+    //Remove the Answers delete button
+    var deleteButton = document.getElementById(answerID + "-deleteanswer");
+    deleteButton.parentNode.removeChild(deleteButton);
+  }
+  updateQuestionNumbers();
+}
+
+let tiebreakerIDs = [];
+// This is adds a numeric question to the html // NOTE: This only adds the question to the html not the databasex
+function addNumericQuestion(questionID, description, answer) {
+  // TODO: Check to see if this questionId has been added already if so dont add the question
+  tiebreakerIDs.push(questionID);
+
+  // Add the question html to the pool questions element
+  $$('#pool-questions').append('<div  id="' + questionID + '"  class="question n-question list no-hairlines no-hairlines-between">\
+    <ul>\
+      <li class="item-content item-input">\
+      <div class="item-inner">\
+      <div style="width: 100%">\
+        <div class="item-title item-label question-title">Numeric Question</div>\
+        <div class="item-input-wrap">\
+          <input id ="question-description-' + questionID + '" type="text" placeholder="Your question">\
+        </div>\
+        </div>\
+        <div class="item-after">\
+          <button class="button delete-button" onclick="deleteQuestion(this)">Delete</button>\
+        </div>\
+      </div>\
+      </li>\
+      <div class="seporator"></div>\
+      <li class="item-content item-input">\
+        <div class="item-inner"><div style="width: 100%">\
+          <div class="item-title item-label">Answer</div>\
+          <div class="item-input-wrap">\
+            <input id="' + questionID + '-numeric-answer" class="" type="number">\
+          </div>\
+        </div></div>\
+      </li>\
+    </ul>\
+  </div>');
+
+  //Setup the question description
+  document.getElementById("question-description-" + questionID).value = description;
+  document.getElementById(questionID + "-numeric-answer").value = answer;
+
+  updateQuestionNumbers();
+}
+
+function updateQuestionNumbers() {
+  $$('.question-title').forEach(function(question, i) {
+    $$(question).text('Question ' + (i + 1));
+  });
+}
+
+// TODO: Change these to use the questionIDs and answerIDs
+//remove an answer from a multiple choice question
+function deleteAnswer(el) {
+  var answer = el.parentElement.parentElement.parentElement;
+  answer.parentElement.removeChild(answer);
+  updateQuestionNumbers();
+}
+
+var correctAnswers = [];
+
+function setAnswer(questionID, answerID) { //Set the selected answer as the correct answer for a multiple choice question with ID questionID
+
+  let el = $$('#' + answerID + "-setanswer")[0]; //Get the element of the button(Correct/Undo)
+  let answer = el.parentElement.parentElement.parentElement;
+
+  //Set the previously selected answers state and color to the default
+  $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
+  $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
+
+
+  if (correctAnswers[questionID] == answerID) { //If this is already marked as the correct answer(eg. the admin has pressed undo in the panel) then remove it from the correct answers
+    delete correctAnswers[questionID];
+    console.log("Undo set answer as correct");
+  } else { //Else add the answer to the list of correct answers and set its html to the correct color and state
+    correctAnswers[questionID] = answerID;
+    el.innerHTML = "Undo";
+    answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
+  }
+  console.log(correctAnswers);
+
+}
+
+function deleteQuestion(el) { //remove a question from the list
+  deleteAnswer(el.parentElement.parentElement);
+}
+
+
+
 //////*******Pools section********\\\\\\\
 
 let loadedPools = [];
@@ -631,62 +635,7 @@ function loadPools(callback) {
 
               //When the card is clicked fill the popup with data
               a.onclick = function() {
-                console.log('Opening pool popup for pool: ', pool);
-
-                $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
-                document.getElementById("pool-name").value = pool.name;
-                document.getElementById("pool-name").dataset.id = pool.poolID;
-                document.getElementById("pool-description").innerHTML = pool.description;
-                var poolVisibilityDiv = document.getElementById("pool-visibility");
-                $$("#pool-visibility").val(pool.state).change();
-
-                let date2 = (pool.date != '') ? pool.date : new Date();
-                poolDateInput.setValue([date2])
-
-                // document.getElementById("pool-date").value = "";
-                // document.getElementById("pool-time").value = "";
-
-                document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
-
-                //Clear the question and answer IDs because we are loading a new page
-                questionIDs = [];
-                tiebreakerIDs = [];
-                answerIDs = [];
-                correctAnswers = [];
-
-                //Check to see if this pool has any questions. If so then load them
-                if (pool.questions != null) {
-                  console.log(pool.questions);
-                  for (let i = 0; i < pool.questions.length; i++) {
-                    addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
-                  }
-                } else { //There are no questions in this pool
-                  // TODO: maybe add a question?
-                }
-
-                //Check to see if this pool has any tiebreakers. If so then load them
-                if (pool.tiebreakers != null) {
-                  console.log(pool.tiebreakers);
-                  //For each tiebreaker in the pool.
-                  for (let i = 0; i < pool.tiebreakers.length; i++) {
-                    console.log("dsfkjhsgdfjkh");
-                    addNumericQuestion(pool.tiebreakers[i].id, pool.tiebreakers[i].description, pool.tiebreakers[i].answer);
-                  }
-                }
-
-                //Add in the tags
-                var chipsDiv = document.getElementById("pool-tags");
-                chipsDiv.innerHTML = "";
-                for (var i = 0; i < pool.tags.length; i++) {
-                  var chip = document.createElement("div");
-                  chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
-                  chipsDiv.appendChild(chip.childNodes[0]);
-                }
-
-                if (pool.state === "active" || pool.state === "closed") {}
-                $$('.delete-button').hide();
-
-                app.popup.open(".pool-popup");
+                openPoolPopup(pool)
               };
 
               //Setup the card's inner html
@@ -730,6 +679,68 @@ function loadPools(callback) {
   });
 
 }
+
+function openPoolPopup(pool) { //Opens the popup for the given pool
+  console.log('Opening pool popup for pool: ', pool);
+
+  $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
+  document.getElementById("pool-name").value = pool.name;
+  document.getElementById("pool-name").dataset.id = pool.poolID;
+  document.getElementById("pool-description").innerHTML = pool.description;
+  var poolVisibilityDiv = document.getElementById("pool-visibility");
+  $$("#pool-visibility").val(pool.state).change();
+
+  let date2 = (pool.date != '') ? pool.date : new Date();
+  poolDateInput.setValue([date2])
+
+  // document.getElementById("pool-date").value = "";
+  // document.getElementById("pool-time").value = "";
+
+  document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
+
+  //Clear the question and answer IDs because we are loading a new pool
+  questionIDs = [];
+  tiebreakerIDs = [];
+  answerIDs = [];
+  correctAnswers = [];
+
+  //Check to see if this pool has any questions. If so then load them
+  if (pool.questions != null) {
+    console.log(pool.questions);
+    for (let i = 0; i < pool.questions.length; i++) {
+      addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
+    }
+  } else { //There are no questions in this pool
+    // TODO: maybe add a question?
+  }
+
+  //Check to see if this pool has any tiebreakers. If so then load them
+  if (pool.tiebreakers != null) {
+    console.log(pool.tiebreakers);
+    //For each tiebreaker in the pool.
+    for (let i = 0; i < pool.tiebreakers.length; i++) {
+      console.log("dsfkjhsgdfjkh");
+      addNumericQuestion(pool.tiebreakers[i].id, pool.tiebreakers[i].description, pool.tiebreakers[i].answer);
+    }
+  }
+
+  //Add in the tags
+  var chipsDiv = document.getElementById("pool-tags");
+  chipsDiv.innerHTML = "";
+  for (var i = 0; i < pool.tags.length; i++) {
+    var chip = document.createElement("div");
+    chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
+    chipsDiv.appendChild(chip.childNodes[0]);
+  }
+
+  if (pool.state === "active" || pool.state === "closed") {
+    $$('.delete-button').hide();
+  } else {
+    $$('.delete-button').show();
+  }
+  app.popup.open(".pool-popup");
+};
+
 
 function savePool() {
   app.preloader.show();
@@ -810,7 +821,6 @@ function savePool() {
     tiebreakers: tieBreakers
   });
 }
-
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 async function editPool(poolData, callback) {

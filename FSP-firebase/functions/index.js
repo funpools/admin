@@ -1156,9 +1156,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
 
     } else {
       throw new functions.https.HttpsError('failed-precondition', 'Unable to join or invite to pool', data);
-
     }
-
   } else {
     throw new functions.https.HttpsError('failed-precondition', 'The function was called with invaid data ', data);
   }
