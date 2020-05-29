@@ -72,7 +72,7 @@ exports.poolUpdate = functions.firestore
               if (answers[questions[i].id] != null && answers[questions[i].id] == questions[i].correctAnswer) { //If the user answerd this question correctly
                 score++;
               } else {
-                poolLog += ' User did not answer question correctly: ' + questions[i].id;
+                poolLog += ' incorrect: ' + questions[i].id;
               }
             }
 
@@ -99,10 +99,8 @@ exports.poolUpdate = functions.firestore
 
         });
 
-
-
         if (!pool.questions.some(a => a.correctAnswer == null)) { //If there are no unanswed questions
-          console.log("All questions are answered");
+          //console.log("All questions are answered");
           //If there is a tie try and resolve it
           if (winners.length > 1) {
             poolLog += "More than one winner attempting tie resolution between: " + winners;
@@ -120,53 +118,54 @@ exports.poolUpdate = functions.firestore
               }
             }
           }
-
-          //Notify each user in the pool
-          pool.users.forEach((user, i) => {
-            //Decide which type of notification to send to the user
-            switch (messageType) {
-              case "active":
-                sendNotification(user.uid, {
-                  id: poolID,
-                  poolID: poolID,
-                  link: "/pool/?id=" + poolID,
-                  title: pool.name + " is now active",
-                  text: pool.name + " is now active. Click here to veiw the pool! ",
-                  type: "PU",
-                });
-                break;
-              case "closed":
-                sendNotification(user.uid, {
-                  id: poolID,
-                  poolID: poolID,
-                  link: "/pool/?id=" + poolID,
-                  title: pool.name + " is now closed",
-                  text: pool.name + " is now closed. Click here to veiw your results!",
-                  type: "PU",
-                });
-                break;
-              case "score-update":
-                sendNotification(user.uid, {
-                  id: poolID,
-                  poolID: poolID,
-                  link: "/pool/?id=" + poolID,
-                  title: "Your score has been updated",
-                  text: "A question in " + pool.name + " pool has been updated—check here for your score!",
-                  type: "PU",
-                });
-                break;
-              default:
-                sendNotification(user.uid, {
-                  id: poolID,
-                  poolID: poolID,
-                  link: "/pool/?id=" + poolID,
-                  title: "Pool has been updated",
-                  text: "Pool " + pool.name + "has been updated!",
-                  type: "PU",
-                });
-            }
-          });
         }
+
+        //Notify each user in the pool
+        console.log("Sending notifications to users. Notification type: ", messageType);
+        pool.users.forEach((user, i) => {
+          //Decide which type of notification to send to the user
+          switch (messageType) {
+            case "active":
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: pool.name + " is now active",
+                text: pool.name + " is now active. Click here to veiw the pool! ",
+                type: "PU",
+              });
+              break;
+            case "closed":
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: pool.name + " is now closed",
+                text: pool.name + " is now closed. Click here to veiw your results!",
+                type: "PU",
+              });
+              break;
+            case "score-update":
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: "Your score has been updated",
+                text: "A question in " + pool.name + " pool has been updated—check here for your score!",
+                type: "PU",
+              });
+              break;
+            default:
+              sendNotification(user.uid, {
+                id: poolID,
+                poolID: poolID,
+                link: "/pool/?id=" + poolID,
+                title: "Pool has been updated",
+                text: "Pool " + pool.name + "has been updated!",
+                type: "PU",
+              });
+          }
+        });
 
         //Sort the graded users by score and if they are a winner
         users.sort((a, b) => (a.winner) ? 1 : (a.score - b.score));
@@ -591,15 +590,15 @@ async function sendNotification(uid, message) {
 
   let user = db.collection('users').doc(uid).get();
   user = (await user);
-  //console.log("sending notification to user: ", user);
+  //console.log("sending notification: ", message, " to user: ", user);
   if (user != null && user.exists && user.data() != null) {
     user = user.data();
 
     let exludedNotifications = (user.exludedNotifications) ? user.exludedNotifications : [];
 
     if (exludedNotifications.includes(message.type)) { //If the user has requested to not receve these types of notifications the dont send anything
-      //console.log("THE BLASTED NOTIFICATION IS BANNED");
-      return "Failed to send the notification. The user has requested to to see these notifications";
+      console.log("user: ", user, " has requested to not receve this");
+      return "Failed to send the notification. The user has requested not to see these notifications";
     } else {
       message.user = uid;
       message.timestamp = admin.firestore.FieldValue.serverTimestamp();
@@ -891,10 +890,13 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
   /**
    * This function must be called with the data param containing
    * {
-   *    uid:""//The id of the user to join this pool,
+   *    uid:""//The id of the user to join this pool
    *    poolID:""//The id of the pool that sould be joined
    *    join:true//True if the user should join the pool false if the user should leave the pool
    * }
+   * it will return {
+      result:joined,requested
+    }
    */
   console.log("Join pool function called with data: ", data);
 
@@ -952,7 +954,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
 
             return {
               uid: userID,
-              result: "Successfully joined pool",
+              result: "joined",
               data: data,
             };
 
@@ -984,7 +986,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
 
             return {
               uid: userID,
-              result: "Succesfully sent join request",
+              result: "requested",
               data: data,
             };
           }
@@ -1006,7 +1008,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
           });
           return {
             uid: userID,
-            result: "Successfully left the pool",
+            result: "left",
             data: data,
           };
         }
@@ -1052,7 +1054,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               return {
                 uid: userID,
                 operation: "success",
-                result: "Succesfully accepted the users join request",
+                result: "accepted",
                 data: data,
               };
 
@@ -1074,7 +1076,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               return {
                 uid: userID,
                 operation: "success",
-                result: "Sent pool invite",
+                result: "invited",
                 data: data,
               };
             }
@@ -1110,7 +1112,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               return {
                 uid: userID,
                 operation: "success",
-                result: "Succesfully kicked user: " + targetUid + " from pool",
+                result: "kicked",
                 data: data,
               };
             } else { //The user is not an admin so send a request to the admin to kick the specified user
@@ -1134,7 +1136,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) {
               return {
                 uid: userID,
                 operation: "success",
-                result: "Reported user to pool captians",
+                result: "reported",
                 data: data,
               };
             }
