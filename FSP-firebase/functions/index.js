@@ -1174,37 +1174,68 @@ exports.banUser = functions.https.onCall(async function(data, context) {
 
   const uid = context.auth.uid; //the uid of the user who the requested this operation
   const uidToBan = data.uidToBan;
+  const liftBan = (data.liftBan) ? data.liftBan : false;
   let adminObject = await (db.collection("admins").doc(uid).get());
 
 
   if (adminObject.exists && uidToBan != null) {
+    if (!liftBan) { //If we are not lifting the ban then ban the user
 
-    let bannedUserData = (await db.collection("users").doc(uidToBan).get()).data();
-    //Move the userData to the bannedUser collection then delete them from the normal user collection
-    let op1 = db.collection("bannedUsers").doc(uidToBan).set(bannedUserData);
-    let op2 = db.collection("users").doc(uidToBan).delete();
-    //Disable the users account
-    let op3 = admin.auth().updateUser(uidToBan, {
-      disabled: true,
-    }).then(function(userRecord) {
-      console.log('Successfully disabled user');
-    }).catch(function(error) {
-      console.log('Error disableing user: ', error);
-    });
+      //get the users data and move it into the bannedUser collection then delete the data in the normal user collection
+      let bannedUserData = (await db.collection("users").doc(uidToBan).get()).data();
+      let op1 = db.collection("bannedUsers").doc(uidToBan).set(bannedUserData);
+      let op2 = db.collection("users").doc(uidToBan).delete();
 
-    await Promise.all([op1, op2, op3]).then(result => {
-      console.log('Succesfully Banned User!');
-      return {
-        result: 'Successfully banned user!',
-        data: {
-          result: 'success'
-        }
-      };
-    }).catch(error => {
-      console.log(error);
-      return 'Error banning user!';
-    });
+      //Disable the users account
+      let op3 = admin.auth().updateUser(uidToBan, {
+        disabled: true,
+      }).then(function(userRecord) {
+        console.log('Successfully disabled user');
+      }).catch(function(error) {
+        console.log('Error disableing user: ', error);
+      });
+      //wait for the operations to finish
+      await Promise.all([op1, op2, op3]).then(result => {
+        console.log('Succesfully Banned User!');
+        return {
+          result: 'Successfully banned user!',
+          data: {
+            result: 'success'
+          }
+        };
+      }).catch(error => {
+        console.log(error);
+        return 'Error banning user!';
+      });
+    } else {
 
+      //get the users data and restore it to the users collection
+      let bannedUserData = (await db.collection("bannedUsers").doc(uidToBan).get()).data();
+      let op1 = db.collection("users").doc(uidToBan).set(bannedUserData);
+      let op2 = db.collection("bannedUsers").doc(uidToBan).delete();
+
+      //enable the users account
+      let op3 = admin.auth().updateUser(uidToBan, {
+        disabled: false,
+      }).then(function(userRecord) {
+        console.log('Successfully enabled user');
+      }).catch(function(error) {
+        console.log('Error enableing user: ', error);
+      });
+      //wait for the operations to finish
+      await Promise.all([op1, op2, op3]).then(result => {
+        console.log('Succesfully lifted ban on User!');
+        return {
+          result: 'Successfully lifted ban!',
+          data: {
+            result: 'success'
+          }
+        };
+      }).catch(error => {
+        console.log(error);
+        return 'Error lifting ban on user!';
+      });
+    }
   } else {
     throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
       'as an admin with valid data.');

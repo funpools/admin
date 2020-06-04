@@ -50,26 +50,51 @@ function getUser(userID, callback) {
           profilePic = "./unknown.jpg";;
         }).then(function() {
           db.collection("users").doc(userID).get().then(function(userData) {
-            loadedUsers[userID] = {
-              uid: userID,
-              username: userData.get("username"),
-              firstName: userData.get("firstName"),
-              lastName: userData.get("lastName"),
-              fullName: function() {
-                return "" + this.firstName + " " + this.lastName;
-              },
-              profilePic: profilePic,
-              bio: userData.get("bio"),
-              favoriteSports: userData.get("favoriteSports"),
-              favoriteTeams: userData.get("favoriteTeams"),
-            };
-            console.log("loaded user: " + userID);
+            if (userData.exists) {
+              loadedUsers[userID] = {
+                uid: userID,
+                username: userData.get("username"),
+                firstName: userData.get("firstName"),
+                lastName: userData.get("lastName"),
+                fullName: function() {
+                  return "" + this.firstName + " " + this.lastName;
+                },
+                profilePic: profilePic,
+                bio: userData.get("bio"),
+                favoriteSports: userData.get("favoriteSports"),
+                favoriteTeams: userData.get("favoriteTeams"),
+              };
+              console.log("loaded user: " + userID);
+              for (let i = 0; i < callbacks[userID].length; i++) { // Iterate through the callbacks for this user
+                callbacks[userID][i](loadedUsers[userID]);
+              }
+              delete callbacks[userID]; // Remove the callbacks for this user
+            } else {
+              db.collection("bannedUsers").doc(userID).get().then(function(banedUserData) {
+                if (banedUserData.exists) {
+                  loadedUsers[userID] = {
+                    uid: userID,
+                    username: banedUserData.get("username"),
+                    firstName: banedUserData.get("firstName"),
+                    lastName: banedUserData.get("lastName"),
+                    fullName: function() {
+                      return "" + this.firstName + " " + this.lastName;
+                    },
+                    profilePic: profilePic,
+                    bio: banedUserData.get("bio"),
+                    favoriteSports: banedUserData.get("favoriteSports"),
+                    favoriteTeams: banedUserData.get("favoriteTeams"),
+                  };
+                  for (let i = 0; i < callbacks[userID].length; i++) { // Iterate through the callbacks for this user
+                    callbacks[userID][i](loadedUsers[userID]);
+                  }
+                  delete callbacks[userID]; // Remove the calbacks for this user
 
-            console.log(callbacks);
-            for (let i = 0; i < callbacks[userID].length; i++) { // Iterate through the callbacks for this user
-              callbacks[userID][i](loadedUsers[userID]);
+                } else { //This user does not exist
+
+                }
+              });
             }
-            delete callbacks[userID]; // Remove the calbacks for this user
 
           });
         });
@@ -82,7 +107,6 @@ function getUser(userID, callback) {
     callback({}); //The id is invalid so return the invalid/anonomus user object
   }
 }
-
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editUser(username, firstName, lastName, pic, password) {
@@ -150,14 +174,14 @@ function editUser(username, firstName, lastName, pic, password) {
   });
 }
 
-
-
 async function banUserF(uidToBan) { //Bans the user then resfreshes the page
+
 
   console.log('Trying to ban uid: ', uidToBan);
 
   banUser({
     uidToBan: uidToBan,
+    liftBan: false,
   }).then(function(result) {
     // TODO: Refresh the search properly
     searchUsers();
@@ -170,6 +194,25 @@ async function banUserF(uidToBan) { //Bans the user then resfreshes the page
   });
 
   return true;
+}
+
+function liftBan(uidToLift) {
+
+  console.log('Trying to lift ban on user uid: ', uidToLift);
+
+  banUser({
+    uidToBan: uidToLift,
+    liftBan: true,
+  }).then(function(result) {
+    // TODO: Refresh the search properly
+    searchBannedUsers();
+    app.dialog.alert('Successfully lifted ban!');
+    console.log(result);
+  }).catch(error => {
+    app.dialog.close();
+    app.dialog.alert(error.message);
+    console.log(error);
+  });
 }
 
 function searchUsers() {
@@ -248,6 +291,88 @@ function searchUsers() {
 
     });
   });
+
+}
+
+function searchBannedUsers() {
+
+  $$('.search-banned-user-preloader').show();
+  $$('#banned-users-list').html('');
+
+  //get query
+  let query = $$('#banned-user-search').val().toLowerCase();
+
+  if (query != null && query != '') {
+
+    //where we will store the results
+    var foundUsers = {};
+    //an array to store our query promises
+    let querys = [];
+
+    //Add the querys
+    querys.push(db.collection('bannedUsers').where("username", "==", query).get());
+    querys.push(db.collection('bannedUsers').where("firstName", "==", query).get());
+    querys.push(db.collection('bannedUsers').where("lastName", "==", query).get());
+
+    //Await all the the querys then add their results
+    Promise.all(querys).catch(function(error) {
+
+      $$('.search-banned-user-preloader').hide();
+      $$('#banned-users-list').html('There was an error loading results. Please try again later.');
+      console.error(error.message);
+      return;
+    }).then(function(queryDoc) {
+      queryDoc.forEach(function(queryResults) {
+        queryResults.forEach(function(userDoc) {
+          //If this user has already been found add to its priority
+          if (foundUsers[userDoc.id]) {
+            foundUsers[userDoc.id] += 2;
+          } else {
+            foundUsers[userDoc.id] = 2;
+          }
+        });
+      });
+
+      //Sort by priority
+      var sortable = [];
+      for (var user in foundUsers) {
+        sortable.push([user, foundUsers[user]]);
+      }
+
+      //If nothing is found
+      if (sortable.length < 1) {
+        $$('#banned-users-list').html('There were no users matching \"' + query + '\"');
+        $$('.search-banned-user-preloader').hide();
+        return;
+      }
+
+      sortable.sort(function(a, b) {
+        return b[1] - a[1];
+      });
+
+      //get user info and display on list
+      let lastUser = sortable[sortable.length - 1][0];
+      sortable.forEach(function(userDoc) {
+        getUser(userDoc[0], function(user) {
+          $$('#banned-users-list').append('<li><div class="item-content">' +
+            '<div class="item-media"><div class="picture" style="background-image: url(' + user.picURL + ')"></div></div>' +
+            '<div class="item-inner">' +
+            '<div class="item-title-row"><div class="item-title">' + user.username + '</div><div class="item-after"><a href="#" onclick="liftBan(\'' + user.uid + '\')" class="button color-red">Lift Ban</a></div></div>' +
+            '<div class="item-text">' + user.firstName + ' ' + user.lastName + '</div>' +
+            '</div></div></li>');
+
+          //hide preloader on last result
+          if (user.uid == lastUser) {
+            $$('.search-banned-user-preloader').hide();
+          }
+        });
+
+
+      });
+    });
+  } else {
+    $$('.search-banned-user-preloader').hide();
+  }
 
 }
 
