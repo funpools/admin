@@ -451,7 +451,7 @@ exports.deletePool = functions.https.onCall(async function(data, context) {
   poolData = (await poolData);
   let admin = db.collection("admins").doc(uid).get();
   admin = await admin;
-  //If the user requesting the delete operation is an admin of the pool allow the delete otherwise permission denied
+  //If the user requesting the delete operation is an admin of the pool or an FP admin allow to delete otherwise permission denied
   if (admin.exists || poolData.admins.includes(uid)) {
     let poolUsers = db.collection("pools").doc(data.poolID).collection('users').get();
     let poolMessages = db.collection("pools").doc(data.poolID).collection('messages').get();
@@ -489,6 +489,344 @@ exports.deletePool = functions.https.onCall(async function(data, context) {
   }
 
 });
+
+exports.joinPool = functions.https.onCall(async function(data, context) { //Function for joining and leaving pools
+  /**
+   * This function must be called with the data param containing
+   * {
+   *    uid:""//The id of the user to join this pool
+   *    poolID:""//The id of the pool that sould be joined
+   *    join:true//True if the user should join the pool false if the user should leave the pool
+   * }
+   * it will return {
+      result:joined,requested
+    }
+   */
+
+  console.log("Join pool function called with data: ", data);
+
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'while authenticated.');
+  }
+
+  if (data.uid == null || data.poolID == null || data.join == null) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function was called with invaid data ', data);
+  }
+
+
+  const userID = context.auth.uid; //The uid of the user who requested this operation
+  const targetUid = data.uid; //the uid of the user whom the request is targeted
+  const poolID = data.poolID; //the uid of the user whom the request is targeted
+  const join = data.join; //This is for telling weather the user wishes to join or not
+
+  //Request the needed data
+  let targetUser = db.collection("users").doc(targetUid).get();
+  let pool = getPool(poolID);
+  let user = db.collection('users').doc(userID).get();
+
+  targetUser = (await targetUser).data();
+  pool = await pool;
+
+  let ops = []; //The operations stored as an array of promises
+
+  //If the pool is valid
+  if (pool != "invalid") {
+    if (pool.state != "closed" && !(pool.state == "active" && join)) { //If the pool is not closed and (The the user is not trying to join an active pool)
+      if (userID == targetUid) { //If the user is requesting this operation as themselves
+
+        console.log("Loaded pool data: ", pool);
+
+        if (join) { //If the user wants to join the pool
+
+          if (!pool.private || pool.allowedUsers.includes(userID)) { //If the user is allowed to join this pool add them to it
+
+            await db.collection("users").doc(userID).update({
+              pools: admin.firestore.FieldValue.arrayUnion(poolID),
+            });
+
+            await db.collection("pools").doc(poolID).update({
+              users: admin.firestore.FieldValue.arrayUnion({
+                uid: userID,
+                score: 0,
+                isWinner: false,
+              }),
+            });
+
+            return {
+              uid: userID,
+              result: "joined",
+              data: data,
+            };
+
+          } else { //This user is not allowed to join this pool so request permission from the pool admin/captian
+
+            //Add this pool to the users pending pools
+            await db.collection("users").doc(userID).update({
+              pendingPools: admin.firestore.FieldValue.arrayUnion(poolID),
+            });
+
+            await db.collection("pools").doc(poolID).update({
+              pendingUsers: admin.firestore.FieldValue.arrayUnion(userID),
+            });
+
+            //Send request to the pool admin/admins to join the pool
+            //// TODO: Send request to other admins
+            let adminT = pool.admins[0];
+            console.log("admin is: ", adminT);
+            await sendNotification(adminT, {
+              user: pool.admins[1],
+              senderID: userID,
+              poolID: poolID,
+              id: userID + poolID,
+              link: "/pool/?id=" + poolID,
+              title: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join your pool.",
+              text: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join " + pool.name + ". Click to accept or reject.",
+              type: "pool-request",
+            });
+
+            return {
+              uid: userID,
+              result: "requested",
+              data: data,
+            };
+          }
+        } else { //The user does not want to join/be part of the pool so remove them from it
+
+          await db.collection("users").doc(userID).update({
+            pools: admin.firestore.FieldValue.arrayRemove(poolID),
+            pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
+          });
+
+          let userToRemove = pool.users.find(function(e) {
+            return e.uid === userID;
+          });
+          console.log(userToRemove);
+          //Remove the user from the pool//// QUESTION: Should we also delete thier answers?
+          await db.collection("pools").doc(poolID).update({
+            users: admin.firestore.FieldValue.arrayRemove(userToRemove),
+            pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
+          });
+          return {
+            uid: userID,
+            result: "left",
+            data: data,
+          };
+        }
+
+      } else { //The user is requesting the operation on another user
+
+        user = (await user).data();
+
+        if (!pool.private || (pool.allowShares) || pool.admins.includes(userID) || user.pools.includes(poolID)) { //If this user is allowed to perform this operation // TODO: check if the user requesting this operation is part of this pool
+
+          if (join) { //If this user is allowing the specified user to join the pool
+            if (targetUser.pendingPools.includes(poolID)) { //If the specified user has requested to join this pool
+              //Add the user to the allowedUsers and to the users array
+              ops.push(db.collection("pools").doc(poolID).update({
+                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
+                allowedUsers: admin.firestore.FieldValue.arrayUnion(targetUid),
+                users: admin.firestore.FieldValue.arrayUnion({
+                  uid: targetUid,
+                  score: 0,
+                  isWinner: false,
+                }),
+              }));
+
+              //Add the pool to the users pool list
+              ops.push(db.collection("users").doc(targetUid).update({
+                pools: admin.firestore.FieldValue.arrayUnion(poolID),
+              }));
+
+              //Remove the notification from the user if any
+              ops.push(removeNotification(targetUid, "pool-request-" + poolID));
+
+              ops.push(sendNotification(targetUid, {
+                user: targetUid,
+                id: poolID,
+                link: "/pool/?id=" + poolID,
+                title: user.firstName + ' ' + user.lastName + " has accepted your request.",
+                text: user.firstName + ' ' + user.lastName + " has accepted your request to join" + pool.name + " pool. Click to play!",
+                type: "PA",
+              }));
+
+              await Promise.all(ops);
+
+              return {
+                uid: userID,
+                operation: "success",
+                result: "accepted",
+                data: data,
+              };
+
+            } else { //The user has not requested to join this pool so send them an invite and allow them to join
+
+              await db.collection("pools").doc(poolID).update({
+                allowedUsers: admin.firestore.FieldValue.arrayUnion(targetUid),
+              });
+
+              await sendNotification(targetUid, {
+                user: targetUid,
+                id: poolID,
+                link: "/pool/?id=" + poolID,
+                title: user.firstName + ' ' + user.lastName + " invited you to a pool.",
+                text: user.firstName + ' ' + user.lastName + " invited you to join the " + pool.name + " pool. Click to play!",
+                type: "PI",
+              });
+
+              return {
+                uid: userID,
+                operation: "success",
+                result: "invited",
+                data: data,
+              };
+            }
+
+          } else { //The user is requesting that the specifid uid not be allowed in the pool
+
+            if (pool.admins.includes(userID)) { //If the user is an admin kick the requested user from the pool
+
+              await db.collection("users").doc(targetUid).update({
+                pools: admin.firestore.FieldValue.arrayRemove(poolID),
+                pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
+              });
+
+              //Find the object of the user to kick
+              let userToKick = 0;
+              for (var i = 0; i < pool.users.length; i++) {
+                if (pool.users[i].uid == targetUid) {
+                  userToKick = pool.users[i];
+                  break;
+                }
+              }
+              //Remove the user from the allowed users and pool users
+              ops.push(db.collection("pools").doc(poolID).update({
+                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
+                allowedUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
+                users: admin.firestore.FieldValue.arrayRemove(userToKick),
+              }));
+
+              //Remove the user from the pool//// QUESTION: should we do this as it does remove thier answers // NOTE: If we store users as an array in the pool doc we can delete them from the pool and keep the answers
+              //await db.collection("pools").doc(poolID).collection("users").doc(userID).delete();
+              //TODO:  Maybe add the user to the banned users list and perhaps send a notification
+
+              return {
+                uid: userID,
+                operation: "success",
+                result: "kicked",
+                data: data,
+              };
+            } else { //The user is not an admin so send a request to the admin to kick the specified user
+
+
+              //Send request to the pool admin/admins to kick the user
+              //// TODO: Send request to other admins
+              let adminT = pool.admins[0];
+              console.log("admin is: ", adminT);
+              await sendNotification(adminT, {
+                user: pool.admins[1],
+                senderID: userID,
+                poolID: poolID,
+                id: targetUid + poolID,
+                link: "/pool/?id=" + poolID, //", //"/pool/?id=" + poolID,
+                title: user.firstName + ' ' + user.lastName + " has requested.",
+                text: user.username + " has reported user: " + targetUser.username + " click to veiw.",
+                type: "UR",
+              });
+
+              return {
+                uid: userID,
+                operation: "success",
+                result: "reported",
+                data: data,
+              };
+            }
+
+          }
+
+        } else { //The user does not have permission for this operation so deny their request
+          return {
+            result: "You do not have permission to do that!",
+            operation: "denied",
+            uid: userID,
+            data: data,
+          };
+        }
+
+      }
+
+    } else {
+      throw new functions.https.HttpsError('failed-precondition', 'Unable to join or invite to pool', data);
+    }
+  } else {
+    throw new functions.https.HttpsError('failed-precondition', 'The function was called with invaid data ', data);
+  }
+
+});
+
+async function getPool(poolID) {
+
+  let poolData = db.collection("pools").doc(poolID).get();
+
+  poolData = (await poolData).data();
+
+  if (poolData == null) {
+    console.log("Invalid pool returning");
+    return "invalid";
+  }
+  console.log("This pools raw data is: ", poolData);
+  //If the pool is a private/child pool get the needed data from the parentPool
+  if (poolData.parentPool != null) {
+
+    let parentData = await getPool(poolData.parentPool);
+
+    return {
+      poolID: poolID,
+      tags: parentData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: parentData.state,
+      date: parentData.state,
+      questions: parentData.questions,
+      tiebreakers: parentData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      private: true,
+      childPools: null,
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+      admins: poolData.admins ? poolData.admins : [],
+    };
+
+  } else {
+    return {
+      poolID: poolID,
+      tags: poolData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: poolData.state,
+      date: ((poolData.date) ? poolData.date.toDate() : ''),
+      questions: poolData.questions,
+      tiebreakers: poolData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      childPools: (poolData.childPools) ? poolData.childPools : null,
+      private: false,
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      allowShares: poolData.allowShares ? poolData.allowShares : true,
+      admins: poolData.admins ? poolData.admins : [],
+    };
+  }
+}
 
 exports.addMessage = functions.https.onCall(async function(data, context) {
   /*
@@ -825,345 +1163,54 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
 
 });
 
-async function getPool(poolID) {
+exports.banUser = functions.https.onCall(async function(data, context) {
 
-  let poolData = db.collection("pools").doc(poolID).get();
-
-  poolData = (await poolData).data();
-
-  if (poolData == null) {
-    console.log("Invalid pool returning");
-    return "invalid";
-  }
-  console.log("This pools raw data is: ", poolData);
-  //If the pool is a private/child pool get the needed data from the parentPool
-  if (poolData.parentPool != null) {
-
-    let parentData = await getPool(poolData.parentPool);
-
-    return {
-      poolID: poolID,
-      tags: parentData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: parentData.state,
-      date: parentData.state,
-      questions: parentData.questions,
-      tiebreakers: parentData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      private: true,
-      childPools: null,
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
-      admins: poolData.admins ? poolData.admins : [],
-    };
-
-  } else {
-    return {
-      poolID: poolID,
-      tags: poolData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: poolData.state,
-      date: ((poolData.date) ? poolData.date.toDate() : ''),
-      questions: poolData.questions,
-      tiebreakers: poolData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      childPools: (poolData.childPools) ? poolData.childPools : null,
-      private: false,
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      allowShares: poolData.allowShares ? poolData.allowShares : true,
-      admins: poolData.admins ? poolData.admins : [],
-    };
-  }
-}
-
-exports.joinPool = functions.https.onCall(async function(data, context) {
-  /**
-   * This function must be called with the data param containing
-   * {
-   *    uid:""//The id of the user to join this pool
-   *    poolID:""//The id of the pool that sould be joined
-   *    join:true//True if the user should join the pool false if the user should leave the pool
-   * }
-   * it will return {
-      result:joined,requested
-    }
-   */
-  console.log("Join pool function called with data: ", data);
-
-
-  // Checking that the user is authenticated.
+  // Check that the user is authenticated.
   if (!context.auth) {
-    // Throwing an HttpsError so that the client gets the error details.
+    // Throw an HttpsError so that the client gets the error details.
     throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
       'while authenticated.');
   }
 
-  if (data.uid == null || data.poolID == null || data.join == null) {
-    // Throwing an HttpsError so that the client gets the error details.
-    throw new functions.https.HttpsError('failed-precondition', 'The function was called with invaid data ', data);
-  }
+  const uid = context.auth.uid; //the uid of the user who the requested this operation
+  const uidToBan = data.uidToBan;
+  let adminObject = await (db.collection("admins").doc(uid).get());
 
 
-  const userID = context.auth.uid; //The uid of the user who requested this operation
-  const targetUid = data.uid; //the uid of the user whom the request is targeted
-  const poolID = data.poolID; //the uid of the user whom the request is targeted
-  const join = data.join; //This is for telling weather the user wishes to join or not
+  if (adminObject.exists && uidToBan != null) {
 
-  //Request the needed data
-  let targetUser = db.collection("users").doc(targetUid).get();
-  let pool = getPool(poolID);
-  let user = db.collection('users').doc(userID).get();
+    let bannedUserData = (await db.collection("users").doc(uidToBan).get()).data();
+    //Move the userData to the bannedUser collection then delete them from the normal user collection
+    let op1 = db.collection("bannedUsers").doc(uidToBan).set(bannedUserData);
+    let op2 = db.collection("users").doc(uidToBan).delete();
+    //Disable the users account
+    let op3 = admin.auth().updateUser(uidToBan, {
+      disabled: true,
+    }).then(function(userRecord) {
+      console.log('Successfully disabled user');
+    }).catch(function(error) {
+      console.log('Error disableing user: ', error);
+    });
 
-  targetUser = (await targetUser).data();
-  pool = await pool;
-
-  let ops = []; //The operations stored as an array of promises
-
-  //If the pool is valid
-  if (pool != "invalid") {
-    if (pool.state != "closed" && !(pool.state == "active" && join)) { //If the pool is not closed and (The the user is not trying to join an active pool)
-      if (userID == targetUid) { //If the user is requesting this operation as themselves
-
-        console.log("Loaded pool data: ", pool);
-
-        if (join) { //If the user wants to join the pool
-
-          if (!pool.private || pool.allowedUsers.includes(userID)) { //If the user is allowed to join this pool add them to it
-
-            await db.collection("users").doc(userID).update({
-              pools: admin.firestore.FieldValue.arrayUnion(poolID),
-            });
-
-            await db.collection("pools").doc(poolID).update({
-              users: admin.firestore.FieldValue.arrayUnion({
-                uid: userID,
-                score: 0,
-                isWinner: false,
-              }),
-            });
-
-            return {
-              uid: userID,
-              result: "joined",
-              data: data,
-            };
-
-          } else { //This user is not allowed to join this pool so request permission from the pool admin/captian
-
-            //Add this pool to the users pending pools
-            await db.collection("users").doc(userID).update({
-              pendingPools: admin.firestore.FieldValue.arrayUnion(poolID),
-            });
-
-            await db.collection("pools").doc(poolID).update({
-              pendingUsers: admin.firestore.FieldValue.arrayUnion(userID),
-            });
-
-            //Send request to the pool admin/admins to join the pool
-            //// TODO: Send request to other admins
-            let adminT = pool.admins[0];
-            console.log("admin is: ", adminT);
-            await sendNotification(adminT, {
-              user: pool.admins[1],
-              senderID: userID,
-              poolID: poolID,
-              id: userID + poolID,
-              link: "/pool/?id=" + poolID,
-              title: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join your pool.",
-              text: targetUser.firstName + ' ' + targetUser.lastName + " has requested to join " + pool.name + ". Click to accept or reject.",
-              type: "pool-request",
-            });
-
-            return {
-              uid: userID,
-              result: "requested",
-              data: data,
-            };
-          }
-        } else { //The user does not want to join/be part of the pool so remove them from it
-
-          await db.collection("users").doc(userID).update({
-            pools: admin.firestore.FieldValue.arrayRemove(poolID),
-            pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
-          });
-
-          let userToRemove = pool.users.find(function(e) {
-            return e.uid === userID;
-          });
-          console.log(userToRemove);
-          //Remove the user from the pool//// QUESTION: Should we also delete thier answers?
-          await db.collection("pools").doc(poolID).update({
-            users: admin.firestore.FieldValue.arrayRemove(userToRemove),
-            pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
-          });
-          return {
-            uid: userID,
-            result: "left",
-            data: data,
-          };
+    await Promise.all([op1, op2, op3]).then(result => {
+      console.log('Succesfully Banned User!');
+      return {
+        result: 'Successfully banned user!',
+        data: {
+          result: 'success'
         }
+      };
+    }).catch(error => {
+      console.log(error);
+      return 'Error banning user!';
+    });
 
-      } else { //The user is requesting the operation on another user
-
-        user = (await user).data();
-
-        if (!pool.private || (pool.allowShares) || pool.admins.includes(userID) || user.pools.includes(poolID)) { //If this user is allowed to perform this operation // TODO: check if the user requesting this operation is part of this pool
-
-          if (join) { //If this user is allowing the specified user to join the pool
-            if (targetUser.pendingPools.includes(poolID)) { //If the specified user has requested to join this pool
-              //Add the user to the allowedUsers and to the users array
-              ops.push(db.collection("pools").doc(poolID).update({
-                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
-                allowedUsers: admin.firestore.FieldValue.arrayUnion(targetUid),
-                users: admin.firestore.FieldValue.arrayUnion({
-                  uid: targetUid,
-                  score: 0,
-                  isWinner: false,
-                }),
-              }));
-
-              //Add the pool to the users pool list
-              ops.push(db.collection("users").doc(targetUid).update({
-                pools: admin.firestore.FieldValue.arrayUnion(poolID),
-              }));
-
-              //Remove the notification from the user if any
-              ops.push(removeNotification(targetUid, "pool-request-" + poolID));
-
-              ops.push(sendNotification(targetUid, {
-                user: targetUid,
-                id: poolID,
-                link: "/pool/?id=" + poolID,
-                title: user.firstName + ' ' + user.lastName + " has accepted your request.",
-                text: user.firstName + ' ' + user.lastName + " has accepted your request to join" + pool.name + " pool. Click to play!",
-                type: "PA",
-              }));
-
-              await Promise.all(ops);
-
-              return {
-                uid: userID,
-                operation: "success",
-                result: "accepted",
-                data: data,
-              };
-
-            } else { //The user has not requested to join this pool so send them an invite and allow them to join
-
-              await db.collection("pools").doc(poolID).update({
-                allowedUsers: admin.firestore.FieldValue.arrayUnion(targetUid),
-              });
-
-              await sendNotification(targetUid, {
-                user: targetUid,
-                id: poolID,
-                link: "/pool/?id=" + poolID,
-                title: user.firstName + ' ' + user.lastName + " invited you to a pool.",
-                text: user.firstName + ' ' + user.lastName + " invited you to join the " + pool.name + " pool. Click to play!",
-                type: "PI",
-              });
-
-              return {
-                uid: userID,
-                operation: "success",
-                result: "invited",
-                data: data,
-              };
-            }
-
-          } else { //The user is requesting that the specifid uid not be allowed in the pool
-
-            if (pool.admins.includes(userID)) { //If the user is an admin kick the requested user from the pool
-
-              await db.collection("users").doc(targetUid).update({
-                pools: admin.firestore.FieldValue.arrayRemove(poolID),
-                pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
-              });
-
-              //Find the object of the user to kick
-              let userToKick = 0;
-              for (var i = 0; i < pool.users.length; i++) {
-                if (pool.users[i].uid == targetUid) {
-                  userToKick = pool.users[i];
-                  break;
-                }
-              }
-              //Remove the user from the allowed users and pool users
-              ops.push(db.collection("pools").doc(poolID).update({
-                pendingUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
-                allowedUsers: admin.firestore.FieldValue.arrayRemove(targetUid),
-                users: admin.firestore.FieldValue.arrayRemove(userToKick),
-              }));
-
-              //Remove the user from the pool//// QUESTION: should we do this as it does remove thier answers // NOTE: If we store users as an array in the pool doc we can delete them from the pool and keep the answers
-              //await db.collection("pools").doc(poolID).collection("users").doc(userID).delete();
-              //TODO:  Maybe add the user to the banned users list and perhaps send a notification
-
-              return {
-                uid: userID,
-                operation: "success",
-                result: "kicked",
-                data: data,
-              };
-            } else { //The user is not an admin so send a request to the admin to kick the specified user
-
-
-              //Send request to the pool admin/admins to kick the user
-              //// TODO: Send request to other admins
-              let adminT = pool.admins[0];
-              console.log("admin is: ", adminT);
-              await sendNotification(adminT, {
-                user: pool.admins[1],
-                senderID: userID,
-                poolID: poolID,
-                id: targetUid + poolID,
-                link: "/pool/?id=" + poolID, //", //"/pool/?id=" + poolID,
-                title: user.firstName + ' ' + user.lastName + " has requested.",
-                text: user.username + " has reported user: " + targetUser.username + " click to veiw.",
-                type: "UR",
-              });
-
-              return {
-                uid: userID,
-                operation: "success",
-                result: "reported",
-                data: data,
-              };
-            }
-
-          }
-
-        } else { //The user does not have permission for this operation so deny their request
-          return {
-            result: "You do not have permission to do that!",
-            operation: "denied",
-            uid: userID,
-            data: data,
-          };
-        }
-
-      }
-
-    } else {
-      throw new functions.https.HttpsError('failed-precondition', 'Unable to join or invite to pool', data);
-    }
   } else {
-    throw new functions.https.HttpsError('failed-precondition', 'The function was called with invaid data ', data);
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'as an admin with valid data.');
   }
 
 });
-
-
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions

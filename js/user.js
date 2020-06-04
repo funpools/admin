@@ -22,45 +22,67 @@ function signOut() {
   });
 }
 
+//getUser function taken from app
 var loadedUsers = []; //
+var callbacks = {}; // This stores the calbacks for users we are loading
 function getUser(userID, callback) {
   //example usage
   //  getUser('MTyzi4gXVqfKIOoeihvdUuVAu3E2', function(user) {
   //  console.log(user);});
-  //If we have already loaded this users data then return it else load it from the database
-  if (userID in loadedUsers) {
-    console.log("found user in array");
-    callback(loadedUsers[userID]);
+
+  if (userID && userID != '') { // If the userID is valid
+    if (loadedUsers[userID]) { // If we have already loaded this users data then return it else load it from the database
+      console.log("found user in array");
+      callback(loadedUsers[userID]);
+    } else {
+
+      if (!callbacks[userID]) { // Check if we are already loading this user
+        // We are not currently loading this user so make a callback array for the user and push the current callback to it
+        callbacks[userID] = [];
+        callbacks[userID].push(callback);
+
+        var profilePic = "";
+        var profilePictureRef = storageRef.child('profile-pictures').child(userID); // Create a reference to the file we want to download
+
+        profilePictureRef.getDownloadURL().then(function(url) { // Get the download URL
+          profilePic = url;
+        }).catch(function(error) {
+          profilePic = "./unknown.jpg";;
+        }).then(function() {
+          db.collection("users").doc(userID).get().then(function(userData) {
+            loadedUsers[userID] = {
+              uid: userID,
+              username: userData.get("username"),
+              firstName: userData.get("firstName"),
+              lastName: userData.get("lastName"),
+              fullName: function() {
+                return "" + this.firstName + " " + this.lastName;
+              },
+              profilePic: profilePic,
+              bio: userData.get("bio"),
+              favoriteSports: userData.get("favoriteSports"),
+              favoriteTeams: userData.get("favoriteTeams"),
+            };
+            console.log("loaded user: " + userID);
+
+            console.log(callbacks);
+            for (let i = 0; i < callbacks[userID].length; i++) { // Iterate through the callbacks for this user
+              callbacks[userID][i](loadedUsers[userID]);
+            }
+            delete callbacks[userID]; // Remove the calbacks for this user
+
+          });
+        });
+      } else { // This user currently being loaded so add the callback to the array
+        callbacks[userID].push(callback);
+      }
+
+    }
   } else {
-    var profilePic = "";
-    // Create a reference to the file we want to download
-    var profilePictureRef = storageRef.child('profile-pictures').child(userID);
-    // Get the download URL
-    profilePictureRef.getDownloadURL().then(function(url) {
-      profilePic = url;
-    }).catch(function(error) {
-      profilePic = "./unknown.jpg";
-    }).then(function() {
-      db.collection("users").doc(userID).get().then(function(userData) {
-        loadedUsers[userID] = {
-          uid: userID,
-          username: userData.get("username") ? userData.get("username") : 'undefined',
-          firstName: userData.get("firstName") ? capitalizeFirstLetter(userData.get("firstName")) : 'undefined',
-          lastName: userData.get("lastName") ? capitalizeFirstLetter(userData.get("lastName")) : 'undefined',
-          picURL: profilePic,
-        };
-        console.log("loaded user: " + userID);
-        callback(loadedUsers[userID]);
-      });
-    });
+    callback({}); //The id is invalid so return the invalid/anonomus user object
   }
 }
 
-function banUser(uid) {
-  app.toast.show({
-    text: "This feature is coming soon!"
-  });
-}
 
 //If the pool exist then this edits its data if it doesnt exist eg poolID=0||null then it creates a new pool. tags should be an array, poolStartDate should be a Timestamp
 function editUser(username, firstName, lastName, pic, password) {
@@ -128,6 +150,28 @@ function editUser(username, firstName, lastName, pic, password) {
   });
 }
 
+
+
+async function banUserF(uidToBan) { //Bans the user then resfreshes the page
+
+  console.log('Trying to ban uid: ', uidToBan);
+
+  banUser({
+    uidToBan: uidToBan,
+  }).then(function(result) {
+    // TODO: Refresh the search properly
+    searchUsers();
+    app.dialog.alert('Successfully banned the user!');
+    console.log(result);
+  }).catch(error => {
+    app.dialog.close();
+    app.dialog.alert(error.message);
+    console.log(error);
+  });
+
+  return true;
+}
+
 function searchUsers() {
 
   $$('.search-user-preloader').show();
@@ -191,7 +235,7 @@ function searchUsers() {
         $$('#all-users-list').append('<li><div class="item-content">' +
           '<div class="item-media"><div class="picture" style="background-image: url(' + user.picURL + ')"></div></div>' +
           '<div class="item-inner">' +
-          '<div class="item-title-row"><div class="item-title">' + user.username + '</div><div class="item-after"><a href="#" onclick="banUser(\'' + user.uid + '\')" class="button color-red">Ban User</a></div></div>' +
+          '<div class="item-title-row"><div class="item-title">' + user.username + '</div><div class="item-after"><a href="#" onclick="banUserF(\'' + user.uid + '\')" class="button color-red">Ban User</a></div></div>' +
           '<div class="item-text">' + user.firstName + ' ' + user.lastName + '</div>' +
           '</div></div></li>');
 
@@ -204,6 +248,7 @@ function searchUsers() {
 
     });
   });
+
 }
 
 function forgotPassword() {

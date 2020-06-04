@@ -229,7 +229,8 @@ function setupMainPage() {
 
   });
 }
-//////*******feeback section********\\\\\\\
+
+//////*******feedback section********\\\\\\\
 
 //array of feedback messages
 var messages = [];
@@ -487,8 +488,6 @@ function deleteQuestion(el) { //remove a question from the list
   deleteAnswer(el.parentElement.parentElement);
 }
 
-
-
 //////*******Pools section********\\\\\\\
 
 let loadedPools = [];
@@ -740,7 +739,6 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   }
   app.popup.open(".pool-popup");
 };
-
 
 function savePool() {
   app.preloader.show();
@@ -1109,65 +1107,4 @@ function deleteTag(id) {
     });
     loadTags();
   });
-}
-
-//getUser function taken from app
-var loadedUsers = []; //
-var callbacks = {}; // This stores the calbacks for users we are loading
-function getUser(userID, callback) {
-  //example usage
-  //  getUser('MTyzi4gXVqfKIOoeihvdUuVAu3E2', function(user) {
-  //  console.log(user);});
-
-  if (userID && userID != '') { // If the userID is valid
-    if (loadedUsers[userID]) { // If we have already loaded this users data then return it else load it from the database
-      console.log("found user in array");
-      callback(loadedUsers[userID]);
-    } else {
-
-      if (!callbacks[userID]) { // Check if we are already loading this user
-        // We are not currently loading this user so make a callback array for the user and push the current callback to it
-        callbacks[userID] = [];
-        callbacks[userID].push(callback);
-
-        var profilePic = "";
-        var profilePictureRef = storageRef.child('profile-pictures').child(userID); // Create a reference to the file we want to download
-
-        profilePictureRef.getDownloadURL().then(function(url) { // Get the download URL
-          profilePic = url;
-        }).catch(function(error) {
-          profilePic = anonymousProfilePic;
-        }).then(function() {
-          db.collection("users").doc(userID).get().then(function(userData) {
-            loadedUsers[userID] = {
-              uid: userID,
-              username: userData.get("username"),
-              firstName: capFirstLetter(userData.get("firstName")),
-              lastName: capFirstLetter(userData.get("lastName")),
-              fullName: function() {
-                return "" + this.firstName + " " + this.lastName;
-              },
-              profilePic: profilePic,
-              bio: userData.get("bio"),
-              favoriteSports: userData.get("favoriteSports"),
-              favoriteTeams: userData.get("favoriteTeams"),
-            };
-            console.log("loaded user: " + userID);
-
-            console.log(callbacks);
-            for (let i = 0; i < callbacks[userID].length; i++) { // Iterate through the callbacks for this user
-              callbacks[userID][i](loadedUsers[userID]);
-            }
-            delete callbacks[userID]; // Remove the calbacks for this user
-
-          });
-        });
-      } else { // This user currently being loaded so add the callback to the array
-        callbacks[userID].push(callback);
-      }
-
-    }
-  } else {
-    callback({}); //The id is invalid so return the invalid/anonomus user object
-  }
 }
