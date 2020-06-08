@@ -923,11 +923,22 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       tiebreakers: poolData.tiebreakers,
       state: 'draft',
     };
+    //clear the selected questions
+    newPool.questions.forEach((question, i) => {
+      newPool.questions[i].correctAnswer = null;
+      newPool.questions[i].answers.forEach((answer, x) => {
+        newPool.questions[i].answers[x].correct = false;
+      });
+    });
+
     editPool(newPool, function(editedPoolID) {
       console.log("Made a new duplicate pool with ID: " + editedPoolID);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
+    /*
+     */
   });
+
 }
 
 
