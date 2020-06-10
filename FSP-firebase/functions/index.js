@@ -18,15 +18,13 @@ exports.poolUpdate = functions.firestore
 
     //async function to grade the pool
     async function gradePool(poolID, messageType) {
-      /*
-        function usage
-        Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
-        Valid message types are:
-          "active"//This will let the users know that the pool is now active
-          "score-update"//This notifys the pools users of there new score
-          "none"//This will not send a notification
-      */
-
+      /* function usage
+       *Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
+       *Valid message types are:
+       *  "active"//This will let the users know that the pool is now active
+       *  "score-update"//This notifys the pools users of there new score
+       *  "none"//This will not send a notification
+       */
 
       let poolLog = "Graded pool: ";
       let highestScore = 0; //This is used to determin the winner(s)
@@ -329,19 +327,17 @@ exports.poolUpdate = functions.firestore
 
 //Check for any pools that are closing soon and notify the users in that pool
 exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function(context) {
-  console.log('Checking for any pools that are closing soon!');
 
+  //get any pools that close within "minutes" from now
   const minutes = 60;
   let startDate = new Date();
   let endDate = new Date(startDate.getTime() + (minutes * 60000));
-
-  let querySnapshot = await db.collection('pools').orderBy('date')
-    .startAt(startDate).endAt(endDate).get();
+  let querySnapshot = await db.collection('pools').orderBy('date').startAt(startDate).endAt(endDate).get();
 
   console.log(querySnapshot.size, " pools are closing soon! Start and end date:", startDate, endDate);
 
-  async function sendClosingNotificatoin(poolID) {
-
+  async function sendClosingNotificatoin(poolID) { //Sends out a closing notification for the given pool and any child pools
+    // TODO: Pehaps pass in the doc data to this function to save a read?
     let pool = await getPool(poolID);
 
     let poolPromises = [];
@@ -349,13 +345,13 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
     if (pool.childPools != null) {
       pool.childPools.forEach(function(cpoolID) {
         poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
-          console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
+          //console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
         }));
       });
     }
 
     let userPromises = [];
-    //if we have not sent a closing notification for this pool send one to all users in the pool
+    //if we have not sent a closing notification for this pool send one to all users in this pool
     if (!pool.sentPoolClosingNotification) {
       pool.users.forEach((user, i) => {
         userPromises.push(sendNotification(user.uid, {
@@ -365,30 +361,32 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
           title: "Pool closing soon",
           text: "Enter your answers now: " + pool.name + " is closing soon!",
           type: "PU",
-        }).then(result => {
-          console.log("sent notificatoin to user", result);
-        }));
+        }).then(result => {}));
       });
+      console.log("Sent closing notificatoin to " + pool.users.length + " users!");
     } else {
       console.log("Closing notification already sent for this pool.");
     }
-
+    //wait for all operations to finish
     await Promise.all(userPromises);
     await Promise.all(poolPromises);
     await db.collection("pools").doc(poolID).update({
       sentPoolClosingNotification: true,
     });
+
     return true;
   }
 
   //send a notificatoin for each of the found pools
+  let notificationPromises = [];
   for (var i = 0; i < querySnapshot.docs.length; i++) {
     //console.log(querySnapshot.docs[i].id);
-    console.log("Pool ", querySnapshot.docs[i].id, " is closing soon pool data: ", querySnapshot.docs[i].data());
-    await sendClosingNotificatoin(querySnapshot.docs[i].id); // TODO: Change this to be more asychronus ie(Promise.all();)
+    //console.log("Pool ", querySnapshot.docs[i].id, " is closing soon pool data: ", querySnapshot.docs[i].data());
+    notificationPromises.push(sendClosingNotificatoin(querySnapshot.docs[i].id));
   }
+  await Promise.all(notificationPromises);
 
-  return null;
+  return true;
 });
 
 //Creates a private pool with given data
