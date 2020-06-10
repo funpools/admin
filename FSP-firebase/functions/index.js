@@ -327,20 +327,66 @@ exports.poolUpdate = functions.firestore
     return 0;
   });
 
-exports.poolClosing = functions.pubsub.schedule('every 10 minutes').onRun(async function(context) {
+//Check for any pools that are closing soon and notify the users in that pool
+exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function(context) {
   console.log('Checking for any pools that are closing soon!');
-  let date = new Date();
-  console.log(date);
-  let querySnapshot = await db.collection('pools').where('date', '>', date).get();
 
-  async function closeWarning() {
+  const minutes = 60;
+  let startDate = new Date();
+  let endDate = new Date(startDate.getTime() + (minutes * 60000));
 
+  let querySnapshot = await db.collection('pools').orderBy('date')
+    .startAt(startDate).endAt(endDate).get();
+
+  console.log(querySnapshot.size, " pools are closing soon! Start and end date:", startDate, endDate);
+
+  async function sendClosingNotificatoin(poolID) {
+
+    let pool = await getPool(poolID);
+
+    let poolPromises = [];
+    //If this pool has children then add them to the list of pools to send closing notifications to
+    if (pool.childPools != null) {
+      pool.childPools.forEach(function(cpoolID) {
+        poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
+          console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
+        }));
+      });
+    }
+
+    let userPromises = [];
+    //if we have not sent a closing notification for this pool send one to all users in the pool
+    if (!pool.sentPoolClosingNotification) {
+      pool.users.forEach((user, i) => {
+        userPromises.push(sendNotification(user.uid, {
+          id: poolID,
+          poolID: poolID,
+          link: "/pool/?id=" + poolID,
+          title: "Pool closing soon",
+          text: "Enter your answers now: " + pool.name + " is closing soon!",
+          type: "PU",
+        }).then(result => {
+          console.log("sent notificatoin to user", result);
+        }));
+      });
+    } else {
+      console.log("Closing notification already sent for this pool.");
+    }
+
+    await Promise.all(userPromises);
+    await Promise.all(poolPromises);
+    await db.collection("pools").doc(poolID).update({
+      sentPoolClosingNotification: true,
+    });
+    return true;
   }
 
-  querySnapshot.forEach(function(doc) {
-    console.log(doc.id, ' => ', doc.data());
-    console.log("timestamp", admin.firestore.FieldValue.serverTimestamp());
-  });
+  //send a notificatoin for each of the found pools
+  for (var i = 0; i < querySnapshot.docs.length; i++) {
+    //console.log(querySnapshot.docs[i].id);
+    console.log("Pool ", querySnapshot.docs[i].id, " is closing soon pool data: ", querySnapshot.docs[i].data());
+    await sendClosingNotificatoin(querySnapshot.docs[i].id); // TODO: Change this to be more asychronus ie(Promise.all();)
+  }
 
   return null;
 });
@@ -802,6 +848,7 @@ async function getPool(poolID) {
       allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
       admins: poolData.admins ? poolData.admins : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
     };
 
   } else {
@@ -824,6 +871,7 @@ async function getPool(poolID) {
       bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
       allowShares: poolData.allowShares ? poolData.allowShares : true,
       admins: poolData.admins ? poolData.admins : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
     };
   }
 }

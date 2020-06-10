@@ -935,8 +935,6 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       console.log("Made a new duplicate pool with ID: " + editedPoolID);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
-    /*
-     */
   });
 
 }
