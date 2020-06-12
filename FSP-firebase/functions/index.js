@@ -534,6 +534,14 @@ exports.deletePool = functions.https.onCall(async function(data, context) {
 
 });
 
+async function getUser(uidToGet) { //Gets a user and runs checks for errors and invalid pareameters
+  let userData = (await db.collection('users').doc(uidToGet).get()).data();
+
+  (userData.pendingPools) ? null: userData.pendingPools = [];
+
+  return userData
+}
+
 exports.joinPool = functions.https.onCall(async function(data, context) { //Function for joining and leaving pools
   /**
    * This function must be called with the data param containing
@@ -568,11 +576,11 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
   const join = data.join; //This is for telling weather the user wishes to join or not
 
   //Request the needed data
-  let targetUser = db.collection("users").doc(targetUid).get();
+  let targetUser = getUser(targetUid);
   let pool = getPool(poolID);
   let user = db.collection('users').doc(userID).get();
 
-  targetUser = (await targetUser).data();
+  targetUser = await targetUser;
   pool = await pool;
 
   let ops = []; //The operations stored as an array of promises
@@ -665,7 +673,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
 
         user = (await user).data();
 
-        if (!pool.private || (pool.allowShares) || pool.admins.includes(userID) || user.pools.includes(poolID)) { //If this user is allowed to perform this operation // TODO: check if the user requesting this operation is part of this pool
+        if (!pool.private || (pool.allowShares && user.pools.includes(poolID)) || pool.admins.includes(userID)) { //If this user is allowed to perform this operation // TODO: check if the user requesting this operation is part of this pool
 
           if (join) { //If this user is allowing the specified user to join the pool
             if (targetUser.pendingPools.includes(poolID)) { //If the specified user has requested to join this pool
