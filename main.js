@@ -489,6 +489,24 @@ function deleteQuestion(el) { //remove a question from the list
 }
 
 //////*******Pools section********\\\\\\\
+const invalidPool = {
+  poolID: "invalid",
+  tags: [],
+  name: "invalid",
+  description: "invalid",
+  state: "invalid",
+  date: "invalid",
+  pic: "invalid picURL", // TODO: add a image here
+  users: [],
+  questions: [],
+  winners: [],
+  id: "invalid",
+  private: false,
+  pendingUsers: [],
+  bannedUsers: [],
+  allowShares: false,
+  admins: [],
+}
 
 let loadedPools = [];
 // An asyc method to get pool data
