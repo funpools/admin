@@ -340,39 +340,43 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
     // TODO: Pehaps pass in the doc data to this function to save a read?
     let pool = await getPool(poolID);
 
-    let poolPromises = [];
-    //If this pool has children then add them to the list of pools to send closing notifications to
-    if (pool.childPools != null) {
-      pool.childPools.forEach(function(cpoolID) {
-        poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
-          //console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
-        }));
-      });
-    }
+    if (pool.state === "open") { //Only send closing notifications if the pool is open
+      let poolPromises = [];
+      //If this pool has children then add them to the list of pools to send closing notifications to
+      if (pool.childPools != null) {
+        pool.childPools.forEach(function(cpoolID) {
+          poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
+            //console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
+          }));
+        });
+      }
 
-    let userPromises = [];
-    //if we have not sent a closing notification for this pool send one to all users in this pool
-    if (!pool.sentPoolClosingNotification) {
-      pool.users.forEach((user, i) => {
-        userPromises.push(sendNotification(user.uid, {
-          id: poolID,
-          poolID: poolID,
-          link: "/pool/?id=" + poolID,
-          title: "Pool closing soon",
-          text: "Enter your answers now: " + pool.name + " is closing soon!",
-          type: "PU",
-        }).then(result => {}));
+      let userPromises = [];
+      //if we have not sent a closing notification for this pool send one to all users in this pool
+      if (!pool.sentPoolClosingNotification) {
+        pool.users.forEach((user, i) => {
+          userPromises.push(sendNotification(user.uid, {
+            id: poolID,
+            poolID: poolID,
+            link: "/pool/?id=" + poolID,
+            title: "Pool closing soon",
+            text: "Enter your answers now: " + pool.name + " is closing soon!",
+            type: "PU",
+          }).then(result => {}));
+        });
+        console.log("Sent closing notificatoin to " + pool.users.length + " users!");
+      } else {
+        console.log("Closing notification already sent for this pool.");
+      }
+      //wait for all operations to finish
+      await Promise.all(userPromises);
+      await Promise.all(poolPromises);
+      await db.collection("pools").doc(poolID).update({
+        sentPoolClosingNotification: true,
       });
-      console.log("Sent closing notificatoin to " + pool.users.length + " users!");
     } else {
-      console.log("Closing notification already sent for this pool.");
+      //console.log("This pool is not open. Not sending closing notification");
     }
-    //wait for all operations to finish
-    await Promise.all(userPromises);
-    await Promise.all(poolPromises);
-    await db.collection("pools").doc(poolID).update({
-      sentPoolClosingNotification: true,
-    });
 
     return true;
   }
