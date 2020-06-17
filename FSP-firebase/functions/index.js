@@ -928,7 +928,6 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
     for (var i = 0; i < pool.users.length; i++) {
       if (pool.users[i].uid != uid) {
         noteOps.push(sendNotification(pool.users[i].uid, {
-          user: pool.users[i].uid,
           senderID: uid,
           poolID: poolID,
           id: poolID,
@@ -994,11 +993,10 @@ async function sendNotification(uid, message) {
 
     if (exludedNotifications.includes(message.type)) { //If the user has requested to not receve these types of notifications the dont send anything
       console.log("user: ", user, " has requested to not receve this");
-      return "Failed to send the notification. The user has requested not to see these notifications";
+      return "Failed to send the notification. The user has requested not to see these types notifications";
     } else {
       message.user = uid;
       message.timestamp = admin.firestore.FieldValue.serverTimestamp();
-
       //console.log("uid: ", uid, " message: ", message);
 
       //Set the channel id
@@ -1041,7 +1039,6 @@ async function sendNotification(uid, message) {
       if (message.image) {
         notificationMessage.notification[image] = message.image;
       }
-
       //console.log(notificationMessage);
 
       //Add the message to the users updates
