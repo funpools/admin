@@ -266,6 +266,19 @@ exports.poolUpdate = functions.firestore
           //Grade the pool and notify the users that the pool is now closed
           return gradePool(context.params.poolID, "closed");
           break;
+        case "open":
+          let scoreResetUsers = [];
+          newData.users.forEach((user, i) => {
+            scoreResetUsers.push({
+              uid: user.uid,
+              score: 0,
+              isWinner: false,
+            });
+          });
+          return db.collection("pools").doc(context.params.poolID).update({
+            users: scoreResetUsers,
+          });
+          break;
         default:
 
       }
