@@ -10,7 +10,7 @@ const db = admin.firestore();
 // Listen for changes in all documents in the 'pools' collection
 exports.poolUpdate = functions.firestore
   .document('pools/{poolID}')
-  .onWrite((change, context) => { //On write to any pool // NOTE: The little arrow thing is shorthand for function(change,context)
+  .onWrite((change, context) => { //On write to any pool
     //// NOTE: we can get the poolsID with context.params.poolID
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
@@ -166,7 +166,19 @@ exports.poolUpdate = functions.firestore
         });
 
         //Sort the graded users by score and if they are a winner
-        users.sort((a, b) => (a.winner) ? 1 : (a.score - b.score));
+        users.sort((a, b) => {
+          if (!a.isWinner && b.isWinner) {
+            return 1;
+          } else if (b.score != a.score) {
+            return b.score - a.score;
+          } else {
+            if (a.uid > b.uid) {
+              return -1;
+            }
+          }
+          return 0;
+        });
+
         console.log("Pools final user array is: ", users);
 
         //Wait for the pools doc to finish updating
@@ -925,8 +937,8 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
   const poolID = data.poolID;
   const text = data.text;
 
-  let pool = getPool(poolID);
-  pool = await pool;
+  let pool = await getPool(poolID);
+  let senderData = await getUser(uid);
 
   if (true) { //// TODO: check to see if the user is able to send this chat message eg they are a part of the pool
 
@@ -945,7 +957,7 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
           poolID: poolID,
           id: poolID,
           link: "/chat/?id=" + poolID,
-          title: "New chat Message",
+          title: pool.name + ": " + senderData.firstName + " " + senderData.lastName,
           text: text,
           type: "CU",
         }));
