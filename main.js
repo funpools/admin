@@ -4,32 +4,32 @@ var app = new Framework7({
   id: 'com.myapp.test',
   theme: 'aurora',
   routes: [{
-    path: '/home/',
-    url: 'index.html',
-    options: {
-      transition: 'f7-dive',
-    },
-    on: {
-      pageBeforeIn: function () {
-        app.preloader.hide();
-      }
-    }
-  },
-  {
-    path: '/login/',
-    url: 'pages/login.html',
-    options: {
-      transition: 'f7-dive',
-    },
-    on: {
-      pageInit: function (e, page) {
-        //When the pages is Initialized setup the signIn button
-        $$('#log-in').click(function (event) {
-          signIn($$('#uname').val(), $$('#pword').val());
-        });
+      path: '/home/',
+      url: 'index.html',
+      options: {
+        transition: 'f7-dive',
       },
-    }
-  },
+      on: {
+        pageBeforeIn: function() {
+          app.preloader.hide();
+        }
+      }
+    },
+    {
+      path: '/login/',
+      url: 'pages/login.html',
+      options: {
+        transition: 'f7-dive',
+      },
+      on: {
+        pageInit: function(e, page) {
+          //When the pages is Initialized setup the signIn button
+          $$('#log-in').click(function(event) {
+            signIn($$('#uname').val(), $$('#pword').val());
+          });
+        },
+      }
+    },
 
 
   ],
@@ -52,14 +52,14 @@ function makeid(length) {
 }
 
 // user search
-$$('#user-search').on('keyup', function (event) {
+$$('#user-search').on('keyup', function(event) {
   if (event.keyCode === 13) {
     $$('#user-search-button').click();
   }
 });
 
 // Setup for the new multiple choice question button
-$$('#mc-question').on('click', function () {
+$$('#mc-question').on('click', function() {
   //store the question number for later use
   var questionNumb = makeid(10);
   //add the new question html to the page
@@ -67,7 +67,7 @@ $$('#mc-question').on('click', function () {
 });
 
 // Setup for the new numeric question button
-$$('#n-question').on('click', function () {
+$$('#n-question').on('click', function() {
 
   //store the question number for later use
   var questionNumb = makeid(10);
@@ -78,55 +78,55 @@ $$('#n-question').on('click', function () {
 
 
 // Delete pool button on click
-$$('.pool-delete').on('click', function () {
+$$('.pool-delete').on('click', function() {
   let idToDelete = document.getElementById("pool-name").dataset.id;
 
   app.dialog.create({
     text: 'Are you sure you want to delete this pool? This action can not be undone.',
     buttons: [{
-      text: 'Cancel',
-    },
-    {
-      text: 'Delete',
-      color: 'red',
-      onClick: function () {
-        console.log("Deleting pool: ", idToDelete);
-        app.preloader.show();
-        deletePool({
-          poolID: idToDelete,
-        }).then(function () {
-          app.toast.show({
-            text: "Succesfully deleted pool.",
-            closeTimeout: 5000,
-          });
-        }).catch(function (error) {
-          app.toast.show({
-            text: "There was an error deleting your pool. Please try again later.",
-            closeTimeout: 5000,
-            closeButton: true
-          });
-        }).finally(function (result) {
-          //Close the uneeded UI and notify the admin that the pool was saved
-          loadPools(function () {
-            app.preloader.hide();
-            app.popup.close(".pool-popup");
-          });
+        text: 'Cancel',
+      },
+      {
+        text: 'Delete',
+        color: 'red',
+        onClick: function() {
+          console.log("Deleting pool: ", idToDelete);
+          app.preloader.show();
+          deletePool({
+            poolID: idToDelete,
+          }).then(function() {
+            app.toast.show({
+              text: "Succesfully deleted pool.",
+              closeTimeout: 5000,
+            });
+          }).catch(function(error) {
+            app.toast.show({
+              text: "There was an error deleting your pool. Please try again later.",
+              closeTimeout: 5000,
+              closeButton: true
+            });
+          }).finally(function(result) {
+            //Close the uneeded UI and notify the admin that the pool was saved
+            loadPools(function() {
+              app.preloader.hide();
+              app.popup.close(".pool-popup");
+            });
 
-        });
-      }
-    },
+          });
+        }
+      },
     ],
   }).open();
 
 });
 
 // Save pool button on click
-$$('.pool-save').on('click', function () {
+$$('.pool-save').on('click', function() {
   savePool();
 });
 
 //Duplicate pool button
-$$('.pool-duplicate').click(function () {
+$$('.pool-duplicate').click(function() {
   duplicatePool();
 });
 
@@ -150,9 +150,9 @@ function newPool() {
 
 
 function setupMainPage() {
-  db.collection("admins").doc(uid).get().catch(function (error) {
+  db.collection("admins").doc(uid).get().catch(function(error) {
     console.log(error);
-  }).then(function (userData) {
+  }).then(function(userData) {
     //If the user exist then this user is an admin so load the main page
     if (userData.exists) {
       User = {
@@ -160,7 +160,7 @@ function setupMainPage() {
         username: userData.get("lastName"),
         firstName: userData.get("firstName"),
         lastName: userData.get("lastName"),
-        fullName: function () {
+        fullName: function() {
           return "" + this.firstName + " " + this.lastName;
         },
         profilePic: null //profilePic,// TODO: Load that here
@@ -190,7 +190,7 @@ function setupMainPage() {
     }
 
     //load Feedback
-    db.collection("feedback").get().then(function (snapshot) {
+    db.collection("feedback").get().then(function(snapshot) {
 
       $$('.skeleton-feedback').hide();
       var options = {
@@ -201,9 +201,9 @@ function setupMainPage() {
         minute: '2-digit'
       };
       let messageIndex = 0;
-      snapshot.forEach(function (doc) {
+      snapshot.forEach(function(doc) {
 
-        getUser(doc.get('sender'), function (user) {
+        getUser(doc.get('sender'), function(user) {
           var message = {
             id: doc.id,
             sender: user,
@@ -243,16 +243,16 @@ function showFeedback(index) {
       app.dialog.create({
         text: 'Are you sure you want to delete this account?',
         buttons: [{
-          text: 'Cancel',
-        },
-        {
-          text: 'Delete',
-          color: 'red',
-          onClick: function () {
-            deleteAccount(message.sender.uid)
-
+            text: 'Cancel',
           },
-        },
+          {
+            text: 'Delete',
+            color: 'red',
+            onClick: function() {
+              deleteAccount(message.sender.uid)
+
+            },
+          },
         ],
         verticalButtons: false,
       }).open();
@@ -274,13 +274,13 @@ function showFeedback(index) {
       popup.open();
 
       //update feedback type in database
-      $$('.resolve-' + message.id).click(function () {
+      $$('.resolve-' + message.id).click(function() {
 
         app.preloader.show();
 
         db.collection("feedback").doc(message.id).update({
           type: 'resolved'
-        }).catch(function (error) {
+        }).catch(function(error) {
 
           console.log(error.message);
           app.preloader.hide();
@@ -288,7 +288,7 @@ function showFeedback(index) {
             text: "There was an error resolving feedback. please try agian later."
           });
 
-        }).then(function () {
+        }).then(function() {
 
           app.preloader.hide();
           popup.close();
@@ -334,7 +334,7 @@ function addAnswer(questionID, answerID, answerText, correct) { //Adds an answer
   </div>\
   </li>');
 
-  $$('#' + answerID + "-setanswer").click(function () {
+  $$('#' + answerID + "-setanswer").click(function() {
     setAnswer(questionID, answerID);
   });
   document.getElementById(answerID).value = answerText;
@@ -371,7 +371,7 @@ function addQuestion(questionID, description, answers) { //Adds a multiple choic
    </div>');
 
   //Setup the add answer button
-  $$('.mc-answer-' + questionID).on('click', function (event) {
+  $$('.mc-answer-' + questionID).on('click', function(event) {
     var answerID = makeid(10);
     addAnswer(questionID, answerID, '', false);
   });
@@ -383,7 +383,7 @@ function addQuestion(questionID, description, answers) { //Adds a multiple choic
   if (answers != null && answers.length > 0) {
     let i = 0;
     //Add each answer to the html
-    answers.forEach(function (answer) {
+    answers.forEach(function(answer) {
       addAnswer(questionID, answer.id, answer.text, answer.correct);
 
       if (i < 1) { //If this is the first answer remove the delete button
@@ -447,7 +447,7 @@ function addNumericQuestion(questionID, description, answer) {
 }
 
 function updateQuestionNumbers() {
-  $$('.question-title').forEach(function (question, i) {
+  $$('.question-title').forEach(function(question, i) {
     $$(question).text('Question ' + (i + 1));
   });
 }
@@ -515,13 +515,13 @@ async function getPool(poolID, callback) {
   if (poolID in loadedPools) {
     console.log("found pool in array");
     //We call the callback and return it for backwards compatability
-    (callback) ? callback(loadedPools[poolID]) : null;
+    (callback) ? callback(loadedPools[poolID]): null;
     return loadedPools[poolID];
   } else {
     // Create a reference to the file we want to download
     var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
     // Get the download URL for the picture
-    let poolPic = poolPictureRef.getDownloadURL().catch(function (error) {
+    let poolPic = poolPictureRef.getDownloadURL().catch(function(error) {
       // TODO: add filler picture
       poolPic = "";
     });
@@ -534,13 +534,13 @@ async function getPool(poolID, callback) {
 
     if (poolData == null) {
       console.log("Invalid pool returning");
-      (callback) ? callback(invalidPool) : null;
+      (callback) ? callback(invalidPool): null;
       return invalidPool;
     }
 
     //If the pool is a private/child pool get the needed data from the parentPool
     if (poolData.private) {
-      getPool(poolData.parentPool, function (parentData) {
+      getPool(poolData.parentPool, function(parentData) {
         loadedPools[poolID] = {
           poolID: poolID,
           tags: parentData.tags,
@@ -559,7 +559,7 @@ async function getPool(poolID, callback) {
           allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
           admins: poolData.admins ? poolData.admins : [],
         };
-        (callback) ? callback(loadedPools[poolID]) : null;
+        (callback) ? callback(loadedPools[poolID]): null;
         //console.log(loadedPools[poolID]);
         return loadedPools[poolID];
       });
@@ -582,7 +582,7 @@ async function getPool(poolID, callback) {
         allowShares: poolData.allowShares ? poolData.allowShares : true,
         admins: poolData.admins ? poolData.admins : [],
       };
-      (callback) ? callback(loadedPools[poolID]) : null;
+      (callback) ? callback(loadedPools[poolID]): null;
       //console.log(loadedPools[poolID]);
       return loadedPools[poolID];
 
@@ -622,11 +622,11 @@ function loadPools(callback) {
   var pools = [];
 
   //Get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
-  db.collection("pools").get().then(function (poolsSnapshot) {
-    poolsSnapshot.forEach(function (doc) {
+  db.collection("pools").get().then(function(poolsSnapshot) {
+    poolsSnapshot.forEach(function(doc) {
 
       //Get the pool's Data
-      getPool(doc.id, function (poolDAT) {
+      getPool(doc.id, function(poolDAT) {
 
         //Add the pool data to an array for later use
         pools.push(poolDAT);
@@ -636,7 +636,7 @@ function loadPools(callback) {
 
           console.log("Loaded and sorted all pool data");
 
-          pools.forEach(function (pool) {
+          pools.forEach(function(pool) {
             if (pool.private) {
               console.log('private pool not displaying.');
             } else {
@@ -651,12 +651,12 @@ function loadPools(callback) {
               a.classList.add("col-30");
 
               //When the card is clicked fill the popup with data
-              a.onclick = function () {
+              a.onclick = function() {
                 openPoolPopup(pool);
               };
 
               //Setup the card's inner html
-              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end"> ' + pool.name + ' <button class="col button button-raised button-fill button-round" onClick=featurePool("' + pool.id + '") > Feature this pool</button > </div > ' +
+              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end"> ' + pool.name + ' </div > ' +
                 '<div class="card-content card-content-padding">' +
                 '  <p class="date">' + date.toLocaleString() + '</p>' +
                 '  <p> ' + pool.description + '</p>' +
@@ -685,7 +685,7 @@ function loadPools(callback) {
             }
           });
           //We are done loading the pools so call the callback
-          (callback) ? callback() : null;
+          (callback) ? callback(): null;
 
         }
       });
@@ -706,6 +706,13 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   document.getElementById("pool-description").innerHTML = pool.description;
   var poolVisibilityDiv = document.getElementById("pool-visibility");
   $$("#pool-visibility").val(pool.state).change();
+  $$("#feature-pool-button").click(() => {
+    console.log("Feature pool!");
+    app.popup.open(".feature-popup");
+    $$('#feature-pool').click(() => {
+      featurePool(pool.id);
+    });
+  });
 
   let date2 = (pool.date != '') ? pool.date : new Date();
   poolDateInput.setValue([date2])
@@ -755,6 +762,7 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   } else {
     $$('.delete-button').show();
   }
+
   app.popup.open(".pool-popup");
 };
 
@@ -861,7 +869,9 @@ async function editPool(poolData, callback) {
       });
       //Update the picture if it exists
       if (poolData.picture && poolData.picture != null) {
-        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture);
+        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture).then(function(snapshot) {
+          console.log('Uploaded a blob or file!');
+        });
       }
     } else { //The pool does not exist so create a pool and set its information
       //Add the pool to the database
@@ -885,7 +895,7 @@ async function editPool(poolData, callback) {
     }
 
     //We are done editing the pool so reload the pools then call any callbacks and return
-    loadPools(function () {
+    loadPools(function() {
       //Close the uneeded UI and notify the admin that the pool was saved
       app.preloader.hide();
       app.toast.show({
@@ -893,7 +903,7 @@ async function editPool(poolData, callback) {
         closeTimeout: 3000,
       });
       app.popup.close(".pool-popup");
-      (callback) ? callback(id) : null;
+      (callback) ? callback(id): null;
       return id;
     });
 
@@ -932,7 +942,7 @@ async function editPool(poolData, callback) {
 function duplicatePool() { //Duplicates the specified pool then opens the popup
   let id = document.getElementById("pool-name").dataset.id;
   console.log('Duplicating pool: ' + id);
-  getPool(id).then(function (poolData) {
+  getPool(id).then(function(poolData) {
     let newPool = {
       name: poolData.name + '(Copy)',
       description: poolData.description,
@@ -949,7 +959,7 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       });
     });
 
-    editPool(newPool, function (editedPoolID) {
+    editPool(newPool, function(editedPoolID) {
       console.log("Made a new duplicate pool with ID: " + editedPoolID);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
@@ -984,8 +994,8 @@ function addTag(el) {
 function loadTags() {
   $$('.tag').remove();
   app.preloader.show();
-  db.collection("tags").get().then(function (tags) {
-    tags.forEach(function (tag) {
+  db.collection("tags").get().then(function(tags) {
+    tags.forEach(function(tag) {
       //add to page
       $$('#type-' + tag.get('type')).prepend('<div id="' + tag.id + '" class="tag"><label><div class="pic-upload no-margin">' +
         '<input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, \'#' + tag.id + '\')" disabled><i class="material-icons pic-icon" style="font-size: 30px; color: rgba(0,0,0,0)">edit</i></div>' +
@@ -994,12 +1004,12 @@ function loadTags() {
         '<p class="segmented no-margin"><button onclick="deleteTag(\'' + tag.id + '\')" class="button color-red">Delete</button><button class="button tag-edit" onclick=(editTag(\'' + tag.id + '\'))>Edit</button></p></div>');
 
       //get picture
-      storageRef.child('tag-pictures').child(tag.id).getDownloadURL().then(function (url) {
+      storageRef.child('tag-pictures').child(tag.id).getDownloadURL().then(function(url) {
         $$('#' + tag.id).find('.pic-upload').css("background-image", "url('" + url + "')");
       });
     });
     app.preloader.hide();
-  }).catch(function (error) {
+  }).catch(function(error) {
     console.error(error.message);
     app.preloader.hide();
   });
@@ -1018,23 +1028,23 @@ function newTag() {
 }
 
 //actually save
-$$(".tag-save").click(function () {
+$$(".tag-save").click(function() {
   app.preloader.show();
   //add tag to database
   db.collection("tags").add({
     name: $$('#tag-name').val(),
     type: $$('#tag-type').val()
-  }).then(function (doc) {
+  }).then(function(doc) {
     //then upload photo
     var profilePictureRef = storageRef.child('tag-pictures').child(doc.id);
     var pic = $$('.tag-popup').find('.pic-input').prop('files')[0];
     //If poolPicture is valid
     if (pic) {
-      profilePictureRef.put(pic).then(function () {
+      profilePictureRef.put(pic).then(function() {
         app.popup.close(".tag-popup");
         app.preloader.hide();
         loadTags();
-      }).catch(function (error) {
+      }).catch(function(error) {
         app.popup.close(".tag-popup");
         app.preloader.hide();
         app.toast.show({
@@ -1051,7 +1061,7 @@ $$(".tag-save").click(function () {
       loadTags();
 
     }
-  }).catch(function (error) {
+  }).catch(function(error) {
     app.popup.close(".tag-popup");
     app.preloader.hide();
     app.toast.show({
@@ -1071,20 +1081,20 @@ function editTag(id) {
   tagEl.find('.pic-icon').css("color", "white");
   tagEl.find('.tag-name').css("font-weight", 'normal');
   tagEl.find('.tag-edit').text('Save');
-  tagEl.find('.tag-edit').click(function () {
+  tagEl.find('.tag-edit').click(function() {
     app.preloader.show();
     db.collection("tags").doc(id).update({
       name: tagEl.find('.tag-name').val(),
-    }).then(function () {
+    }).then(function() {
       //then upload photo
       var profilePictureRef = storageRef.child('tag-pictures').child(id);
       var pic = tagEl.find('.pic-input').prop('files')[0];
       //If poolPicture is valid
       if (pic) {
-        profilePictureRef.put(pic).then(function () {
+        profilePictureRef.put(pic).then(function() {
           app.preloader.hide();
           loadTags();
-        }).catch(function (error) {
+        }).catch(function(error) {
           app.preloader.hide();
           app.toast.show({
             text: error.message,
@@ -1098,7 +1108,7 @@ function editTag(id) {
         app.preloader.hide();
         loadTags();
       }
-    }).catch(function (error) {
+    }).catch(function(error) {
       app.preloader.hide();
       app.toast.show({
         text: error.message,
@@ -1112,11 +1122,11 @@ function editTag(id) {
 
 function deleteTag(id) {
   app.preloader.show();
-  db.collection("tags").doc(id).delete().then(function () {
-    storageRef.child('tag-pictures').child(id).delete().then(function () {
+  db.collection("tags").doc(id).delete().then(function() {
+    storageRef.child('tag-pictures').child(id).delete().then(function() {
       app.preloader.hide();
       loadTags();
-    }).catch(function (error) {
+    }).catch(function(error) {
       app.preloader.hide();
       app.toast.show({
         text: error.message,
@@ -1125,7 +1135,7 @@ function deleteTag(id) {
       });
       loadTags();
     });
-  }).catch(function (error) {
+  }).catch(function(error) {
     app.preloader.hide();
     app.toast.show({
       text: error.message,
