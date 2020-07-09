@@ -1001,25 +1001,29 @@ exports.sendAnnouncement = functions.https.onCall(async function(data, context) 
   admin = await admin;
   //If the user is an admin allow the announcment
   if (admin.exists) {
-    console.log("Sending announcment: ", {
-      title: title,
-      description: description,
-      link: link,
-    });
+    console.log("Sending announcment: " + title + description + link);
 
     let querySnapshot = await db.collection("users").get();
-    querySnapshot.forEach(function(doc) {
-      sendNotification(doc.id, {
+    let userDocs = querySnapshot.docs;
+    console.log("sending torification to " + userDocs.length + " users");
+    let notificationPromises = [];
+    let log = [];
+    for (var i = 0; i < userDocs.length; i++) {
+      //console.log(userDocs[i].id);
+      notificationPromises.push(sendNotification(userDocs[i].id, {
         id: title + description,
         title: title,
         text: description,
         type: "A",
         link: link, //"/pool/?id=" + poolID,
-      });
-    });
+      }));
+      log.push(userDocs[i].id);
+    }
+    //console.log("Sent announcment to users: ", log);
+
+    await Promise.all(notificationPromises);
+
     return "Succesfully sent announcment";
-
-
   } else {
     console.error("Announcement request from an unathorized source!");
     return "You are not an admin and cannot send announcements. This incident will be reported!"
