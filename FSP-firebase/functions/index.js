@@ -563,12 +563,67 @@ exports.deletePool = functions.https.onCall(async function(data, context) {
 
 });
 
-async function getUser(uidToGet) { //Gets a user and runs checks for errors and invalid pareameters
-  let userData = (await db.collection('users').doc(uidToGet).get()).data();
+async function getPool(poolID) {
 
-  (userData.pendingPools) ? null: userData.pendingPools = [];
+  let poolData = db.collection("pools").doc(poolID).get();
 
-  return userData
+  poolData = (await poolData).data();
+
+  if (poolData == null) {
+    console.log("Invalid pool returning");
+    return "invalid";
+  }
+  console.log("This pools raw data is: ", poolData);
+  //If the pool is a private/child pool get the needed data from the parentPool
+  if (poolData.parentPool != null) {
+
+    let parentData = await getPool(poolData.parentPool);
+
+    return {
+      poolID: poolID,
+      tags: parentData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: parentData.state,
+      date: parentData.state,
+      questions: parentData.questions,
+      tiebreakers: parentData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      private: true,
+      childPools: null,
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+      admins: poolData.admins ? poolData.admins : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
+    };
+
+  } else {
+    return {
+      poolID: poolID,
+      tags: poolData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: poolData.state,
+      date: ((poolData.date) ? poolData.date.toDate() : ''),
+      questions: poolData.questions,
+      tiebreakers: poolData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      childPools: (poolData.childPools) ? poolData.childPools : null,
+      private: false,
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      allowShares: poolData.allowShares ? poolData.allowShares : true,
+      admins: poolData.admins ? poolData.admins : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
+    };
+  }
 }
 
 exports.joinPool = functions.https.onCall(async function(data, context) { //Function for joining and leaving pools
@@ -848,69 +903,6 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
 
 });
 
-async function getPool(poolID) {
-
-  let poolData = db.collection("pools").doc(poolID).get();
-
-  poolData = (await poolData).data();
-
-  if (poolData == null) {
-    console.log("Invalid pool returning");
-    return "invalid";
-  }
-  console.log("This pools raw data is: ", poolData);
-  //If the pool is a private/child pool get the needed data from the parentPool
-  if (poolData.parentPool != null) {
-
-    let parentData = await getPool(poolData.parentPool);
-
-    return {
-      poolID: poolID,
-      tags: parentData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: parentData.state,
-      date: parentData.state,
-      questions: parentData.questions,
-      tiebreakers: parentData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      private: true,
-      childPools: null,
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
-      admins: poolData.admins ? poolData.admins : [],
-      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
-    };
-
-  } else {
-    return {
-      poolID: poolID,
-      tags: poolData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: poolData.state,
-      date: ((poolData.date) ? poolData.date.toDate() : ''),
-      questions: poolData.questions,
-      tiebreakers: poolData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      childPools: (poolData.childPools) ? poolData.childPools : null,
-      private: false,
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      allowShares: poolData.allowShares ? poolData.allowShares : true,
-      admins: poolData.admins ? poolData.admins : [],
-      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
-    };
-  }
-}
-
 exports.addMessage = functions.https.onCall(async function(data, context) {
   /*
   This should be called with the data pareameter containing
@@ -983,6 +975,58 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
 
 });
 
+exports.sendAnnouncement = functions.https.onCall(async function(data, context) { //Sends an announcement to all users
+
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'while authenticated.');
+  }
+
+  if (data.title == null || data.description == null) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function was called with invalid Data: ', data);
+  }
+
+  const uid = context.auth.uid;
+  const title = data.title;
+  const description = data.description;
+  const link = (data.link) ? data.link : null;
+  //const image = data.image;
+
+  let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";
+
+  let admin = db.collection("admins").doc(uid).get();
+  admin = await admin;
+  //If the user is an admin allow the announcment
+  if (admin.exists) {
+    console.log("Sending announcment: ", {
+      title: title,
+      description: description,
+      link: link,
+    });
+
+    let querySnapshot = await db.collection("users").get();
+    querySnapshot.forEach(function(doc) {
+      sendNotification(doc.id, {
+        id: title + description,
+        title: title,
+        text: description,
+        type: "A",
+        link: link, //"/pool/?id=" + poolID,
+      });
+    });
+    return "Succesfully sent announcment";
+
+
+  } else {
+    console.error("Announcement request from an unathorized source!");
+    return "You are not an admin and cannot send announcements. This incident will be reported!"
+  }
+
+});
+
 async function sendNotification(uid, message) {
   //Usage
   /*
@@ -997,15 +1041,15 @@ async function sendNotification(uid, message) {
         *link: "",//"/pool/?id=" + poolID,
     }
 
-//// NOTE: These types are not used notifications currently use old nameing
+//// NOTE: These types are not used notifications currently use old naming
     Notification types:
+      A-(Announcement)
       PU-(Pool update)
       PI-(Pool invite)
       PA-(Pool accept)
       CU-(Chat update)
       UR-(User report)
       FR-(Freind request)
-
   */
 
   let user = db.collection('users').doc(uid).get();
@@ -1083,6 +1127,14 @@ async function removeNotification(uid, notificationID) {
   //Delete the notificatoin specified for the given uid
   await db.collection("users").doc(uid).collection('updates').doc(notificationID).delete();
   return "Succesfully removed notification";
+}
+
+async function getUser(uidToGet) { //Gets a user and runs checks for errors and invalid pareameters
+  let userData = (await db.collection('users').doc(uidToGet).get()).data();
+
+  (userData.pendingPools) ? null: userData.pendingPools = [];
+
+  return userData
 }
 
 //Requests to be freinds with the specified user

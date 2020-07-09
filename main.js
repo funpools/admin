@@ -968,6 +968,41 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
 }
 
 
+///////*Announcements*\\\\\\\
+
+function newAnnouncement() {
+  //clear any existing values in the popup
+  $$(".announcement-popup").find('.pic-upload').css("background-image", "");
+  $$(".announcement-popup").find('.pic-icon').html("add_photo_alternate");
+  $$(".announcement-popup").find('#send-announcement').off('click').click(
+    function() {
+      app.preloader.show();
+
+      let title = $$('#announcment-title').val();
+      let description = $$('#announcment-description').val();
+      let link = $$('#announcment-link').val();
+      let announcement = {
+        title: title,
+        description: description,
+        link: link,
+      };
+      console.log("Sending announcement: ", announcement);
+
+      sendAnnouncement(announcement).then(result => {
+        app.preloader.hide();
+        console.log(result);
+      }).catch(error => {
+        app.preloader.hide();
+        console.error(error);
+      });
+
+    });
+  //open the popup
+  app.popup.open(".announcement-popup");
+
+}
+
+
 //displays uploaded picture on screen
 function previewPic(event, el) {
   $$(el).find('.pic-upload').css("background-image", ("url(" + URL.createObjectURL(event.target.files[0]) + ")"));

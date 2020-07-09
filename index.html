@@ -30,6 +30,8 @@
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
             <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
             <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
+            <li><a href="#tab-6" class="tab-link">Announcements(In Construction)</a></li>
+
             <li><a href="#" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
           </ul>
         </div>
@@ -40,7 +42,8 @@
       <div data-name="home" class="page">
         <div class="page-content">
           <div class="tabs">
-            <div id="tab-1" class="tab tab-active">
+            <!-- Reports and Analytics tab -->
+            <div id="tab-1" class="tab">
               <div class="block-card">
                 <h3 class="title no-margin-top">Analytics</h3>
                 <!-- TODO: add analytics -->
@@ -262,6 +265,7 @@
                 </div>
               </div>
             </div>
+            <!-- Users tab -->
             <div id="tab-2" class="tab">
               <div class="block-card">
                 <h3 class="title no-margin-top">All Users</h3>
@@ -370,6 +374,7 @@
                 </div>
               </div>
             </div>
+            <!-- Pool managment tab -->
             <div id="tab-3" class="tab">
               <div class="block">
                 <button class="button button-fill" onclick="newPool()" style="width: 50%; margin: 16px auto">New
@@ -472,6 +477,34 @@
                 <a href="#" onclick="forgotPassword()" class="button">Reset Your Password</a>
               </div>
             </div>
+            <!-- Announcements tab -->
+            <div id="tab-6" class="tab tab-active">
+              <div class="block">
+                <button class="button button-fill" onclick="newAnnouncement()" style="width: 50%; margin: 16px auto">New Anouncement</button>
+
+                <div id="" class="card">
+                  <div style="" class="card-header align-items-flex-end"> Test Anouncement</div>
+                  <div class="card-content card-content-padding">
+                    <div class="row">
+                      <div class="col-60 block">
+
+                      </div>
+                      <div class="col-40">
+                        <div class="pic-upload"
+                          style="background-image: url(&quot;https://firebasestorage.googleapis.com/v0/b/fun-sports-pools.appspot.com/o/pool-pictures%2FiniYhqiWcpuJdYvaf9w8?alt=media&amp;token=8470c4b9-d1c0-4744-bcf3-11f3663f47b4&quot;);">
+                          <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#pool-pic')">
+                          <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -631,6 +664,52 @@
     </div>
   </div>
 
+  <!-- Announcement popup -->
+  <div class="popup announcement-popup" style="height: 400px; margin: -200px; ">
+    <div class="block">
+
+      <div class="row no-gap" style="height: 340px;">
+        <div class=" col-60 list no-hairlines">
+          <div class="">Title</div>
+          <div class="item-input-wrap">
+            <input id="announcment-title" type="text" placeholder="Anouncement title">
+            <span class="input-clear-button"></span>
+          </div>
+
+          <div class="">Description</div>
+          <div class="card elevation-4">
+            <div class="card-content" style="position: relative; padding: 5px 8px;">
+              <textarea id="announcment-description" class="" placeholder="Announcement description"></textarea>
+            </div>
+          </div>
+
+          <div class="">Link</div>
+          <div class="item-input-wrap">
+            <input id="announcment-link" type="text" placeholder="/pool/?id=poolID">
+            <span class=" input-clear-button"></span>
+          </div>
+
+        </div>
+
+        <div class="col-40">
+          <label id="announcement-pic">
+            <div class="pic-upload">
+              <input id="announcement-pic" class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#announcement-pic')" />
+              <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="row justify-content-space-around">
+        <button id="send-announcement" class="col button button-raised button-fill">Send Announcement</button>
+      </div>
+
+    </div>
+  </div>
+
+
+
   <script type="text/javascript" src="framework7.bundle.js"></script>
   <script type="text/javascript" src="main.js"></script>
   <script type="text/javascript" src="js/user.js"></script>
@@ -670,6 +749,7 @@
     //Declare firebase functions
     deletePool = firebase.functions().httpsCallable('deletePool');
     banUser = firebase.functions().httpsCallable('banUser');
+    sendAnnouncement = firebase.functions().httpsCallable('sendAnnouncement');
 
 
     //Get refs for media storage
