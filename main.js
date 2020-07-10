@@ -700,18 +700,43 @@ function loadPools(callback) {
 function openPoolPopup(pool) { //Opens the popup for the given pool
   console.log('Opening pool popup for pool: ', pool);
 
-  $$('.pool-popup').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
+  $$('.pool-popup').find('#pool-pic').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
+  $$('.pool-popup').find('#pool-pic').find('.pic-icon').html('edit');
   document.getElementById("pool-name").value = pool.name;
   document.getElementById("pool-name").dataset.id = pool.poolID;
   document.getElementById("pool-description").innerHTML = pool.description;
   var poolVisibilityDiv = document.getElementById("pool-visibility");
   $$("#pool-visibility").val(pool.state).change();
-  $$("#feature-pool-button").click(() => {
-    console.log("Feature pool!");
-    app.popup.open(".feature-popup");
-    $$('#feature-pool').click(() => {
-      featurePool(pool.id);
-    });
+
+  //check to see if this pool is already featured or not
+  db.collection("universalData").doc("mainPage").get().then(async function(mainPageData) {
+    let featuredPool = await getPool(mainPageData.data().featuredPool);
+
+    if (pool.id === featuredPool.id) { // if this is a featured pool
+
+      // get featured image
+      let displayPic = pool.pic;
+      let featuredPic = storageRef.child('featured-pool-pic').getDownloadURL().then(picURL => {
+        displayPic = picURL;
+      }).catch(error => {});
+      await featuredPic;
+
+      //set featured image
+      $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + displayPic + ")"));
+      $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
+
+      //update checkbox
+      $$('#featured-pool-checkbox').prop('checked', true);
+      $$('#featured-pool').show();
+    }
+  });
+
+  $$('#featured-pool-checkbox').on('change', function(e) {
+    if (e.target.checked) {
+      $$('#featured-pool').show();
+    } else {
+      $$('#featured-pool').hide();
+    }
   });
 
   let date2 = (pool.date != '') ? pool.date : new Date();
@@ -773,12 +798,17 @@ function savePool() {
   let id = document.getElementById("pool-name").dataset.id;
   let name = document.getElementById("pool-name").value;
   let description = document.getElementById("pool-description").innerHTML;
-  let pic = $$('.pool-popup').find('.pic-input')[0].files[0];
+  let pic = $$('.pool-popup').find('#pool-pic').find('.pic-input')[0].files[0];
   let timestamp = poolDateInput.getValue()[0];
   let poolState = $$("#pool-visibility").val();
   let poolQuestions = document.getElementsByClassName("mc-question");
   let poolTieBreakers = document.getElementsByClassName("n-question");
+  let featuredPic = null;
 
+  // check if this is a featured pool
+  if ($$('#featured-pool-checkbox').prop('checked')) {
+    featuredPic = $$('.featured-pool-popup').find('#pool-pic').find('.pic-input')[0].files[0];
+  }
   //Get tags from the chips
   let tags = [];
   let chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
@@ -917,6 +947,7 @@ async function editPool(poolData, callback) {
     });
     app.popup.close(".pool-popup");
   }
+
   /*//Unused code for calculating name intersection
   async function getPoolName(name, id, i) { //Generates a username for the user based on the given name and last name
 

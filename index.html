@@ -514,7 +514,6 @@
   <!-- Pool popup -->
   <div id="pool-pic-input" class="popup pool-popup">
     <div class="block">
-      <button id="feature-pool-button" class="col button button-raised button-fill button-round"> Feature this pool</button>
       <label id="pool-pic">
         <div class="pic-upload">
           <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#pool-pic')" />
@@ -523,6 +522,24 @@
       </label>
       <div class="list inset">
         <ul>
+          <li>
+            <label class="item-checkbox item-content">
+              <input id="featured-pool-checkbox" type="checkbox" />
+              <i class="icon icon-checkbox"></i>
+              <div class="item-inner">
+                <div class="item-title">Featured Pool</div>
+              </div>
+            </label>
+          </li>
+          <li id="featured-pool" style="display: none">
+            <label id="featured-pool-pic">
+              <div class="item-title item-label" style="margin: 8px 0 -8px 16px">Featured Banner</div>
+              <div class="pic-upload" style="padding: 5% 0">
+                <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#featured-pool-pic')" />
+                <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
+              </div>
+            </label>
+          </li>
           <li class="item-content item-input">
             <div class="item-inner">
               <div class="item-title item-label">Pool Name</div>
