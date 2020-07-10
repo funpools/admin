@@ -1011,10 +1011,10 @@ exports.sendAnnouncement = functions.https.onCall(async function(data, context) 
     let querySnapshot = await db.collection("users").get();
     let userDocs = querySnapshot.docs;
     let promises = [];
-    console.log("Sending announcment to " + userDocs.length + " users");
+    //console.log("Sending announcment to " + userDocs.length + " users");
 
     for (var i = 0; i < userDocs.length; i++) {
-      if (!test || (userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2")) {
+      if (!test || (userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2" || userDocs[i].id == "kvkL4oRtkDflKTeoOMJAkn2nRZe2")) {
         promises.push(db.collection("users").doc(userDocs[i].id).collection('updates').doc(announcementId).set({
           id: announcementId,
           title: title,
@@ -1040,7 +1040,7 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
   let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";
   if (test != null && test) {
     console.log("Sending a test announcment notification.");
-    condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)";
+    condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
   }
 
   var message = {
