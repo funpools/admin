@@ -983,53 +983,97 @@ exports.sendAnnouncement = functions.https.onCall(async function(data, context) 
     throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
       'while authenticated.');
   }
-
   if (data.title == null || data.description == null) {
+    console.log("Function called with invalid data.");
     // Throwing an HttpsError so that the client gets the error details.
     throw new functions.https.HttpsError('failed-precondition', 'The function was called with invalid Data: ', data);
   }
 
   const uid = context.auth.uid;
   const title = data.title;
-  const description = data.description;
+  const body = data.description;
   const link = (data.link) ? data.link : null;
-  //const image = data.image;
+  const test = (data.test) ? data.test : false;
+  let announcementId = 'A-' + title + body;
+  announcementId = announcementId.replace(/\s+/g, '-').toLowerCase();
+  //const image = data.image;//Not needed at the moment
 
-  let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";
-
-  let admin = db.collection("admins").doc(uid).get();
-  admin = await admin;
   //If the user is an admin allow the announcment
+  let admin = await db.collection("admins").doc(uid).get();
   if (admin.exists) {
-    console.log("Sending announcment: " + title + description + link);
+
+    if (test) {
+      console.log("Sending a test announcment, title: " + title + ", body: " + body + ", link: " + link);
+    } else {
+      console.log("Sending announcment, title: " + title + ", body: " + body + ", link: " + link);
+    }
 
     let querySnapshot = await db.collection("users").get();
     let userDocs = querySnapshot.docs;
-    console.log("sending torification to " + userDocs.length + " users");
-    let notificationPromises = [];
-    let log = [];
+    let promises = [];
+    console.log("Sending announcment to " + userDocs.length + " users");
+
     for (var i = 0; i < userDocs.length; i++) {
-      //console.log(userDocs[i].id);
-      notificationPromises.push(sendNotification(userDocs[i].id, {
-        id: title + description,
-        title: title,
-        text: description,
-        type: "A",
-        link: link, //"/pool/?id=" + poolID,
-      }));
-      log.push(userDocs[i].id);
+      if (!test || (userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2")) {
+        promises.push(db.collection("users").doc(userDocs[i].id).collection('updates').doc(announcementId).set({
+          id: announcementId,
+          title: title,
+          text: body,
+          type: 'A',
+          link: link, //"/pool/?id=" + poolID,
+        }));
+      }
     }
-    //console.log("Sent announcment to users: ", log);
 
-    await Promise.all(notificationPromises);
+    await sendAnnouncementNotification(title, body, link, announcementId, test);
+    await Promise.all(promises);
 
-    return "Succesfully sent announcment";
+    return "Succesfully sent announcement";
   } else {
     console.error("Announcement request from an unathorized source!");
-    return "You are not an admin and cannot send announcements. This incident will be reported!"
+    return "You are not authorized to send announcements. This incident will be reported!"
+  }
+});
+
+async function sendAnnouncementNotification(title, body, link, announcementId, test) {
+  // Define a condition which will send to devices which are subscribed
+  let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";
+  if (test != null && test) {
+    console.log("Sending a test announcment notification.");
+    condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)";
   }
 
-});
+  var message = {
+    notification: {
+      title: (title) ? title : 'No Title',
+      body: (body) ? body : 'No Body',
+    },
+    data: {
+      link: (link) ? link : '',
+      //notification_foreground: true,
+      notification_id: announcementId, //this is the id of the notificatoin as it is in the users updates collection
+    },
+    android: {
+      notification: {
+        //tag: 'A-' + message.id,
+        channel_id: "default",
+      },
+    },
+    condition: condition,
+  };
+
+  // Send a message to devices subscribed to the combination of topics specified by the provided condition.
+  await admin.messaging().send(message).then((response) => {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  }).catch((error) => {
+    console.log('Error sending message:', error);
+  });
+
+  return 1;
+}
+
+
 
 async function sendNotification(uid, message) {
   //Usage

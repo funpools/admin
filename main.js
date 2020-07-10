@@ -1016,6 +1016,7 @@ function newAnnouncement() {
         title: title,
         description: description,
         link: link,
+        test: false,
       };
       console.log("Sending announcement: ", announcement);
 
@@ -1028,6 +1029,31 @@ function newAnnouncement() {
       });
 
     });
+  $$(".announcement-popup").find('#send-test-announcement').off('click').click(
+    function() {
+      app.preloader.show();
+
+      let title = $$('#announcment-title').val();
+      let description = $$('#announcment-description').val();
+      let link = $$('#announcment-link').val();
+      let announcement = {
+        title: title,
+        description: description,
+        link: link,
+        test: true,
+      };
+      console.log("Sending announcement: ", announcement);
+
+      sendAnnouncement(announcement).then(result => {
+        app.preloader.hide();
+        console.log(result);
+      }).catch(error => {
+        app.preloader.hide();
+        console.error(error);
+      });
+
+    });
+
   //open the popup
   app.popup.open(".announcement-popup");
 
