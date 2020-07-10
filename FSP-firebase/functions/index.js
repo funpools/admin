@@ -1028,7 +1028,11 @@ exports.sendAnnouncement = functions.https.onCall(async function(data, context) 
     await sendAnnouncementNotification(title, body, link, announcementId, test);
     await Promise.all(promises);
 
-    return "Succesfully sent announcement";
+    if (!test) {
+      return "Succesfully sent announcement";
+    } else {
+      return "Succesfully sent test announcement";
+    }
   } else {
     console.error("Announcement request from an unathorized source!");
     return "You are not authorized to send announcements. This incident will be reported!"
