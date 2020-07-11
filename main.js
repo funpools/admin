@@ -938,9 +938,8 @@ async function editPool(poolData, callback) {
       id = doc.id;
     }
 
-    if (poolData.feature) {
-      await featurePool(id, poolData.featuredPic);
-    }
+    await featurePool(id, poolData.featuredPic, poolData.feature);
+
     //We are done editing the pool so reload the pools then call any callbacks and return
     loadPools(function() {
       app.preloader.hide();
