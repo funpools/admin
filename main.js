@@ -686,6 +686,9 @@ function loadPools(callback) {
           });
           //We are done loading the pools so call the callback
           (callback) ? callback(): null;
+          db.collection("universalData").doc("mainPage").get().then((mainPageData) => {
+            $$('#poolcard-' + mainPageData.data().featuredPool).addClass("featured-pool");
+          });
 
         }
       });
