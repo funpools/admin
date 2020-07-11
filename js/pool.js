@@ -1,20 +1,40 @@
-async function featurePool(idToFeature) {
+async function featurePool(idToFeature, featuredPic) {
   app.preloader.show();
-  console.log("Featureing pool id: " + idToFeature);
 
+  let mainPageData = (await db.collection("universalData").doc("mainPage").get()).data();
+
+  //if this pool will replace another featuredpool then do some fancy code to confirm the admin wants to do this
+  if (idToFeature != mainPageData.featuredPool) {
+    app.preloader.hide();
+    let confirmationPromise = new Promise(function(resolve, reject) {
+      app.dialog.confirm("Featuring this pool will overwrite any other featured pools. Are you sure you wish to proceed?", function() {
+        resolve();
+      }, function() {
+        reject();
+      });
+    });
+
+    try {
+      await confirmationPromise;
+      console.log("Confirmed the featurePool operation.");
+    } catch (e) {
+      console.log("Canceled the feature pool operation.");
+      return 0;
+    }
+  }
+
+  console.log("Featureing pool id: " + idToFeature);
   await db.collection("universalData").doc("mainPage").update({
     featuredPool: idToFeature
   });
 
-  let pic = $$('.feature-popup').find('.pic-input')[0].files[0];
   //Update the picture if it exists
-  if (pic != null) { //If there is a picture upload it and display the progress
-    console.log("uploading pic");
+  if (featuredPic != null) { //If there is a picture upload it and display the progress
+    console.log("Uploading pic");
 
     var progress = 0;
-    let progressDialog = app.dialog.progress('Uploading photo', progress);
-    var uploadTask = storageRef.child('featured-pool-pic').put(pic);
-
+    let progressDialog = app.dialog.progress('Uploading featured photo', progress);
+    var uploadTask = storageRef.child('featured-pool-pic').put(featuredPic);
 
     app.preloader.hide();
     // Listen for state changes, errors, and completion of the upload.
@@ -31,13 +51,17 @@ async function featurePool(idToFeature) {
       },
       function() {
         console.log("Finished uploading photo.");
-        app.popup.close(".feature-popup");
         progressDialog.close();
-        app.preloader.hide();
+        app.preloader.show();
       });
+
+    await uploadTask;
+
+    return 1;
   } else {
     console.log("No photo to upload.");
-    app.popup.close(".feature-popup");
     app.preloader.hide();
+    return 1;
   }
+
 }

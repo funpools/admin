@@ -106,7 +106,7 @@ $$('.pool-delete').on('click', function() {
               closeButton: true
             });
           }).finally(function(result) {
-            //Close the uneeded UI and notify the admin that the pool was saved
+            //Close the uneeded UI
             loadPools(function() {
               app.preloader.hide();
               app.popup.close(".pool-popup");
@@ -712,7 +712,7 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   db.collection("universalData").doc("mainPage").get().then(async function(mainPageData) {
     let featuredPool = await getPool(mainPageData.data().featuredPool);
 
-    if (pool.id === featuredPool.id) { // if this is a featured pool
+    if (pool.id === mainPageData.data().featuredPool) { // if this is a featured pool
 
       // get featured image
       let displayPic = pool.pic;
@@ -728,6 +728,15 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
       //update checkbox
       $$('#featured-pool-checkbox').prop('checked', true);
       $$('#featured-pool').show();
+    } else {
+
+      //set featured image
+      $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + '' + ")"));
+      $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
+
+      //update checkbox
+      $$('#featured-pool-checkbox').prop('checked', false);
+      $$('#featured-pool').hide();
     }
   });
 
@@ -803,11 +812,12 @@ function savePool() {
   let poolState = $$("#pool-visibility").val();
   let poolQuestions = document.getElementsByClassName("mc-question");
   let poolTieBreakers = document.getElementsByClassName("n-question");
+  let featured = $$('#featured-pool-checkbox').prop('checked');
   let featuredPic = null;
 
-  // check if this is a featured pool
-  if ($$('#featured-pool-checkbox').prop('checked')) {
-    featuredPic = $$('.featured-pool-popup').find('#pool-pic').find('.pic-input')[0].files[0];
+  //If this is a featured pool load the image
+  if (featured) {
+    featuredPic = $$('.pool-popup').find('#featured-pool-pic').find('.pic-input')[0].files[0];
   }
   //Get tags from the chips
   let tags = [];
@@ -872,7 +882,9 @@ function savePool() {
     tags: tags,
     questions: questions,
     state: poolState,
-    tiebreakers: tieBreakers
+    tiebreakers: tieBreakers,
+    feature: featured, //// TODO: add stuff here
+    featuredPic: featuredPic,
   });
 }
 
@@ -882,8 +894,8 @@ async function editPool(poolData, callback) {
   app.preloader.show();
   try {
     let id;
-    //If the poolID is valid edit the data
-    if (poolData.poolID != null && poolData.poolID != 0) {
+
+    if (poolData.poolID != null && poolData.poolID != 0) { //If the poolID is valid edit the data
       id = poolData.poolID;
       let poolRef = db.collection('pools').doc(poolData.poolID);
       //Update the pools data
@@ -904,7 +916,6 @@ async function editPool(poolData, callback) {
         });
       }
     } else { //The pool does not exist so create a pool and set its information
-      //Add the pool to the database
       let doc = await db.collection("pools").add({
         name: (poolData.name) ? poolData.name : "No name given",
         description: (poolData.description) ? poolData.description : "No Description",
@@ -924,10 +935,13 @@ async function editPool(poolData, callback) {
       id = doc.id;
     }
 
+    if (poolData.feature) {
+      await featurePool(id, poolData.featuredPic);
+    }
     //We are done editing the pool so reload the pools then call any callbacks and return
     loadPools(function() {
-      //Close the uneeded UI and notify the admin that the pool was saved
       app.preloader.hide();
+      //Close the uneeded UI and notify the admin that the pool was saved
       app.toast.show({
         text: "Pool Saved",
         closeTimeout: 3000,
@@ -935,6 +949,7 @@ async function editPool(poolData, callback) {
       app.popup.close(".pool-popup");
       (callback) ? callback(id): null;
       return id;
+
     });
 
   } catch (error) {
