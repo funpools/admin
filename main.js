@@ -748,7 +748,7 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
     $$('#pool-tags-list').empty();
 
     universalData.tags.forEach((tag, i) => {
-      let tagEl = $$('<div id="' + tag.id + '" class="col-25 card card-outline" >\
+      let tagEl = $$('<div id="' + tag.id + '" class="col-25 card card-outline tag-card" >\
           <div class="card-header">' + tag.title + '</div>\
           <div class="card-content card-content-padding">' + tag.description + '</div>\
         </div>');

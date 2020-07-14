@@ -218,9 +218,23 @@
 }
 
 
+
+.tag-card{
+  transition: .1s;
+}
+
+.tag-card .card-header {
+  background-color: var(--f7-theme-color);
+  color: #fff;
+}
+
+.tag-card:hover{
+  border-color: var(--f7-theme-color);
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, .05);
+}
+
 .selected-tag{
-  background-color: var(--f7-card-bg-color);
-  color: rgb(255, 0, 0);
+  background-color:rgba(76, 175, 80, 0.2);
   box-shadow: 0 0 16px 2px rgba(0, 0, 0, .1);
 }
 
