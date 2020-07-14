@@ -138,6 +138,7 @@ function newPool() {
   document.getElementById("pool-name").value = "";
   document.getElementById("pool-name").dataset.id = "0";
   document.getElementById("pool-description").innerHTML = "";
+  $$("#pool-rules").clear();
   $$("#pool-tags").html("");
   $$("#pool-questions").html("");
   poolDateInput.setValue([new Date()]); //Set the value of the date to be nothing
@@ -494,6 +495,7 @@ const invalidPool = {
   tags: [],
   name: "invalid",
   description: "invalid",
+  rules: "invalid",
   state: "invalid",
   date: "invalid",
   pic: "invalid picURL", // TODO: add a image here
@@ -545,7 +547,8 @@ async function getPool(poolID, callback) {
           poolID: poolID,
           tags: parentData.tags,
           name: poolData.name,
-          description: poolData.description,
+          description: poolData.description ? poolData.description : "No Description",
+          rules: poolData.rules ? poolData.rules : "No Rules",
           state: parentData.state,
           date: parentData.state,
           pic: parentData.pic,
@@ -568,7 +571,8 @@ async function getPool(poolID, callback) {
         poolID: poolID,
         tags: poolData.tags,
         name: poolData.name,
-        description: poolData.description,
+        description: poolData.description ? poolData.description : "No Description",
+        rules: poolData.rules ? poolData.rules : "No Rules",
         state: poolData.state,
         date: ((poolData.date) ? poolData.date.toDate() : ''),
         pic: poolPic,
@@ -708,6 +712,7 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   document.getElementById("pool-name").value = pool.name;
   document.getElementById("pool-name").dataset.id = pool.poolID;
   document.getElementById("pool-description").innerHTML = pool.description;
+  $$("#pool-rules").html(pool.rules);
   var poolVisibilityDiv = document.getElementById("pool-visibility");
   $$("#pool-visibility").val(pool.state).change();
 
@@ -810,6 +815,7 @@ function savePool() {
   let id = document.getElementById("pool-name").dataset.id;
   let name = document.getElementById("pool-name").value;
   let description = document.getElementById("pool-description").innerHTML;
+  let rules = $$("#pool-rules").html();
   let pic = $$('.pool-popup').find('#pool-pic').find('.pic-input')[0].files[0];
   let timestamp = poolDateInput.getValue()[0];
   let poolState = $$("#pool-visibility").val();
@@ -880,6 +886,7 @@ function savePool() {
     poolID: id,
     name: name,
     description: description,
+    rules: rules,
     picture: pic,
     date: timestamp,
     tags: tags,
@@ -905,6 +912,7 @@ async function editPool(poolData, callback) {
       await poolRef.update({
         name: (poolData.name) ? poolData.name : "No name given",
         description: (poolData.description) ? poolData.description : "No Description",
+        rules: (poolData.rules) ? poolData.rules : "No Rules",
         date: (poolData.date) ? poolData.date : new Date(),
         tags: (poolData.tags) ? poolData.tags : [],
         questions: (poolData.questions) ? poolData.questions : [],
@@ -922,6 +930,7 @@ async function editPool(poolData, callback) {
       let doc = await db.collection("pools").add({
         name: (poolData.name) ? poolData.name : "No name given",
         description: (poolData.description) ? poolData.description : "No Description",
+        rules: (poolData.rules) ? poolData.rules : "No Rules",
         date: (poolData.date) ? poolData.date : new Date(),
         tags: (poolData.tags) ? poolData.tags : [],
         questions: (poolData.questions) ? poolData.questions : [],
@@ -993,7 +1002,8 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
   getPool(id).then(function(poolData) {
     let newPool = {
       name: poolData.name + '(Copy)',
-      description: poolData.description,
+      description: poolData.description ? poolData.description : "No Description",
+      rules: poolData.rules ? poolData.rules : "No Rules",
       tags: poolData.tags,
       questions: poolData.questions,
       tiebreakers: poolData.tiebreakers,
