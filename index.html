@@ -25,9 +25,10 @@
         <h3 id="username" style="text-align: center"></h3>
         <div class="list no-hairlines">
           <ul>
-            <li><a href="#tab-1" class="tab-link tab-link-active">Reports</a></li>
+            <li><a href="#tab-1" class="tab-link ">Reports</a></li>
             <li><a href="#tab-2" class="tab-link">Users</a></li>
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
+            <li><a href="#tab-4" class="tab-link">Tags</a></li>
             <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
             <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
             <li><a href="#tab-6" class="tab-link">Announcements(In Construction)</a></li>
@@ -441,36 +442,58 @@
                 </div>
               </div>
             </div>
+            <!-- Tags tab -->
             <div id="tab-4" class="tab">
-              <a href="#" onclick="newTag()" class="button button-fill" style="width: 50%; margin: 16px auto">New
-                Tag</a>
+              <div class="row">
+                <div class="col-70">
+                  <!-- <a class="link sortable-toggle" data-sortable="#tags-list">Toggle</a> -->
+                  <h2 style="padding-left:5px;">Tags</h2>
 
-              <div class="block-card">
-                <div class="list no-hairlines no-margin">
-                  <ul>
-                    <li class="accordion-item accordion-item-opened no-margin-top"><a href="#" class="item-content item-link">
-                        <div class="item-inner">
-                          <div class="item-title">Favorite Sports</div>
-                        </div>
-                      </a>
-                      <div class="accordion-item-content">
-                        <div id="type-sport">
-                        </div>
-                      </div>
-                    </li>
-                    <li class="accordion-item no-margin-bottom"><a href="#" class="item-content item-link">
-                        <div class="item-inner">
-                          <div class="item-title">Favorite Teams</div>
-                        </div>
-                      </a>
-                      <div class="accordion-item-content">
-                        <div id="type-team">
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
+                </div>
+                <div class="col-20" style="padding-top:10px;padding-right:5px;">
+                  <div class="row">
+                    <button id="cancel-edit-tags-button" class="col button button-fill button-round" style="display:none;">Cancel</button>
+                    <button id="edit-tags-button" class="col button button-fill button-round">Edit</button>
+                  </div>
                 </div>
               </div>
+
+              <div class="card">
+
+                <div id="sortable-tags-list" class="list sortable sortable-opposite">
+                  <!-- This is here for a kind of guide I guess -->
+                  <div class="item-content none-sortable">
+                    <div class="item-media"><i class="material-icons icon">edit</i></div>
+                    <div class="item-inner">
+                      <div class="item-title">Title</div>
+                      <div class="item-after">Description</div>
+                    </div>
+                  </div>
+
+                  <ul id="tags-list">1
+
+                    <!-- This is the referance element-->
+                    <li class="tag-input">
+                      <div class="item-content">
+                        <div class="item-media"><i class="material-icons icon">edit</i></div>
+                        <div class="item-inner">
+                          <!-- TODO: Add a delete button maybe?-->
+                          <div class="item-title">
+                            <input class="tag-title-input" type="text" name="Title" placeholder="Title" readonly>
+                          </div>
+                          <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description" readonly>
+                        </div>
+                      </div>
+                      <div class="sortable-handler"></div>
+                    </li>
+
+                  </ul>
+                </div>
+                <div class="row justify-content-center" style="padding-bottom:5px;">
+                  <button id="new-tag-button" class="col-25 button button-fill button-round" style="display:none;">Add Tag</button>
+                </div>
+              </div>
+
             </div>
             <div id="tab-5" class="tab">
               <div class="block-card">
@@ -609,6 +632,7 @@
             <div class="item-media">
               <i class="material-icons">label</i>
             </div>
+            <button id="pool-tag-button" class="button" type="button" name="button">Tags</button>
             <div class="item-inner">
               <div class="item-title item-label">Pool Tags</div>
               <div class="item-input-wrap">
@@ -618,6 +642,7 @@
           </li>
           <div class="block" id="pool-tags" style="padding-bottom: 16px">
           </div>
+
         </ul>
       </div>
 
@@ -652,8 +677,23 @@
     </div>
   </div>
 
+  <!-- Tag popover -->
+  <div id="pool-tags" class="popup tag-popup" style="height:500px;width:1000px;">
+    <div class="popover-angle on-top"></div>
+    <div class="popover-inner">
+      <div id="pool-tags-list" class="row justify-content-flex-start" style="min-height: 50px;">
+
+        <div id="tag-id" class="col-25 card card-outline">
+          <div class="card-header">Tag title</div>
+          <div class="card-content card-content-padding">Tag description</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Tag popup -->
-  <div class="popup tag-popup" style="height: 400px; width: 400px; margin: -200px; ">
+  <!-- <div class="popup tag-popup" style="height: 400px; width: 400px; margin: -200px; ">
     <div class="block">
       <label id="tag-pic">
         <div class="pic-upload">
@@ -694,7 +734,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- Feature Pool popup -->
   <div class="popup feature-popup">
@@ -721,7 +761,7 @@
     <div class="block">
 
       <div class="row no-gap" style="height: 340px;">
-        <div class=" col-60 list no-hairlines">
+        <div class=" col-80 list no-hairlines">
           <div class="">Title</div>
           <div class="item-input-wrap">
             <input id="announcment-title" type="text" placeholder="Anouncement title">
@@ -729,8 +769,8 @@
           </div>
 
           <div class="">Description</div>
-          <div class="" style="position: relative; padding: 1px 2px;">
-            <textarea id="announcment-description" class="" placeholder="Announcement description"></textarea>
+          <div class="">
+            <textarea id=" announcment-description" class="" placeholder="Announcement description"></textarea>
           </div>
 
           <div class="">Link</div>
@@ -800,6 +840,9 @@
 
     //reference to the firestore database
     var db = firebase.firestore();
+
+    var universalDataRef = db.collection('universalData').doc('main'); // this is a referance to the main doc for storing universal data such as tags
+    var universalData = universalDataRef.get();
 
     var User; //An objects that contins the user data if the currently signed in user
     var uid; //This is the users id
