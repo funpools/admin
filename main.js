@@ -40,6 +40,7 @@ var $$ = Dom7;
 var mainView = app.views.create('.view-main');
 
 
+
 ///////********Page Setup Functions and dom stuff*********\\\\\\\\\\
 function makeid(length) {
   var result = '';
@@ -51,7 +52,7 @@ function makeid(length) {
   return result;
 }
 
-// user search
+//user search
 $$('#user-search').on('keyup', function(event) {
   if (event.keyCode === 13) {
     $$('#user-search-button').click();
@@ -147,8 +148,6 @@ function newPool() {
 
 }
 
-
-
 function setupMainPage() {
   db.collection("admins").doc(uid).get().catch(function(error) {
     console.log(error);
@@ -172,8 +171,11 @@ function setupMainPage() {
         self.app.views.main.router.navigate('/home/');
         console.log("navigated to main page");
       }
+
       loadPools();
+      loadTags();
       //editUser('Administrator', 'test', 'user', null, null);
+
       $$('#username').html('Hi, ' + User.firstName);
       console.log(User.username);
       var panel = app.panel.create({
@@ -714,7 +716,6 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   //check to see if this pool is already featured or not
   db.collection("universalData").doc("mainPage").get().then(async function(mainPageData) {
     let featuredPool = await getPool(mainPageData.data().featuredPool);
-
     if (pool.id === mainPageData.data().featuredPool) { // if this is a featured pool
 
       // get featured image
@@ -723,25 +724,50 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
         displayPic = picURL;
       }).catch(error => {});
       await featuredPic;
-
       //set featured image
       $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + displayPic + ")"));
       $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
-
       //update checkbox
       $$('#featured-pool-checkbox').prop('checked', true);
       $$('#featured-pool').show();
     } else {
-
       //set featured image
       $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + '' + ")"));
       $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
-
       //update checkbox
       $$('#featured-pool-checkbox').prop('checked', false);
       $$('#featured-pool').hide();
     }
   });
+
+  //  POOL TAGS
+  universalDataRef.get().then(function(doc) {
+    universalData = doc.data();
+    console.log(universalData);
+    console.log("Setting up tag popup");
+    $$('#pool-tags-list').empty();
+
+    universalData.tags.forEach((tag, i) => {
+      let tagEl = $$('<div id="' + tag.id + '" class="col-25 card card-outline" >\
+          <div class="card-header">' + tag.title + '</div>\
+          <div class="card-content card-content-padding">' + tag.description + '</div>\
+        </div>');
+      tagEl.attr('data-id', tag.id);
+      if (pool.tags.includes(tag.id)) {
+        tagEl.addClass('selected-tag');
+      }
+      tagEl.click(function() {
+        selectTag(tag.id);
+      });
+      $$('#pool-tags-list').append(tagEl);
+    });
+  });
+
+  $$('#pool-tag-button').click(function() {
+    console.log("Opening tag popup");
+    app.popup.open('.tag-popup');
+  });
+
 
   $$('#featured-pool-checkbox').on('change', function(e) {
     if (e.target.checked) {
@@ -785,15 +811,6 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
     }
   }
 
-  //Add in the tags
-  var chipsDiv = document.getElementById("pool-tags");
-  chipsDiv.innerHTML = "";
-  for (var i = 0; i < pool.tags.length; i++) {
-    var chip = document.createElement("div");
-    chip.innerHTML = '<div class="chip" onclick="deleteTag(this)"><div class="chip-label">' + pool.tags[i] + '</div><a href="#" class="chip-delete"></a></div>';
-    chipsDiv.appendChild(chip.childNodes[0]);
-  }
-
   if (pool.state === "active" || pool.state === "closed") {
     $$('.delete-button').hide();
   } else {
@@ -824,10 +841,10 @@ function savePool() {
   }
   //Get tags from the chips
   let tags = [];
-  let chips = document.getElementById("pool-tags").getElementsByClassName("chip-label");
-  for (var i = 0; i < chips.length; i++) {
-    tags.push(chips[i].innerHTML);
-  }
+  $$('#pool-tags-list').find('.selected-tag').forEach((selectedTag, i) => {
+    console.log($$(selectedTag).attr("id"), $$(selectedTag).attr("data-id"));
+    tags.push($$(selectedTag).attr("data-id"));
+  });
 
   let questions = [];
   //For each question
@@ -870,7 +887,6 @@ function savePool() {
       description: document.getElementById('question-description-' + questionID).value,
       answer: (numericAnswer.value) ? numericAnswer.value : null,
     });
-
   }
 
   console.log(tieBreakers);
@@ -1076,13 +1092,141 @@ function newAnnouncement() {
 
 }
 
+///////*TAGS*\\\\\\\
+
+$$('#edit-tags-button').click(function() {
+  if ($$('#edit-tags-button').html() == "Edit") {
+    console.log("Edit tags");
+    app.sortable.enable('#sortable-tags-list')
+
+    $$('#edit-tags-button').html("Save");
+    $$('#tags-list').find('input').prop('readOnly', false);
+    $$('#new-tag-button').show();
+    $$('#cancel-edit-tags-button').show();
+    $$('.delete-tag-button').show();
+
+  } else {
+    console.log("Save tags");
+
+    saveTags();
+
+    app.sortable.disable('#sortable-tags-list')
+    $$('#edit-tags-button').html("Edit");
+    $$('#tags-list').find('input').prop('readOnly', true);
+    $$('#new-tag-button').hide();
+    $$('#cancel-edit-tags-button').hide();
+
+  }
+});
+
+$$('#cancel-edit-tags-button').click(function() {
+  app.preloader.show();
+  loadTags().then(function() {
+    app.preloader.hide();
+  });
+  app.sortable.disable('#sortable-tags-list')
+  $$('#edit-tags-button').html("Edit");
+  $$('#tags-list').find('input').prop('readOnly', true);
+  $$('#new-tag-button').hide();
+  $$('#cancel-edit-tags-button').hide();
+});
+
+$$('#new-tag-button').click(function() {
+  let tagEl = $$('<li class="tag-input">\
+    <div class="item-content">\
+      <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
+      <div class="item-inner">\
+        <!-- TODO: Add a delete button maybe?-->\
+        <div class="item-title">\
+          <input class="tag-title-input" type="text" name="Title" placeholder="Title">\
+        </div>\
+        <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description">\
+      </div>\
+    </div>\
+    <div class="sortable-handler"></div>\
+  </li>');
+  tagEl.attr('data-id', makeid(10)); // TODO: Check for id conflicts
+
+  $$("#tags-list").append(tagEl);
+});
+
+function selectTag(id) {
+  console.log("Selecting tag:" + id);
+  if (!$$('#' + id).hasClass('selected-tag')) {
+    $$('#' + id).addClass('selected-tag');
+  } else {
+    $$('#' + id).removeClass('selected-tag');
+  }
+}
+
+async function loadTags() { //Clears the current tags then loads them from the server
+  console.log("Loading tags");
+
+  universalData = (await universalDataRef.get()).data();
+  console.log(universalData);
+  $$("#tags-list").empty();
+
+  universalData.tags.forEach((tag, i) => {
+    let tagEl = $$('<li class="tag-input">\
+      <div class="item-content">\
+        <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
+        <div class="item-inner">\
+          <!-- TODO: Add a delete button maybe?-->\
+          <div class="item-title">\
+            <input class="tag-title-input" type="text" name="Title" placeholder="Title" value="' + tag.title + '" readonly>\
+          </div>\
+          <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description" value="' + tag.description + '" readonly>\
+        </div>\
+      </div>\
+      <div class="sortable-handler"></div>\
+    </li>');
+    tagEl.attr('data-id', tag.id);
+    //tagEl.data("id", "gksajdhgfkajsdhg");
+    $$("#tags-list").append(tagEl);
+  });
+
+  $$('.delete-tag-button').hide();
+  $$('.delete-tag-button').click(function() {
+    console.log("Deleteing tag.");
+    $$(this).parent().parent().parent().remove();
+  });
+
+  return 1;
+}
+
+async function saveTags() { //Saves the tags and their order as currently displyed in the tags section
+  app.preloader.show();
+  //console.log($$('#tags-list').find('.tag-input'));
+  let tagElements = $$('#tags-list').find('.tag-input');
+  let newTags = [];
+
+  tagElements.forEach((tagElement, i) => {
+    //console.log($$(tagElement).find('input'));
+    console.log($$(tagElement).attr("test"), $$(tagElement).data('id'));
+    newTags.push({
+      id: $$(tagElement).attr("data-id"),
+      title: $$(tagElement).find('.tag-title-input').val(),
+      description: $$(tagElement).find('.tag-description-input').val(),
+    });
+  });
+  console.log(newTags);
+
+  await universalDataRef.update({
+    tags: newTags,
+  });
+
+  loadTags();
+
+  app.preloader.hide();
+
+  return 1;
+}
 
 //displays uploaded picture on screen
 function previewPic(event, el) {
   $$(el).find('.pic-upload').css("background-image", ("url(" + URL.createObjectURL(event.target.files[0]) + ")"));
   $$(el).find('.pic-icon').html('edit');
 }
-
 //add a tag on edit pool page
 function addTag(el) {
   chipsDiv = document.getElementById("pool-tags");
@@ -1099,6 +1243,7 @@ function addTag(el) {
 
 }
 
+/*
 //load tags
 function loadTags() {
   $$('.tag').remove();
@@ -1253,4 +1398,4 @@ function deleteTag(id) {
     });
     loadTags();
   });
-}
+}*/
