@@ -1125,6 +1125,7 @@ $$('#edit-tags-button').click(function() {
     $$('#tags-list').find('input').prop('readOnly', true);
     $$('#new-tag-button').hide();
     $$('#cancel-edit-tags-button').hide();
+    $$('.delete-tag-button').hide();
 
   }
 });
@@ -1139,6 +1140,8 @@ $$('#cancel-edit-tags-button').click(function() {
   $$('#tags-list').find('input').prop('readOnly', true);
   $$('#new-tag-button').hide();
   $$('#cancel-edit-tags-button').hide();
+  $$('.delete-tag-button').hide();
+
 });
 
 $$('#new-tag-button').click(function() {
@@ -1146,7 +1149,7 @@ $$('#new-tag-button').click(function() {
     <div class="item-content">\
       <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
       <div class="item-inner">\
-        <!-- TODO: Add a delete button maybe?-->\
+      <button class="delete-tag-button button color-red" type="button" name="button" style="width:10%;" >Delete</button>\
         <div class="item-title">\
           <input class="tag-title-input" type="text" name="Title" placeholder="Title">\
         </div>\
@@ -1158,6 +1161,10 @@ $$('#new-tag-button').click(function() {
   tagEl.attr('data-id', makeid(10)); // TODO: Check for id conflicts
 
   $$("#tags-list").append(tagEl);
+  $$('.delete-tag-button').click(function() {
+    console.log("Deleteing tag.");
+    $$(this).parent().parent().parent().remove();
+  });
 });
 
 function selectTag(id) {
@@ -1181,7 +1188,7 @@ async function loadTags() { //Clears the current tags then loads them from the s
       <div class="item-content">\
         <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
         <div class="item-inner">\
-          <!-- TODO: Add a delete button maybe?-->\
+        <button class="delete-tag-button button color-red" type="button" name="button" style="width:10%;display:none;" >Delete</button>\
           <div class="item-title">\
             <input class="tag-title-input" type="text" name="Title" placeholder="Title" value="' + tag.title + '" readonly>\
           </div>\

@@ -477,7 +477,7 @@
                       <div class="item-content">
                         <div class="item-media"><i class="material-icons icon">edit</i></div>
                         <div class="item-inner">
-                          <!-- TODO: Add a delete button maybe?-->
+                          <button class=".delete-tag-button button color-red" type="button" name="button" style="width:10%;">Delete</button>
                           <div class="item-title">
                             <input class="tag-title-input" type="text" name="Title" placeholder="Title" readonly>
                           </div>
@@ -614,6 +614,11 @@
           </li>
           <li class="item-content item-input">
             <div class="item-media">
+              <i class="material-icons">label</i>
+            </div>
+            <button id="pool-tag-button" class="button" type="button" name="button">Tags</button>
+
+            <div class="item-media">
               <i class="material-icons">visibility</i>
             </div>
             <div class="item-inner">
@@ -628,20 +633,6 @@
               </div>
             </div>
           </li>
-          <li class="item-content item-input">
-            <div class="item-media">
-              <i class="material-icons">label</i>
-            </div>
-            <button id="pool-tag-button" class="button" type="button" name="button">Tags</button>
-            <div class="item-inner">
-              <div class="item-title item-label">Pool Tags</div>
-              <div class="item-input-wrap">
-                <input type="text" placeholder="Enter tags separated by a comma." onkeypress="addTag(this)">
-              </div>
-            </div>
-          </li>
-          <div class="block" id="pool-tags" style="padding-bottom: 16px">
-          </div>
 
         </ul>
       </div>
