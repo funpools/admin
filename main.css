@@ -62,7 +62,9 @@
   -webkit-font-smoothing: antialiased;
 }
 
-.md-light { color: rgba(255, 255, 255, 1); }
+.md-light {
+  color: rgba(255, 255, 255, 1);
+}
 
 #splash-screen {
   z-index: 10000;
@@ -94,6 +96,26 @@
   border: 2px solid rgba(0, 0, 0, 0);
   box-shadow: none;
   transition: .1s;
+}
+
+.featured-pool {
+  border-color: orange;
+  box-shadow: 0 0 20px 5px rgba(0, 0, 0, .1);
+}
+
+.featured-pool::after {
+  content: "Featured Pool";
+  background-color: orange;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  height: 1.5em;
+  padding: 4px;
+  width: 120px;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  text-align: center;
 }
 
 .pool-card:hover {
@@ -217,9 +239,7 @@
   height: 0;
 }
 
-
-
-.tag-card{
+.tag-card {
   transition: .1s;
 }
 
@@ -228,13 +248,13 @@
   color: #fff;
 }
 
-.tag-card:hover{
+.tag-card:hover {
   border-color: var(--f7-theme-color);
   box-shadow: 0 0 20px 5px rgba(0, 0, 0, .05);
 }
 
-.selected-tag{
-  background-color:rgba(76, 175, 80, 0.2);
+.selected-tag {
+  background-color: rgba(76, 175, 80, 0.2);
   box-shadow: 0 0 16px 2px rgba(0, 0, 0, .1);
 }
 
