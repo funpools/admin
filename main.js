@@ -750,27 +750,18 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
     universalData = doc.data();
     console.log(universalData);
     console.log("Setting up tag popup");
-    $$('#pool-tags-list').empty();
-
+    $$('#pool-tags-list').html("");
     universalData.tags.forEach((tag, i) => {
-      let tagEl = $$('<div id="' + tag.id + '" class="col-25 card card-outline tag-card" >\
-          <div class="card-header">' + tag.title + '</div>\
-          <div class="card-content card-content-padding">' + tag.description + '</div>\
-        </div>');
+      let tagEl = $$('<div id="' + tag.id + '" class="tag-chip no-select">' + tag.title + '</div>');
       tagEl.attr('data-id', tag.id);
       if (pool.tags.includes(tag.id)) {
-        tagEl.addClass('selected-tag');
+        tagEl.addClass('tag-chip-selected');
       }
-      tagEl.click(function() {
-        selectTag(tag.id);
+      tagEl.click(() => {
+        $$('#' + tag.id).toggleClass('tag-chip-selected');
       });
       $$('#pool-tags-list').append(tagEl);
     });
-  });
-
-  $$('#pool-tag-button').click(function() {
-    console.log("Opening tag popup");
-    app.popup.open('.tag-popup');
   });
 
 
@@ -847,7 +838,7 @@ function savePool() {
   }
   //Get tags from the chips
   let tags = [];
-  $$('#pool-tags-list').find('.selected-tag').forEach((selectedTag, i) => {
+  $$('#pool-tags-list').find('.tag-chip-selected').forEach((selectedTag, i) => {
     console.log($$(selectedTag).attr("id"), $$(selectedTag).attr("data-id"));
     tags.push($$(selectedTag).attr("data-id"));
   });
@@ -1107,7 +1098,7 @@ function newAnnouncement() {
 $$('#edit-tags-button').click(function() {
   if ($$('#edit-tags-button').html() == "Edit") {
     console.log("Edit tags");
-    app.sortable.enable('#sortable-tags-list')
+    app.sortable.enable('#sortable-tags-list');
 
     $$('#edit-tags-button').html("Save");
     $$('#tags-list').find('input').prop('readOnly', false);
@@ -1120,7 +1111,7 @@ $$('#edit-tags-button').click(function() {
 
     saveTags();
 
-    app.sortable.disable('#sortable-tags-list')
+    app.sortable.disable('#sortable-tags-list');
     $$('#edit-tags-button').html("Edit");
     $$('#tags-list').find('input').prop('readOnly', true);
     $$('#new-tag-button').hide();
@@ -1145,58 +1136,28 @@ $$('#cancel-edit-tags-button').click(function() {
 });
 
 $$('#new-tag-button').click(function() {
-  let tagEl = $$('<li class="tag-input">\
-    <div class="item-content">\
-      <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
-      <div class="item-inner">\
-      <button class="delete-tag-button button color-red" type="button" name="button" style="width:10%;" >Delete</button>\
-        <div class="item-title">\
-          <input class="tag-title-input" type="text" name="Title" placeholder="Title">\
-        </div>\
-        <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description">\
-      </div>\
-    </div>\
-    <div class="sortable-handler"></div>\
-  </li>');
+  let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
+    '<div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="New Category"></div>' +
+    '</div></div><div class="sortable-handler"></div></li>');
   tagEl.attr('data-id', makeid(10)); // TODO: Check for id conflicts
 
   $$("#tags-list").append(tagEl);
   $$('.delete-tag-button').click(function() {
     console.log("Deleteing tag.");
-    $$(this).parent().parent().parent().remove();
+    $$(this).closest('li').remove();;
   });
 });
-
-function selectTag(id) {
-  console.log("Selecting tag:" + id);
-  if (!$$('#' + id).hasClass('selected-tag')) {
-    $$('#' + id).addClass('selected-tag');
-  } else {
-    $$('#' + id).removeClass('selected-tag');
-  }
-}
 
 async function loadTags() { //Clears the current tags then loads them from the server
   console.log("Loading tags");
 
   universalData = (await universalDataRef.get()).data();
-  console.log(universalData);
   $$("#tags-list").empty();
 
   universalData.tags.forEach((tag, i) => {
-    let tagEl = $$('<li class="tag-input">\
-      <div class="item-content">\
-        <div class="item-media"><i class="material-icons icon">sports_football</i></div>\
-        <div class="item-inner">\
-        <button class="delete-tag-button button color-red" type="button" name="button" style="width:10%;display:none;" >Delete</button>\
-          <div class="item-title">\
-            <input class="tag-title-input" type="text" name="Title" placeholder="Title" value="' + tag.title + '" readonly>\
-          </div>\
-          <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description" value="' + tag.description + '" readonly>\
-        </div>\
-      </div>\
-      <div class="sortable-handler"></div>\
-    </li>');
+    let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
+      '<div class="item-title"><input class="tag-title-input" value="' + tag.title + '" type="text" name="Title" placeholder="Title" readonly></div>' +
+      '</div></div><div class="sortable-handler"></div></li>');
     tagEl.attr('data-id', tag.id);
     //tagEl.data("id", "gksajdhgfkajsdhg");
     $$("#tags-list").append(tagEl);
@@ -1223,7 +1184,6 @@ async function saveTags() { //Saves the tags and their order as currently disply
     newTags.push({
       id: $$(tagElement).attr("data-id"),
       title: $$(tagElement).find('.tag-title-input').val(),
-      description: $$(tagElement).find('.tag-description-input').val(),
     });
   });
   console.log(newTags);

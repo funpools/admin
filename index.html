@@ -28,7 +28,7 @@
             <li><a href="#tab-1" class="tab-link ">Reports</a></li>
             <li><a href="#tab-2" class="tab-link">Users</a></li>
             <li><a href="#tab-3" class="tab-link">Pools</a></li>
-            <li><a href="#tab-4" class="tab-link">Tags</a></li>
+            <li><a href="#tab-4" class="tab-link">Categories</a></li>
             <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
             <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
             <li><a href="#tab-6" class="tab-link">Announcements(In Construction)</a></li>
@@ -444,56 +444,32 @@
             </div>
             <!-- Tags tab -->
             <div id="tab-4" class="tab">
-              <div class="row">
-                <div class="col-70">
-                  <!-- <a class="link sortable-toggle" data-sortable="#tags-list">Toggle</a> -->
-                  <h2 style="padding-left:5px;">Tags</h2>
+              <div class="block-card">
+                <div id="sortable-tags-list" class="list sortable sortable-opposite no-hairlines no-margin-bottom">
 
-                </div>
-                <div class="col-20" style="padding-top:10px;padding-right:5px;">
-                  <div class="row">
-                    <button id="cancel-edit-tags-button" class="col button button-fill button-round" style="display:none;">Cancel</button>
-                    <button id="edit-tags-button" class="col button button-fill button-round">Edit</button>
-                  </div>
-                </div>
-              </div>
 
-              <div class="card">
-
-                <div id="sortable-tags-list" class="list sortable sortable-opposite">
-                  <!-- This is here for a kind of guide I guess -->
-                  <div class="item-content none-sortable">
-                    <div class="item-media"><i class="material-icons icon">edit</i></div>
-                    <div class="item-inner">
-                      <div class="item-title">Title</div>
-                      <div class="item-after">Description</div>
-                    </div>
-                  </div>
-
-                  <ul id="tags-list">1
-
-                    <!-- This is the referance element-->
-                    <li class="tag-input">
+                  <ul id="tags-list">
+                    <li>
                       <div class="item-content">
-                        <div class="item-media"><i class="material-icons icon">edit</i></div>
                         <div class="item-inner">
-                          <button class=".delete-tag-button button color-red" type="button" name="button" style="width:10%;">Delete</button>
-                          <div class="item-title">
-                            <input class="tag-title-input" type="text" name="Title" placeholder="Title" readonly>
-                          </div>
-                          <input class="tag-description-input" type="text" style="text-align:right;" name="Description" placeholder="Description" readonly>
+                          <div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="Title" readonly></div>
+                          <div class="item-after"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div>
                         </div>
                       </div>
                       <div class="sortable-handler"></div>
                     </li>
-
                   </ul>
                 </div>
-                <div class="row justify-content-center" style="padding-bottom:5px;">
-                  <button id="new-tag-button" class="col-25 button button-fill button-round" style="display:none;">Add Tag</button>
+                <div class="display-flex justify-content-center" style="padding-bottom:5px;">
+                  <a href="#" id="new-tag-button" class="button" style="display:none;">+ Add Category</a>
+                </div>
+                <div class="block">
+                  <div class="display-flex justify-content-center">
+                    <a href="#" id="cancel-edit-tags-button" class="button button-fill color-red" style="display: none; margin-right: 16px; width: 100px">Cancel</a>
+                    <a href="#" id="edit-tags-button" class="button button-fill" style="width: 100px">Edit</a>
+                  </div>
                 </div>
               </div>
-
             </div>
             <div id="tab-5" class="tab">
               <div class="block-card">
@@ -616,8 +592,14 @@
             <div class="item-media">
               <i class="material-icons">label</i>
             </div>
-            <button id="pool-tag-button" class="button" type="button" name="button">Tags</button>
-
+            <div class="item-inner">
+              <div class="item-title item-label">Category</div>
+              <div class="item-input-wrap">
+                <a href="#" class="button sheet-open" data-sheet=".category-sheet">Select Category</a>
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
             <div class="item-media">
               <i class="material-icons">visibility</i>
             </div>
@@ -669,16 +651,16 @@
   </div>
 
   <!-- Tag popover -->
-  <div id="pool-tags" class="popup tag-popup" style="height:500px;width:1000px;">
-    <div class="popover-angle on-top"></div>
-    <div class="popover-inner">
-      <div id="pool-tags-list" class="row justify-content-flex-start" style="min-height: 50px;">
-
-        <div id="tag-id" class="col-25 card card-outline">
-          <div class="card-header">Tag title</div>
-          <div class="card-content card-content-padding">Tag description</div>
-        </div>
-
+  <div class="sheet-modal category-sheet">
+    <div class="toolbar">
+      <div class="toolbar-inner">
+        <div class="left"></div>
+        <div class="right"><a href="#" class="link sheet-close">Done</a></div>
+      </div>
+    </div>
+    <div class="sheet-modal-inner">
+      <div class="block" style="height: 222px; overflow: scroll">
+        <div id="pool-tags-list"></div>
       </div>
     </div>
   </div>
