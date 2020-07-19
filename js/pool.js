@@ -67,7 +67,7 @@ async function featurePool(idToFeature, featuredPic, feature) {
             return 1;
         }
 
-    } else {
+    } else if (!feature) {
         if (idToFeature == mainPageData.featuredPool) { //If this is the currently featured pool then remove it from the featuredpool
             if (pool.state != "open") {//If this is the featured pool but it is not open then dont allow it to be featured 
                 app.dialog.alert("This pool is no longer featured in the app because it's state is no longer open");
