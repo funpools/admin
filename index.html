@@ -33,6 +33,7 @@
             <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
             <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
             <li><a href="#tab-6" class="tab-link">Announcements(In Construction)</a></li>
+            <li><a href="#tab-7" class="tab-link">Admin Managment</a></li>
 
             <li><a href="#" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
           </ul>
@@ -446,12 +447,10 @@
                 </div>
               </div>
             </div>
-            <!-- Tags tab -->
+            <!-- Catagory tab -->
             <div id="tab-4" class="tab">
               <div class="block-card">
                 <div id="sortable-tags-list" class="list sortable sortable-opposite no-hairlines no-margin-bottom">
-
-
                   <ul id="tags-list">
                     <li>
                       <div class="item-content">
@@ -510,6 +509,89 @@
                   </div>
                 </div>
 
+              </div>
+            </div>
+
+            <!-- Admin Managment Tab -->
+            <div id="tab-7" class="tab">
+              <div class="block-card">
+                <div class="list">
+                  <ul id="admin-list">
+
+                    <li class="accordion-item">
+                      <a href="#" class="item-content item-link">
+                        <div class="item-inner">
+                          <div class="item-title">Admin Name</div>
+                        </div>
+                      </a>
+                      <div class="accordion-item-content">
+                        <div class="block">
+                          <div class="row">
+                            <div class="list col-50">
+                              <h4>User Permissions:</h4>
+                              <ul>
+                                <li>
+                                  <label class="item-checkbox item-content">
+                                    <input type="checkbox" name="permission-checkbox" value="edit-pools"
+                                      checked="checked" />
+                                    <i class="icon icon-checkbox"></i>
+                                    <div class="item-inner">
+                                      <div class="item-title">Can edit pools</div>
+                                    </div>
+                                  </label>
+                                </li>
+                                <li>
+                                  <label class="item-checkbox item-content">
+                                    <input type="checkbox" name="permission-checkbox" value="user-managment" />
+                                    <i class="icon icon-checkbox"></i>
+                                    <div class="item-inner">
+                                      <div class="item-title">User Managment</div>
+                                    </div>
+                                  </label>
+                                </li>
+                                <li>
+                                  <label class="item-checkbox item-content">
+                                    <input type="checkbox" name="permission-checkbox" value="category-managment" />
+                                    <i class="icon icon-checkbox"></i>
+                                    <div class="item-inner">
+                                      <div class="item-title">Tags/Categories</div>
+                                    </div>
+                                  </label>
+                                </li>
+                                <li>
+                                  <label class="item-checkbox item-content">
+                                    <input type="checkbox" name="permission-checkbox" value="analytics" />
+                                    <i class="icon icon-checkbox"></i>
+                                    <div class="item-inner">
+                                      <div class="item-title">Analytics</div>
+                                    </div>
+                                  </label>
+                                </li>
+                                <li>
+                                  <label class="item-checkbox item-content">
+                                    <input type="checkbox" name="permission-checkbox" value="announcements" />
+                                    <i class="icon icon-checkbox"></i>
+                                    <div class="item-inner">
+                                      <div class="item-title">Announcements</div>
+                                    </div>
+                                  </label>
+                                </li>
+                              </ul>
+                            </div>
+                            <div class="col-40">
+                              <div class="row block">
+                                <button class="col button button-fill">Canel</button>
+                                <button class="col button button-fill">Delete Admin</button>
+                                <button class="col button button-fill">Save</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+
+                  </ul>
+                </div>
               </div>
             </div>
 
