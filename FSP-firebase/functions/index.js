@@ -43,8 +43,8 @@ exports.poolUpdate = functions.firestore
       let poolPromises = [];
       //If this pool has children then add them to the list of pools to grade
       if (pool.childPools != null) {
-        pool.childPools.forEach(function(cpoolID) {
-          poolPromises.push(gradePool(cpoolID, messageType).then(function(result) {
+        pool.childPools.forEach(function (cpoolID) {
+          poolPromises.push(gradePool(cpoolID, messageType).then(function (result) {
             console.log("Successfully graded child pool ", result);
           }));
         });
@@ -129,7 +129,7 @@ exports.poolUpdate = functions.firestore
                 poolID: poolID,
                 link: "/pool/?id=" + poolID,
                 title: pool.name + " is now active",
-                text: pool.name + " is now active. Click here to veiw the pool! ",
+                text: pool.name + " is now active. Click here to view the pool! ",
                 type: "PU",
               });
               break;
@@ -139,7 +139,7 @@ exports.poolUpdate = functions.firestore
                 poolID: poolID,
                 link: "/pool/?id=" + poolID,
                 title: pool.name + " is now closed",
-                text: pool.name + " is now closed. Click here to veiw your results!",
+                text: pool.name + " is now closed. Click here to view your results!",
                 type: "PU",
               });
               break;
@@ -190,7 +190,7 @@ exports.poolUpdate = functions.firestore
       }
 
       //Wait for the child pool to be graded
-      await Promise.all(poolPromises).then(function() {
+      await Promise.all(poolPromises).then(function () {
         console.log("All pools graded!");
       });
 
@@ -267,7 +267,7 @@ exports.poolUpdate = functions.firestore
           //   poolID: context.params.poolID,
           //   link: "/pool/?id=" + context.params.poolID,
           //   title: newData.name + " is now active",
-          //   text: newData.name + " is now active. Click here to veiw the pool! ",
+          //   text: newData.name + " is now active. Click here to view the pool! ",
           //   type: "PU",
           // });
           //Grade the pool and notify the users that the pool is open
@@ -300,7 +300,7 @@ exports.poolUpdate = functions.firestore
           console.log("Pool has stayed active!");
           if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers))) { //If the questions/tiebreakers have changed
             //grade the pool and send notifications to users about their grade
-            return gradePool(context.params.poolID, "score-update").then(function(result) {
+            return gradePool(context.params.poolID, "score-update").then(function (result) {
               console.log("Successfully graded ", result);
             });
           }
@@ -351,7 +351,7 @@ exports.poolUpdate = functions.firestore
   });
 
 //Check for any pools that are closing soon and notify the users in that pool
-exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function(context) {
+exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function (context) {
 
   //get any pools that close within "minutes" from now
   const minutes = 60;
@@ -369,8 +369,8 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
       let poolPromises = [];
       //If this pool has children then add them to the list of pools to send closing notifications to
       if (pool.childPools != null) {
-        pool.childPools.forEach(function(cpoolID) {
-          poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
+        pool.childPools.forEach(function (cpoolID) {
+          poolPromises.push(sendClosingNotificatoin(cpoolID).then(function (result) {
             //console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
           }));
         });
@@ -387,7 +387,7 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
             title: "Pool closing soon",
             text: "Enter your answers now: " + pool.name + " is closing soon!",
             type: "PU",
-          }).then(result => {}));
+          }).then(result => { }));
         });
         console.log("Sent closing notificatoin to " + pool.users.length + " users!");
       } else {
@@ -445,7 +445,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
   // const picture = context.auth.token.picture || null;
   // const email = context.auth.token.email || null;
   console.log(data);
-  return db.collection("pools").doc(data.parentPool).get().then(function(doc) {
+  return db.collection("pools").doc(data.parentPool).get().then(function (doc) {
 
     console.log(doc.data());
     console.log('Parent pool state', doc.data.state);
@@ -459,7 +459,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
         admins: data.admins,
         allowShares: data.allowShares,
         private: true,
-      }).then(function(doc) {
+      }).then(function (doc) {
 
         //Add the pool to the parent pools children
         db.collection("pools").doc(data.parentPool).update({
@@ -509,7 +509,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
 
 });
 
-exports.deletePool = functions.https.onCall(async function(data, context) {
+exports.deletePool = functions.https.onCall(async function (data, context) {
   // Checking that the user is authenticated.
   if (!context.auth) {
     // Throwing an HttpsError so that the client gets the error details.
@@ -626,7 +626,7 @@ async function getPool(poolID) {
   }
 }
 
-exports.joinPool = functions.https.onCall(async function(data, context) { //Function for joining and leaving pools
+exports.joinPool = functions.https.onCall(async function (data, context) { //Function for joining and leaving pools
   /**
    * This function must be called with the data param containing
    * {
@@ -737,7 +737,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
             pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
           });
 
-          let userToRemove = pool.users.find(function(e) {
+          let userToRemove = pool.users.find(function (e) {
             return e.uid === userID;
           });
           console.log(userToRemove);
@@ -869,7 +869,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
                 id: targetUid + poolID,
                 link: "/pool/?id=" + poolID, //", //"/pool/?id=" + poolID,
                 title: user.firstName + ' ' + user.lastName + " has requested.",
-                text: user.username + " has reported user: " + targetUser.username + " click to veiw.",
+                text: user.username + " has reported user: " + targetUser.username + " click to view.",
                 type: "UR",
               });
 
@@ -903,7 +903,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
 
 });
 
-exports.addMessage = functions.https.onCall(async function(data, context) {
+exports.addMessage = functions.https.onCall(async function (data, context) {
   /*
   This should be called with the data pareameter containing
   {
@@ -975,7 +975,7 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
 
 });
 
-exports.sendAnnouncement = functions.https.onCall(async function(data, context) { //Sends an announcement to all users
+exports.sendAnnouncement = functions.https.onCall(async function (data, context) { //Sends an announcement to all users
 
   // Checking that the user is authenticated.
   if (!context.auth) {
@@ -1184,13 +1184,13 @@ async function removeNotification(uid, notificationID) {
 async function getUser(uidToGet) { //Gets a user and runs checks for errors and invalid pareameters
   let userData = (await db.collection('users').doc(uidToGet).get()).data();
 
-  (userData.pendingPools) ? null: userData.pendingPools = [];
+  (userData.pendingPools) ? null : userData.pendingPools = [];
 
   return userData
 }
 
 //Requests to be freinds with the specified user
-exports.freindRequest = functions.https.onCall(async function(data, context) {
+exports.freindRequest = functions.https.onCall(async function (data, context) {
 
   // Checking that the user is authenticated.
   if (!context.auth) {
@@ -1222,7 +1222,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayUnion(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
 
@@ -1230,7 +1230,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayUnion(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
 
@@ -1261,14 +1261,14 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayRemove(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
       //Remove us from the other users freinds
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayRemove(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
       //Wait for the operations to complete
@@ -1293,7 +1293,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       //Update our users pending freinds list
       await db.collection('users').doc(userID).update({
         pendingFriends: admin.firestore.FieldValue.arrayUnion(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
 
@@ -1319,14 +1319,14 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayRemove(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
       //Remove us from the other users freinds
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayRemove(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
       //Wait for the operations to complete
@@ -1347,7 +1347,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
 
 });
 
-exports.banUser = functions.https.onCall(async function(data, context) {
+exports.banUser = functions.https.onCall(async function (data, context) {
 
   // Check that the user is authenticated.
   if (!context.auth) {
@@ -1373,9 +1373,9 @@ exports.banUser = functions.https.onCall(async function(data, context) {
       //Disable the users account
       let op3 = admin.auth().updateUser(uidToBan, {
         disabled: true,
-      }).then(function(userRecord) {
+      }).then(function (userRecord) {
         console.log('Successfully disabled user');
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.log('Error disableing user: ', error);
       });
       //wait for the operations to finish
@@ -1401,9 +1401,9 @@ exports.banUser = functions.https.onCall(async function(data, context) {
       //enable the users account
       let op3 = admin.auth().updateUser(uidToBan, {
         disabled: false,
-      }).then(function(userRecord) {
+      }).then(function (userRecord) {
         console.log('Successfully enabled user');
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.log('Error enableing user: ', error);
       });
       //wait for the operations to finish
