@@ -151,7 +151,7 @@ function loadPools(callback) {
 
                     pools.forEach(function (pool) {
                         if (pool.private) {
-                            console.log('private pool not displaying.');
+                            //console.log('private pool not displaying.');
                         } else {
                             var poolList = document.getElementById("pool-list");
                             let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string

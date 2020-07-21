@@ -149,12 +149,15 @@ function newPool() {
 
 }
 
+
+
 function setupMainPage() {
   db.collection("admins").doc(uid).get().catch(function (error) {
     console.log(error);
   }).then(function (userData) {
     //If the user exist then this user is an admin so load the main page
     if (userData.exists) {
+      let uData = userData.data();
       User = {
         uid: uid,
         username: userData.get("lastName"),
@@ -163,7 +166,9 @@ function setupMainPage() {
         fullName: function () {
           return "" + this.firstName + " " + this.lastName;
         },
-        profilePic: null //profilePic,// TODO: Load that here
+        profilePic: null, //profilePic,// TODO: Load that here
+        permissions: uData.adminPermissions,
+        superUser: uData.superUser,
       };
 
       console.log(self.app.views.main.router.currentRoute.path);
@@ -173,8 +178,33 @@ function setupMainPage() {
         console.log("navigated to main page");
       }
 
-      loadPools();
-      loadTags();
+
+      //NOTE: Add code to enable the tab when loading from these functions
+      if (User.permissions) {
+        if (User.permissions.announcements) {
+          $$('#announcements-tab').show();
+        }
+        if (User.permissions.pools) {
+          $$('#pools-tab').show();
+          loadPools();
+        }
+        if (User.permissions.users) {
+          $$('#users-tab').show();
+        }
+        if (User.permissions.categories) {
+          $$('#categories-tab').show();
+          loadTags();
+        }
+        if (User.permissions.analytics) {
+          $$('#reports-tab').show();
+        }
+
+        if (User.superUser) {
+          $$('#admins-tab').show();
+          loadAdmins();
+        }
+      }
+
       //editUser('Administrator', 'test', 'user', null, null);
 
       $$('#username').html('Hi, ' + User.firstName);
@@ -659,6 +689,170 @@ async function saveTags() { //Saves the tags and their order as currently disply
 
   return 1;
 }
+
+/////////*ADMIN MANAGMENT*\\\\\\\\\\\
+async function loadAdmins() {
+  console.log("Loading admins");
+
+  $$('#admin-list').empty();
+
+  let admins = db.collection("admins").get();
+  admins = (await admins).docs;
+  console.log(admins);
+
+  for (let i = 0; i < admins.length; i++) {
+    //const element = admins[i];
+    const admin = admins[i].data();
+    const adminID = admins[i].id;
+
+    // console.log("Admin:", admin);
+    $$('#admin-list').append('<li id="id-' + adminID + '" class="accordion-item">\
+    <a href="#" class="item-content item-link">\
+      <div class="item-inner">\
+        <div class="item-title">'+ admin.firstName + ' ' + admin.lastName + '</div>\
+      </div>\
+    </a>\
+    <div class="accordion-item-content">\
+      <div class="block">\
+        <div class="row">\
+          <div class="list col-50">\
+            <h4>User Permissions:</h4>\
+            <ul class="permission-list" >\
+              <!-- Permission Section -->\
+              <li>\
+                <label class="item-checkbox item-content">\
+                  <input class="pools-checkbox" type="checkbox" name="permission-checkbox" value="edit-pools">\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">Can edit pools</div>\
+                  </div>\
+                </label>\
+              </li>\
+              <li>\
+                <label class="item-checkbox item-content">\
+                  <input class="users-checkbox" type="checkbox" name="permission-checkbox" value="user-managment" />\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">User Managment</div>\
+                  </div>\
+                </label>\
+              </li>\
+              <li>\
+                <label class="item-checkbox item-content">\
+                  <input class="categories-checkbox" type="checkbox" name="permission-checkbox" value="categories" />\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">Tags/Categories</div>\
+                  </div>\
+                </label>\
+              </li>\
+              <li>\
+                <label  class="item-checkbox item-content">\
+                  <input class="analytics-checkbox" type="checkbox" name="permission-checkbox" value="analytics" />\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">Analytics</div>\
+                  </div>\
+                </label>\
+              </li>\
+              <li>\
+                <label class="item-checkbox item-content">\
+                  <input class="announcements-checkbox" type="checkbox" name="permission-checkbox" value="announcements" />\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">Announcements</div>\
+                  </div>\
+                </label>\
+              </li>\
+            </ul>\
+          </div>\
+          <div class="col-40">\
+            <div style="height: 100px;"></div>\
+            <div class="row block">\
+              <button class="col button button-fill cancel-admin">Canel</button>\
+              <button class="col button button-fill delete-admin">Delete Admin</button>\
+              <button class="col button button-fill save-admin">Save</button>\
+            </div>\
+          </div>\
+        </div>\
+      </div>\
+    </div>\
+  </li>');
+
+
+    if (admin.adminPermissions != null) {
+      if (admin.adminPermissions.pools) {
+        $$('#id-' + adminID).find('.pools-checkbox').prop('checked', true);
+      }
+      if (admin.adminPermissions.users) {
+        $$('#id-' + adminID).find('.users-checkbox').prop('checked', true);
+      }
+      if (admin.adminPermissions.categories) {
+        $$('#id-' + adminID).find('.categories-checkbox').prop('checked', true);
+      }
+      if (admin.adminPermissions.announcements) {
+        $$('#id-' + adminID).find('.announcements-checkbox').prop('checked', true);
+      }
+      if (admin.adminPermissions.analytics) {
+        $$('#id-' + adminID).find('.analytics-checkbox').prop('checked', true);
+      }
+    }
+
+    $$('#id-' + adminID).find('.save-admin').click(function () {
+      saveAdmin(adminID, {
+        adminPermissions: {
+          pools: $$('#id-' + adminID).find('.pools-checkbox').is(":checked"),
+          users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
+          categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
+          announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
+          analytics: $$('#id-' + adminID).find('.analytics-checkbox').is(":checked"),
+        },
+      });
+    });
+    $$('#id-' + adminID).find('.delete-admin').click(function () {
+      app.preloader.show();
+      deleteAdmin(adminID).then(function () {
+        app.preloader.hide();
+      });
+    });
+    $$('#id-' + adminID).find('.cancel-admin').click(function () {
+      app.preloader.show();
+      loadAdmins().then(function () {
+        app.preloader.hide();
+      });
+    });
+
+  }
+  return 1;
+}
+
+async function saveAdmin(adminID, adminObj) {
+  console.log("Saving admin: id:" + adminID + " object:", adminObj);
+  app.preloader.show();
+  let foo = {
+    adminPermissions: {
+      pool: $$('#id-' + adminID).find('.edit-pools-checkbox').is(":checked"),
+      users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
+      categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
+      announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
+      analytics: $$('#id-' + adminID).find('.analytics-checkbox').is(":checked"),
+    },
+  };
+
+  await db.collection("admins").doc(adminID).update(adminObj);
+  await loadAdmins();
+  app.preloader.hide()
+  return 1;
+}
+
+async function deleteAdmin(adminID) {
+  //TODO: Add Code to delete account here
+  console.log("Deleting admins from this panel is currently not finished please consult the devs.");
+  return 1;
+}
+
+
+
 
 //displays uploaded picture on screen
 function previewPic(event, el) {

@@ -26,16 +26,17 @@
         <h3 id="username" style="text-align: center"></h3>
         <div class="list no-hairlines">
           <ul>
-            <li><a href="#tab-1" class="tab-link ">Reports</a></li>
-            <li><a href="#tab-2" class="tab-link">Users</a></li>
-            <li><a href="#tab-3" class="tab-link">Pools</a></li>
-            <li><a href="#tab-4" class="tab-link">Categories</a></li>
+            <li><a id="reports-tab" href="#tab-1" class="tab-link style=" display: none;"">Reports</a></li>
+            <li><a id="users-tab" href="#tab-2" class="tab-link" style="display: none;">Users</a></li>
+            <li><a id="pools-tab" href="#tab-3" class="tab-link" style="display: none;">Pools</a></li>
+            <li><a id="categories-tab" href="#tab-4" class="tab-link" style="display: none;">Categories</a></li>
             <!--  <li><a onclick="loadTags()" href="#tab-4" class="tab-link">Tags</a></li>
             <li><a href="#tab-5" class="tab-link">Change Password</a></li> -->
-            <li><a href="#tab-6" class="tab-link">Announcements(In Construction)</a></li>
-            <li><a href="#tab-7" class="tab-link">Admin Managment</a></li>
+            <li><a id="announcements-tab" href="#tab-6" class="tab-link" style="display: none;">Announcements(In
+                Construction)</a></li>
+            <li><a id="admins-tab" href="#tab-7" class="tab-link" style="display: none;">Admin Managment</a></li>
 
-            <li><a href="#" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
+            <li><a href=" #" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
           </ul>
         </div>
         <a href="#" class="button button-fill" onclick="signOut()">Logout</a>
@@ -518,7 +519,8 @@
                 <div class="list">
                   <ul id="admin-list">
 
-                    <li class="accordion-item">
+                    <!-- referance admin element NOTE:its a bit outdated see main.js -->
+                    <!-- <li class="accordion-item admin-id">
                       <a href="#" class="item-content item-link">
                         <div class="item-inner">
                           <div class="item-title">Admin Name</div>
@@ -551,7 +553,7 @@
                                 </li>
                                 <li>
                                   <label class="item-checkbox item-content">
-                                    <input type="checkbox" name="permission-checkbox" value="category-managment" />
+                                    <input type="checkbox" name="permission-checkbox" value="categories" />
                                     <i class="icon icon-checkbox"></i>
                                     <div class="item-inner">
                                       <div class="item-title">Tags/Categories</div>
@@ -576,19 +578,22 @@
                                     </div>
                                   </label>
                                 </li>
+
                               </ul>
                             </div>
                             <div class="col-40">
+                              <div style="height: 100px;"></div>
                               <div class="row block">
                                 <button class="col button button-fill">Canel</button>
                                 <button class="col button button-fill">Delete Admin</button>
-                                <button class="col button button-fill">Save</button>
+                                <button class="col button button-fill save-admin">Save</button>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </li>
+                    </li> -->
+
 
                   </ul>
                 </div>
