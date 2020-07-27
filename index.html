@@ -724,6 +724,32 @@
         </div>
       </div>
 
+      <div class="block">
+        <div class="block-title">Write Access</div>
+        <div class="searchbar-backdrop"></div>
+        <form class="searchbar admins-searchbar">
+          <div class="searchbar-inner">
+            <div class="searchbar-input-wrap">
+              <input type="search" placeholder="Search admins">
+              <i class="searchbar-icon"></i>
+              <span class="input-clear-button"></span>
+            </div>
+            <span class="searchbar-disable-button if-not-aurora">Cancel</span>
+          </div>
+        </form>
+        <div id="chips-div">
+          <div style="height: auto"></div>
+        </div>
+
+        <div class="list no-hairlines no-margin" style="max-height: 300px; overflow-y: auto">
+          <ul id="admins-list">
+          </ul>
+        </div>
+        <!-- Nothing found message -->
+        <div class="block searchbar-not-found">
+          Nothing found
+        </div>
+      </div>
       <div class="row justify-content-space-around">
         <div class="col">
           <button class="button button-fill pool-delete color-red">Delete</button>

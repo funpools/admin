@@ -3,6 +3,7 @@
   --f7-theme-color-rgb: 53, 124, 92;
   --f7-theme-color-shade: #295f47;
   --f7-theme-color-tint: #419971;
+  --f7-chip-height: 32px;
 }
 
 @font-face {
@@ -103,9 +104,10 @@
   position: fixed;
   padding: 8px 10px;
   z-index: 1000;
+  border-radius: 0 0 8px 0;
 }
 
-@media only screen and (min-width: 701px) {
+@media only screen and (min-width: 700px) {
   .panel-open {
     display: none;
   }
@@ -305,6 +307,29 @@
   font-size: .9rem;
 }
 
+.chip {
+  margin: 4px;
+  padding: 4px;
+}
+
+.chip-media {
+  background-position: center;
+  background-size: cover;
+}
+
+#chips-div {
+  padding: 16px;
+  height: 0px;
+  transition: height .2s;
+}
+
+.animate {
+  -webkit-animation-duration: .2s;
+  animation-duration: .2s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -318,6 +343,39 @@
 .fadeIn {
   -webkit-animation-name: fadeIn;
   animation-name: fadeIn;
+}
+
+@-webkit-keyframes fadeInDown {
+  from {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -20px, 0);
+    transform: translate3d(0, -20px, 0);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -20px, 0);
+    transform: translate3d(0, -20px, 0);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+
+.fadeInDown {
+  -webkit-animation-name: fadeInDown;
+  animation-name: fadeInDown;
 }
 
 .picture {
