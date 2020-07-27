@@ -211,8 +211,7 @@ function setupMainPage() {
       console.log(User.username);
       var panel = app.panel.create({
         el: '.panel-left',
-        resizable: true,
-        visibleBreakpoint: 300,
+        visibleBreakpoint: 700,
       });
 
       //hide splash screen

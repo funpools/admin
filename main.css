@@ -98,6 +98,19 @@
   transition: .1s;
 }
 
+.panel-open {
+  background: rgba(var(--f7-theme-color-rgb), .3);
+  position: fixed;
+  padding: 8px 10px;
+  z-index: 1000;
+}
+
+@media only screen and (min-width: 701px) {
+  .panel-open {
+    display: none;
+  }
+}
+
 .featured-pool {
   border-color: orange;
   box-shadow: 0 0 20px 5px rgba(0, 0, 0, .1);
