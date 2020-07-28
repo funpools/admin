@@ -215,6 +215,9 @@ function loadPools(callback) {
 
 async function openPoolPopup(pool) { //Opens the popup for the given pool
   console.log('Opening pool popup for pool: ', pool);
+  //Reset all elements
+  $$('.pool-delete').parent().show();
+  $$('.pool-save').parent().show();
 
   $$('.pool-popup').find('#pool-pic').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
   $$('.pool-popup').find('#pool-pic').find('.pic-icon').html('edit');
@@ -224,6 +227,15 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   $$("#pool-rules").html(pool.rules);
   var poolVisibilityDiv = document.getElementById("pool-visibility");
   $$("#pool-visibility").val(pool.state).change();
+
+
+  if (pool.admins.includes(User.uid) || User.superUser) {
+    console.log("This user is an admin of this pool or a super user");
+  } else {
+    console.log("This user is not an admin of this pool and not a super user");
+    $$('.pool-delete').parent().hide();
+    $$('.pool-save').parent().hide();
+  }
 
   //check to see if this pool is already featured or not
   db.collection("universalData").doc("mainPage").get().then(async function(mainPageData) {
@@ -271,7 +283,6 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     });
   });
 
-
   $$('#featured-pool-checkbox').on('change', function(e) {
     if (e.target.checked) {
       $$('#featured-pool').show();
@@ -314,10 +325,8 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     }
   }
 
-  if (pool.state === "active" || pool.state === "closed") {
+  if (pool.state === "active" || pool.state === "closed") { //hide the delete button if the pool is active or closed
     $$('.delete-button').hide();
-  } else {
-    $$('.delete-button').show();
   }
 
   $$('#admins-list').html('');
