@@ -661,6 +661,13 @@ async function saveTags() { //Saves the tags and their order as currently disply
 
   await universalDataRef.update({
     tags: newTags,
+  }).catch((error) => {
+    console.error(error);
+    app.toast.show({
+      text: error.message,
+      closeTimeout: 10000,
+      closeButton: true
+    });
   });
 
   loadTags();
