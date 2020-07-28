@@ -213,7 +213,7 @@ function loadPools(callback) {
 
 }
 
-function openPoolPopup(pool) { //Opens the popup for the given pool
+async function openPoolPopup(pool) { //Opens the popup for the given pool
   console.log('Opening pool popup for pool: ', pool);
 
   $$('.pool-popup').find('#pool-pic').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
@@ -323,8 +323,14 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
   $$('#admins-list').html('');
 
   // TODO: Load actual admins
-  var admins = [];
+  let admins = [];
+  let adminSnapshot = await db.collection('admins').get();
+  for (var i = 0; i < adminSnapshot.docs.length; i++) {
+    admins.push(adminSnapshot.docs[i].id);
+  }
+
   //clear any current permissions
+  $$('#chips-div').children().empty();
   admins.forEach((uid, i) => {
     getUser(uid, function(admin) {
       // add to list
@@ -334,7 +340,9 @@ function openPoolPopup(pool) { //Opens the popup for the given pool
         '<div class="item-after"></div></div></div></li>');
 
       // add to chips
-      if (pool.admins.indexOf(admin.uid) != -1) addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
+      if (pool.admins.indexOf(admin.uid) != -1) {
+        addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
+      }
 
       if (i == pool.admins.length - 1) {
         //setup searchbar
@@ -404,12 +412,19 @@ async function savePool() {
   if (featured) {
     featuredPic = $$('.pool-popup').find('#featured-pool-pic').find('.pic-input')[0].files[0];
   }
-  //Get tags from the chips
+  //Get tags from the chips // TODO: Remove this is not needed
   let tags = [];
   $$('#pool-tags-list').find('.tag-chip-selected').forEach((selectedTag, i) => {
     console.log($$(selectedTag).attr("id"), $$(selectedTag).attr("data-id"));
     tags.push($$(selectedTag).attr("data-id"));
   });
+
+  let admins = [];
+  await $$('#chips-div').find('.u-chip').forEach((adminChip, i) => {
+    console.log($$(adminChip).attr("uid"), $$(adminChip).attr("data-uid"));
+    admins.push($$(adminChip).attr("data-uid"));
+  });
+  console.log(admins);
 
   let questions = [];
   //For each question
@@ -470,6 +485,7 @@ async function savePool() {
     tiebreakers: tieBreakers,
     feature: featured, //// TODO: add stuff here
     featuredPic: featuredPic,
+    admins: admins,
   });
 }
 
@@ -494,6 +510,7 @@ async function editPool(poolData, callback) {
         tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
         state: (poolData.state) ? poolData.state : "hidden",
         private: false,
+        admins: (poolData.admins) ? poolData.admins : [],
       });
       //Update the picture if it exists
       if (poolData.picture && poolData.picture != null) {
@@ -516,6 +533,7 @@ async function editPool(poolData, callback) {
         tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
         state: (poolData.state) ? poolData.state : "hidden",
         private: false,
+        admins: (poolData.admins) ? poolData.admins : [],
       });
 
       //Upload the picture if it exists
