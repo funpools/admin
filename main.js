@@ -184,10 +184,6 @@ function setupMainPage() {
         if (User.permissions.announcements) {
           $$('#announcements-tab').show();
         }
-        if (User.permissions.pools) {
-          $$('#pools-tab').show();
-          loadPools();
-        }
         if (User.permissions.users) {
           $$('#users-tab').show();
         }
@@ -204,6 +200,8 @@ function setupMainPage() {
           loadAdmins();
         }
       }
+
+      loadPools();
 
       //editUser('Administrator', 'test', 'user', null, null);
 
@@ -720,15 +718,6 @@ async function loadAdmins() {
               <!-- Permission Section -->\
               <li>\
                 <label class="item-checkbox item-content">\
-                  <input class="pools-checkbox" type="checkbox" name="permission-checkbox" value="edit-pools">\
-                  <i class="icon icon-checkbox"></i>\
-                  <div class="item-inner">\
-                    <div class="item-title">Can edit pools</div>\
-                  </div>\
-                </label>\
-              </li>\
-              <li>\
-                <label class="item-checkbox item-content">\
                   <input class="users-checkbox" type="checkbox" name="permission-checkbox" value="user-managment" />\
                   <i class="icon icon-checkbox"></i>\
                   <div class="item-inner">\
@@ -780,9 +769,6 @@ async function loadAdmins() {
 
 
     if (admin.adminPermissions != null) {
-      if (admin.adminPermissions.pools) {
-        $$('#id-' + adminID).find('.pools-checkbox').prop('checked', true);
-      }
       if (admin.adminPermissions.users) {
         $$('#id-' + adminID).find('.users-checkbox').prop('checked', true);
       }
@@ -800,7 +786,6 @@ async function loadAdmins() {
     $$('#id-' + adminID).find('.save-admin').click(function() {
       saveAdmin(adminID, {
         adminPermissions: {
-          pools: $$('#id-' + adminID).find('.pools-checkbox').is(":checked"),
           users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
           categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
           announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
@@ -830,7 +815,6 @@ async function saveAdmin(adminID, adminObj) {
   app.preloader.show();
   let foo = {
     adminPermissions: {
-      pool: $$('#id-' + adminID).find('.edit-pools-checkbox').is(":checked"),
       users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
       categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
       announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
