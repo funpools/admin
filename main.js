@@ -131,23 +131,6 @@ $$('.pool-duplicate').click(function() {
   duplicatePool();
 });
 
-// New pool button on click
-function newPool() {
-  //clear any existing values in the popup
-  $$(".pool-popup").find('.pic-upload').css("background-image", "");
-  $$(".pool-popup").find('.pic-icon').html("add_photo_alternate");
-  document.getElementById("pool-name").value = "";
-  document.getElementById("pool-name").dataset.id = "0";
-  document.getElementById("pool-description").innerHTML = "";
-  $$("#pool-rules").html("");
-  $$("#pool-tags").html("");
-  $$("#pool-questions").html("");
-  poolDateInput.setValue([new Date()]); //Set the value of the date to be nothing
-
-  //open the popup
-  app.popup.open(".pool-popup");
-
-}
 
 
 

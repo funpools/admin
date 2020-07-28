@@ -117,6 +117,9 @@ let poolDateInput = app.calendar.create({
   },
 });
 
+
+
+
 // This loads the pools. This can also be used to refresh the pools page
 function loadPools(callback) {
 
@@ -329,14 +332,14 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     $$('.delete-button').hide();
   }
 
-  $$('#admins-list').html('');
 
-  // TODO: Load actual admins
+  // TODO: Load admins name data
   let admins = [];
   let adminSnapshot = await db.collection('admins').get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
     admins.push(adminSnapshot.docs[i].id);
   }
+  $$('#admins-list').html('');
 
   //clear any current permissions
   $$('#chips-div').children().empty();
@@ -349,7 +352,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
         '<div class="item-after"></div></div></div></li>');
 
       // add to chips
-      if (pool.admins.indexOf(admin.uid) != -1) {
+      if (pool.admins.includes(admin.uid)) {
         addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
       }
 
@@ -532,6 +535,10 @@ async function editPool(poolData, callback) {
         state: (poolData.state) ? poolData.state : "hidden",
       };
     } else { //The pool does not exist so create a pool and set its information
+      //make sure that the user is included as an admin
+      let poolAdmins = (poolData.admins) ? poolData.admins : [];
+      (poolAdmins.includes(User.uid)) ? null: poolAdmins.push(User.uid);
+
       let doc = await db.collection("pools").add({
         name: (poolData.name) ? poolData.name : "No name given",
         description: (poolData.description) ? poolData.description : "No Description",
@@ -542,7 +549,7 @@ async function editPool(poolData, callback) {
         tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
         state: (poolData.state) ? poolData.state : "hidden",
         private: false,
-        admins: (poolData.admins) ? poolData.admins : [],
+        admins: poolAdmins,
       });
 
       //Upload the picture if it exists
@@ -604,9 +611,54 @@ async function editPool(poolData, callback) {
   */
 }
 
+
+async function newPool() { // New pool button on click
+  //clear any existing values in the popup
+  $$(".pool-popup").find('.pic-upload').css("background-image", "");
+  $$(".pool-popup").find('.pic-icon').html("add_photo_alternate");
+  $$("#pool-name").val("");
+  $$("#pool-description").html("");
+  document.getElementById("pool-name").dataset.id = "0";
+  $$("#pool-visibility").val("draft").change();
+  $$("#pool-rules").html("");
+  $$("#pool-tags").html("");
+  $$("#pool-questions").html("");
+  poolDateInput.setValue([new Date()]); //Set the value of the date to be nothing
+
+  // TODO: Load admins name data
+  let admins = [];
+  let adminSnapshot = await db.collection('admins').get();
+  for (var i = 0; i < adminSnapshot.docs.length; i++) {
+    admins.push(adminSnapshot.docs[i].id);
+  }
+  $$('#admins-list').html('');
+  //clear any current admin permissions
+  $$('#chips-div').children().empty();
+  admins.forEach((uid, i) => {
+    getUser(uid, function(admin) {
+      // add to list
+      $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
+        '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
+        '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + admin.fullName() + '</div>' +
+        '<div class="item-after"></div></div></div></li>');
+
+      if (i == admins.length - 1) {
+        //setup searchbar
+        var searchbar = app.searchbar.create({
+          el: '.admins-searchbar',
+          searchContainer: '#admins-list',
+          searchIn: '.item-title',
+        });
+      }
+    });
+  });
+  //open the popup
+  app.popup.open(".pool-popup");
+  return "Cleared data and opened popup."
+}
+
 function duplicatePool() { //Duplicates the specified pool then opens the popup
   let id = document.getElementById("pool-name").dataset.id;
-  console.log('Duplicating pool: ' + id);
   getPool(id).then(function(poolData) {
     let newPool = {
       name: poolData.name + '(Copy)',
@@ -616,7 +668,9 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       questions: poolData.questions,
       tiebreakers: poolData.tiebreakers,
       state: 'draft',
+      admins: [User.uid],
     };
+    console.log('Duplicating pool: ' + id);
     //clear the selected questions
     newPool.questions.forEach((question, i) => {
       newPool.questions[i].correctAnswer = null;
@@ -626,7 +680,7 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
     });
 
     editPool(newPool, function(editedPoolID) {
-      console.log("Made a new duplicate pool with ID: " + editedPoolID);
+      console.log("Made a new duplicate pool: " + editedPoolID + ",", newPool);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
   });
