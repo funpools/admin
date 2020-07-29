@@ -740,7 +740,7 @@ async function loadAdmins() {
               </li>\
               <li>\
                 <label class="item-checkbox item-content">\
-                  <input class="announcements-checkbox" type="checkbox" name="permission-checkbox" value="developers" />\
+                  <input class="developer-checkbox" type="checkbox" name="permission-checkbox" value="developers" />\
                   <i class="icon icon-checkbox"></i>\
                   <div class="item-inner">\
                     <div class="item-title">Developer</div>\
@@ -752,9 +752,7 @@ async function loadAdmins() {
           <div class="col-40">\
             <div style="height: 100px;"></div>\
             <div class="row block">\
-              <button class="col button button-fill cancel-admin">Canel</button>\
               <button class="col button button-fill delete-admin">Delete Admin</button>\
-              <button class="col button button-fill save-admin">Save</button>\
             </div>\
           </div>\
         </div>\
@@ -778,7 +776,7 @@ async function loadAdmins() {
       }
     }
 
-    $$('#id-' + adminID).find('.save-admin').click(function() {
+    $$('#id-' + adminID).find("[type=checkbox]").change(function() { //Save the admin anytime the check box changes
       saveAdmin(adminID, {
         adminPermissions: {
           users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
@@ -788,19 +786,13 @@ async function loadAdmins() {
         },
       });
     });
+
     $$('#id-' + adminID).find('.delete-admin').click(function() {
       app.preloader.show();
       deleteAdmin(adminID).then(function() {
         app.preloader.hide();
       });
     });
-    $$('#id-' + adminID).find('.cancel-admin').click(function() {
-      app.preloader.show();
-      loadAdmins().then(function() {
-        app.preloader.hide();
-      });
-    });
-
   }
   return 1;
 }
@@ -828,8 +820,6 @@ async function deleteAdmin(adminID) {
   console.log("Deleting admins from this panel is currently not finished please consult the devs.");
   return 1;
 }
-
-
 
 
 //displays uploaded picture on screen
