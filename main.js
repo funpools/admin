@@ -185,7 +185,7 @@ function setupMainPage() {
       //editUser('Administrator', 'test', 'user', null, null);
 
       $$('#username').html('Hi, ' + User.name);
-      console.log(User.username);
+      //console.log(User.username);
       var panel = app.panel.create({
         el: '.panel-left',
         visibleBreakpoint: 700,
@@ -688,7 +688,7 @@ async function loadAdmins() {
     const admin = admins[i].data();
     const adminID = admins[i].id;
 
-    // console.log("Admin:", admin);
+    //console.log("Admin:", admin);
     $$('#admin-list').append('<li id="id-' + adminID + '" class="accordion-item">\
     <a href="#" class="item-content item-link">\
       <div class="item-inner">\

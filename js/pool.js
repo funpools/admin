@@ -333,40 +333,42 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   }
 
 
-  // TODO: Load admins name data
   let admins = [];
-  let adminNames = [];
   let adminSnapshot = await db.collection('admins').get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
-    admins.push(adminSnapshot.docs[i].id);
-    adminNames.push(adminSnapshot.docs[i].data().name);
+    admins.push({
+      uid: adminSnapshot.docs[i].id,
+      name: adminSnapshot.docs[i].data().name,
+      profilePic: "./unknown.jpg",
+    });
+    //getUser(uid, function(admin) {});
   }
+  console.log(admins);
   $$('#admins-list').html('');
 
   //clear any current permissions
   $$('#chips-div').children().empty();
-  admins.forEach((uid, i) => {
-    getUser(uid, function(admin) {
-      // add to list
-      $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
-        '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
-        '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + adminNames[i] + '</div>' +
-        '<div class="item-after"></div></div></div></li>');
+  admins.forEach((admin, i) => {
 
-      // add to chips
-      if (pool.admins.includes(admin.uid)) {
-        addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
-      }
+    // add to list
+    $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
+      '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
+      '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + admin.name + '</div>' +
+      '<div class="item-after"></div></div></div></li>');
 
-      if (i == pool.admins.length - 1) {
-        //setup searchbar
-        var searchbar = app.searchbar.create({
-          el: '.admins-searchbar',
-          searchContainer: '#admins-list',
-          searchIn: '.item-title',
-        });
-      }
-    });
+    // add to chips
+    if (pool.admins.includes(admin.uid)) {
+      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
+    }
+
+    if (i == pool.admins.length - 1) {
+      //setup searchbar
+      var searchbar = app.searchbar.create({
+        el: '.admins-searchbar',
+        searchContainer: '#admins-list',
+        searchIn: '.item-title',
+      });
+    }
   });
 
 
