@@ -343,7 +343,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     });
     //getUser(uid, function(admin) {});
   }
-  console.log(admins);
+  //console.log(admins);
   $$('#admins-list').html('');
 
   //clear any current permissions
@@ -668,7 +668,7 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       name: poolData.name + '(Copy)',
       description: poolData.description ? poolData.description : "No Description",
       rules: poolData.rules ? poolData.rules : "No Rules",
-      tags: poolData.tags,
+      tags: [],
       questions: poolData.questions,
       tiebreakers: poolData.tiebreakers,
       state: 'draft',

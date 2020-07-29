@@ -738,6 +738,15 @@ async function loadAdmins() {
                   </div>\
                 </label>\
               </li>\
+              <li>\
+                <label class="item-checkbox item-content">\
+                  <input class="announcements-checkbox" type="checkbox" name="permission-checkbox" value="developers" />\
+                  <i class="icon icon-checkbox"></i>\
+                  <div class="item-inner">\
+                    <div class="item-title">Developer</div>\
+                  </div>\
+                </label>\
+              </li>\
             </ul>\
           </div>\
           <div class="col-40">\
