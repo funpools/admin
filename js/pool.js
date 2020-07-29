@@ -336,13 +336,13 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   let admins = [];
   let adminSnapshot = await db.collection('admins').get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
-    if (adminSnapshot.docs[i].id != User.uid) {
-      admins.push({
-        uid: adminSnapshot.docs[i].id,
-        name: adminSnapshot.docs[i].data().name,
-        profilePic: "./unknown.jpg",
-      });
-    }
+    //if (adminSnapshot.docs[i].id != User.uid) {
+    admins.push({
+      uid: adminSnapshot.docs[i].id,
+      name: adminSnapshot.docs[i].data().name,
+      profilePic: "./unknown.jpg",
+    });
+    //}
     //getUser(uid, function(admin) {});
   }
   //console.log(admins);
@@ -355,12 +355,16 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     // add to list
     $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
       '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
-      '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + admin.name + '</div>' +
+      '<div class="item-inner"><div class="item-title">' + admin.name + '</div>' +
       '<div class="item-after"></div></div></div></li>');
 
-    // add to chips
+    $$('.user-' + admin.uid).find('.item-inner').click(() => {
+      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin);
+    });
+
+    // add to chips if this user is an admin of this pool
     if (pool.admins.includes(admin.uid)) {
-      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin.uid);
+      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin);
     }
 
     if (i == pool.admins.length - 1) {
@@ -377,26 +381,38 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   app.popup.open(".pool-popup");
 };
 
-function addChip(el, uid) { // add an admin chip
-  console.log("ADDED CHIP");
-  getUser(uid, function(user) {
-    //if user is not already selected
-    if ($$('.chip-' + user.uid).length < 1) {
+function addChip(el, admin) { // add an admin chip
+  console.log("Adding chip for admin: ", admin);
+  //if user is not already selected
+  if ($$('.chip-' + admin.uid).length < 1) {
 
+    if (admin.uid != User.uid) {
       //add chip
-      $$('#chips-div').children().append('<div class=" u-chip animate fadeInDown chip chip-' + user.uid +
-        '" data-uid="' + user.uid + '"><div class="chip-media" style="background-image: url(' + user.profilePic +
-        ')"></div><div class="chip-label">' + user.fullName() +
-        '</div><a href="#" onclick="removeChip(this, \'' + user.uid +
+      $$('#chips-div').children().append('<div class=" u-chip animate fadeInDown chip chip-' + admin.uid +
+        '" data-uid="' + admin.uid + '"><div class="chip-media" style="background-image: url(' + admin.profilePic +
+        ')"></div><div class="chip-label">' + admin.name +
+        '</div><a href="#" onclick="removeChip(this, \'' + admin.uid +
         '\')" class="chip-delete"></a></div>');
 
-      //animate height
-      $$('#chips-div').css("height", $$('#chips-div').children()[0].scrollHeight + "px");
-
-      //add check mark by user
-      $$(el).find('.item-after').html('<i class="icon material-icons animate fadeIn">check</i>');
+    } else {
+      //add chip
+      $$('#chips-div').children().append('<div class=" u-chip animate fadeInDown chip chip-' + admin.uid +
+        '" data-uid="' + admin.uid + '"><div class="chip-media" style="background-image: url(' + admin.profilePic +
+        ')"></div><div class="chip-label">' + admin.name +
+        '</div></div>');
     }
-  });
+
+    //animate height
+    $$('#chips-div').css("height", $$('#chips-div').children()[0].scrollHeight + "px");
+
+    //add check mark by user
+    $$(el).find('.item-after').html('<i class="icon material-icons animate fadeIn">check</i>');
+    $$(el).find('.item-after').html('<i class="icon material-icons animate fadeIn">check</i>');
+
+  }
+
+  //getUser(uid, function(user) {});
+
 }
 
 function removeChip(el, uid) { //Add a user chip to private pool invit
