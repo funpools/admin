@@ -336,11 +336,13 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   let admins = [];
   let adminSnapshot = await db.collection('admins').get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
-    admins.push({
-      uid: adminSnapshot.docs[i].id,
-      name: adminSnapshot.docs[i].data().name,
-      profilePic: "./unknown.jpg",
-    });
+    if (adminSnapshot.docs[i].id != User.uid) {
+      admins.push({
+        uid: adminSnapshot.docs[i].id,
+        name: adminSnapshot.docs[i].data().name,
+        profilePic: "./unknown.jpg",
+      });
+    }
     //getUser(uid, function(admin) {});
   }
   //console.log(admins);
