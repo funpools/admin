@@ -774,6 +774,9 @@ async function loadAdmins() {
       if (admin.adminPermissions.analytics) {
         $$('#id-' + adminID).find('.analytics-checkbox').prop('checked', true);
       }
+      if (admin.adminPermissions.developer) {
+        $$('#id-' + adminID).find('.developer-checkbox').prop('checked', true);
+      }
     }
 
     $$('#id-' + adminID).find("[type=checkbox]").change(function() { //Save the admin anytime the check box changes
@@ -783,6 +786,7 @@ async function loadAdmins() {
           categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
           announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
           analytics: $$('#id-' + adminID).find('.analytics-checkbox').is(":checked"),
+          developer: $$('#id-' + adminID).find('.developer-checkbox').is(":checked"),
         },
       });
     });
@@ -797,18 +801,9 @@ async function loadAdmins() {
   return 1;
 }
 
-async function saveAdmin(adminID, adminObj) {
+async function saveAdmin(adminID, adminObj) { //Saves the admin then reloads all admins
   console.log("Saving admin: id:" + adminID + " object:", adminObj);
   app.preloader.show();
-  let foo = {
-    adminPermissions: {
-      users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
-      categories: $$('#id-' + adminID).find('.categories-checkbox').is(":checked"),
-      announcements: $$('#id-' + adminID).find('.announcements-checkbox').is(":checked"),
-      analytics: $$('#id-' + adminID).find('.analytics-checkbox').is(":checked"),
-    },
-  };
-
   await db.collection("admins").doc(adminID).update(adminObj);
   await loadAdmins();
   app.preloader.hide()
