@@ -335,9 +335,11 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
 
   // TODO: Load admins name data
   let admins = [];
+  let adminNames = [];
   let adminSnapshot = await db.collection('admins').get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
     admins.push(adminSnapshot.docs[i].id);
+    adminNames.push(adminSnapshot.docs[i].data().name);
   }
   $$('#admins-list').html('');
 
@@ -348,7 +350,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
       // add to list
       $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
         '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
-        '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + admin.fullName() + '</div>' +
+        '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + adminNames[i] + '</div>' +
         '<div class="item-after"></div></div></div></li>');
 
       // add to chips

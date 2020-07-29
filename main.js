@@ -144,11 +144,7 @@ function setupMainPage() {
       User = {
         uid: uid,
         username: userData.get("lastName"),
-        firstName: userData.get("firstName"),
-        lastName: userData.get("lastName"),
-        fullName: function() {
-          return "" + this.firstName + " " + this.lastName;
-        },
+        name: userData.get("name"),
         profilePic: null, //profilePic,// TODO: Load that here
         permissions: uData.adminPermissions,
         superUser: uData.superUser,
@@ -188,7 +184,7 @@ function setupMainPage() {
 
       //editUser('Administrator', 'test', 'user', null, null);
 
-      $$('#username').html('Hi, ' + User.firstName);
+      $$('#username').html('Hi, ' + User.name);
       console.log(User.username);
       var panel = app.panel.create({
         el: '.panel-left',
@@ -696,7 +692,7 @@ async function loadAdmins() {
     $$('#admin-list').append('<li id="id-' + adminID + '" class="accordion-item">\
     <a href="#" class="item-content item-link">\
       <div class="item-inner">\
-        <div class="item-title">' + admin.firstName + ' ' + admin.lastName + '</div>\
+        <div class="item-title">' + admin.name + '</div>\
       </div>\
     </a>\
     <div class="accordion-item-content">\
