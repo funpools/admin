@@ -210,13 +210,17 @@ exports.poolUpdate = functions.firestore
 
         //Sort the graded users by score and if they are a winner
         users.sort((a, b) => {
-          if (!(a.isWinner && b.isWinner)) {
+
+          //If ether A or B is a winner then sort by winner else continue normal sort
+          if (!(a.isWinner && b.isWinner)) {//If they are not both winners
             if (a.isWinner) {
               return -1;
-            } else {
+            } else if (b.isWinner) {
               return 1;
             }
-          } else if (b.score != a.score) {
+          }
+
+          if (b.score != a.score) {
             return b.score - a.score;
           } else {
             if (a.uid > b.uid) {
