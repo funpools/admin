@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui, viewport-fit=cover">
   <title>Fun Pools Admin</title>
   <link rel="shortcut icon" href="favicon.ico" />
   <link rel="stylesheet" href="framework7.bundle.css">
@@ -51,9 +52,12 @@
               <div class="block-card">
                 <h3 class="title no-margin-top">Analytics</h3>
                 <div class="display-flex">
-                  <a href="https://console.firebase.google.com/project/fun-sports-pools/overview" target="_blank" class="button button-large button-outline external">Firebase Analytics</a>
-                  <a href="https://analytics.google.com" target="_blank" class="button button-large button-outline external" style="margin: 0 16px">Google Analytics</a>
-                  <a href="https://apps.admob.com" target="_blank" class="button button-large button-outline external">Google AdMob</a>
+                  <a href="https://console.firebase.google.com/project/fun-sports-pools/overview" target="_blank"
+                    class="button button-large button-outline external">Firebase Analytics</a>
+                  <a href="https://analytics.google.com" target="_blank"
+                    class="button button-large button-outline external" style="margin: 0 16px">Google Analytics</a>
+                  <a href="https://apps.admob.com" target="_blank"
+                    class="button button-large button-outline external">Google AdMob</a>
                 </div>
               </div>
               <div class="block-card">
@@ -308,7 +312,8 @@
                       <input id="banned-user-search" type="search" placeholder="Search">
                       <i class="searchbar-icon"></i>
                     </div>
-                    <span id="user-search-button" onclick="searchBannedUsers()" class="searchbar-disable-button">Search</span>
+                    <span id="user-search-button" onclick="searchBannedUsers()"
+                      class="searchbar-disable-button">Search</span>
                   </div>
                 </form>
                 <div class="list media-list no-hairlines">
@@ -327,7 +332,8 @@
               <div class="block-card">
                 <h3 class="title no-margin-top">Banned Users</h3>
                 <div class="searchbar-backdrop"></div>
-                <form class="searchbar searchbar-init no-hairline" style="background-color: white" data-search-in=".item-title" data-search-container="#banned-users-list">
+                <form class="searchbar searchbar-init no-hairline" style="background-color: white"
+                  data-search-in=".item-title" data-search-container="#banned-users-list">
                   <div class="searchbar-inner" style="border: 1px solid var(--f7-list-item-border-color)">
                     <div class="searchbar-input-wrap">
                       <input type="search" placeholder="Search">
@@ -456,8 +462,10 @@
                     <li>
                       <div class="item-content">
                         <div class="item-inner">
-                          <div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="Title" readonly></div>
-                          <div class="item-after"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div>
+                          <div class="item-title"><input class="tag-title-input" type="text" name="Title"
+                              placeholder="Title" readonly></div>
+                          <div class="item-after"><a href="#" class="delete-tag-button"><i
+                                class="material-icons icon">cancel</i></a></div>
                         </div>
                       </div>
                       <div class="sortable-handler"></div>
@@ -469,7 +477,8 @@
                 </div>
                 <div class="block">
                   <div class="display-flex justify-content-center">
-                    <a href="#" id="cancel-edit-tags-button" class="button button-fill color-red" style="display: none; margin-right: 16px; width: 100px">Cancel</a>
+                    <a href="#" id="cancel-edit-tags-button" class="button button-fill color-red"
+                      style="display: none; margin-right: 16px; width: 100px">Cancel</a>
                     <a href="#" id="edit-tags-button" class="button button-fill" style="width: 100px">Edit</a>
                   </div>
                 </div>
@@ -496,7 +505,8 @@
                       <div class="col-40">
                         <div class="pic-upload"
                           style="background-image: url(&quot;https://firebasestorage.googleapis.com/v0/b/fun-sports-pools.appspot.com/o/pool-pictures%2FiniYhqiWcpuJdYvaf9w8?alt=media&amp;token=8470c4b9-d1c0-4744-bcf3-11f3663f47b4&quot;);">
-                          <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#pool-pic')">
+                          <input class="pic-input" type="file" accept="image/jpeg, image/png"
+                            onchange="previewPic(event, '#pool-pic')">
                           <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
                         </div>
                       </div>
@@ -607,7 +617,8 @@
     <div class="block">
       <label id="pool-pic">
         <div class="pic-upload">
-          <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#pool-pic')" />
+          <input class="pic-input" type="file" accept="image/jpeg, image/png"
+            onchange="previewPic(event, '#pool-pic')" />
           <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
         </div>
       </label>
@@ -626,7 +637,8 @@
             <label id="featured-pool-pic">
               <div class="item-title item-label" style="margin: 8px 0 -8px 16px">Featured Banner</div>
               <div class="pic-upload" style="padding: 5% 0">
-                <input class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#featured-pool-pic')" />
+                <input class="pic-input" type="file" accept="image/jpeg, image/png"
+                  onchange="previewPic(event, '#featured-pool-pic')" />
                 <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
               </div>
             </label>
@@ -833,7 +845,8 @@
       <label id="feature-pic">
         <p>Add a graphic to display when featuring this pool.</p>
         <div class="pic-upload">
-          <input id="feature-pic" class="pic-input" type="file" accept="image/jpeg, image/png" onchange="previewPic(event, '#feature-pic')" />
+          <input id="feature-pic" class="pic-input" type="file" accept="image/jpeg, image/png"
+            onchange="previewPic(event, '#feature-pic')" />
           <i class="material-icons pic-icon" style="font-size: 50px">add_photo_alternate</i>
         </div>
       </label>
@@ -939,7 +952,7 @@
     var uid; //This is the users id
 
     //Firebase authentication
-    firebase.auth().onAuthStateChanged(function(user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
+    firebase.auth().onAuthStateChanged(function (user) { //This function runs every time the users authentication state changes (eg. the user signs in or out)
 
       //If the user is signed in
       if (user) {

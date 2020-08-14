@@ -14,7 +14,7 @@ exports.poolUpdate = functions.firestore
     //// NOTE: we can get the poolsID with context.params.poolID
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
-    let log = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' was changed! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
+    let log = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
 
     //async function to grade the pool
     async function gradePool(poolID, messageType) {
@@ -37,15 +37,15 @@ exports.poolUpdate = functions.firestore
       let users = []; //The array of graded users
 
       pool = await pool;
-      poolLog += ' ' + pool;
+      poolLog = poolLog + poolID + '{';
 
       //console.log('child pools', pool.childPools);
       let poolPromises = [];
       //If this pool has children then add them to the list of pools to grade
       if (pool.childPools != null) {
-        pool.childPools.forEach(function(cpoolID) {
-          poolPromises.push(gradePool(cpoolID, messageType).then(function(result) {
-            console.log("Successfully graded child pool ", result);
+        pool.childPools.forEach(function (cpoolID) {
+          poolPromises.push(gradePool(cpoolID, messageType).then(function (result) {
+            //console.log("Successfully graded child pool ", result);
           }));
         });
       }
@@ -55,9 +55,50 @@ exports.poolUpdate = functions.firestore
       let questions = pool.questions;
 
       if (pool.users != null) { //If there are any users in this pool
-        poolLog += ' User scores:{'; //Logging
+        poolLog = poolLog + ' User scores(uid:score):{'; //Logging
 
         //Grade each user in the pool
+        for (let un = 0; un < pool.users.length; un++) {
+          const user = pool.users[un];
+          let score = 0; //This users total score
+          let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
+
+          if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
+            let answers = userDoc.get("answers");
+            //Go through each question and compare the correct answer with the users answer
+            for (let i = 0; i < questions.length; i++) {
+              if (answers[questions[i].id] != null && answers[questions[i].id] == questions[i].correctAnswer) { //If the user answerd this question correctly
+                score++;
+              } else { }
+            }
+
+            //Check to see if this user is the current winner //Note: we could posibly do this by finding the user with the higest score after we add all of them
+            if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
+              highestScore = score;
+              winners = [user.uid];
+            } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
+              winners.push(user.uid);
+            }
+
+
+          } else {
+            score = null;
+          }
+
+          poolLog += user.uid + ':' + score + ',';
+
+          //Add the graded user to the array
+          users.push({
+            uid: user.uid,
+            score: score,
+            isWinner: false,
+          });
+
+        }
+
+        poolLog = poolLog + '}';
+
+        /*
         pool.users.forEach((user, i) => {
           let score = 0; //This users total score
           let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
@@ -96,19 +137,20 @@ exports.poolUpdate = functions.firestore
           });
 
         });
+        */
 
         if (!pool.questions.some(a => a.correctAnswer == null)) { //If there are no unanswed questions
-          //console.log("All questions are answered");
           //If there is a tie try and resolve it
           if (winners.length > 1) {
-            poolLog += "More than one winner attempting tie resolution between: " + winners;
+            poolLog = poolLog + "{More than one winner attempting tie resolution between: " + winners.toString();
             let tieWinners = (await resolveTie(poolID, winners, pool.tiebreakers)); //Get the tie winners
             winners = tieWinners;
-            console.log("winners are: ", winners);
+            poolLog = poolLog + " Tie winners are: " + winners.toString() + '}';
           }
 
+          //TODO add case for true tie
           if (winners.length <= 1 || !pool.tiebreakers.some(a => a.answer == null)) { //If there is only one winner or all the tiebreakers have been answered
-            console.log("only one winner or true tie");
+            // console.log("only one winner or true tie");
             //Set the pool winners
             for (var i = 0; i < users.length; i++) {
               if (winners.includes(users[i].uid)) {
@@ -116,10 +158,11 @@ exports.poolUpdate = functions.firestore
               }
             }
           }
+
         }
 
         //Notify each user in the pool
-        console.log("Sending notifications to users. Notification type: ", messageType);
+        //console.log("Sending notifications to users. Notification type: ", messageType);
         pool.users.forEach((user, i) => {
           //Decide which type of notification to send to the user
           switch (messageType) {
@@ -167,8 +210,12 @@ exports.poolUpdate = functions.firestore
 
         //Sort the graded users by score and if they are a winner
         users.sort((a, b) => {
-          if (!a.isWinner && b.isWinner) {
-            return 1;
+          if (!(a.isWinner && b.isWinner)) {
+            if (a.isWinner) {
+              return -1;
+            } else {
+              return 1;
+            }
           } else if (b.score != a.score) {
             return b.score - a.score;
           } else {
@@ -179,19 +226,20 @@ exports.poolUpdate = functions.firestore
           return 0;
         });
 
-        console.log("Pools final user array is: ", users);
+        poolLog = poolLog + ' Final user array is: ' + JSON.stringify(users);
 
         //Wait for the pools doc to finish updating
         await db.collection("pools").doc(poolID).update({
           users: users,
         });
+
       } else {
-        poolLog += "error no users."
+        poolLog = poolLog + "error no users.";
       }
 
       //Wait for the child pool to be graded
-      await Promise.all(poolPromises).then(function() {
-        console.log("All pools graded!");
+      await Promise.all(poolPromises).then(function () {
+        // /console.log("All pools graded!");
       });
 
       return poolLog;
@@ -203,7 +251,7 @@ exports.poolUpdate = functions.firestore
       let tieBreakerScore = null; //The lowest score of the tied users // NOTE:  Tiebreaker questions are graded by the distance to the correct answer terefor lower is better
       let tieWinners = winners.slice(); //The winners of this tie.
 
-      console.log("Trying to resolve tie between users: ", winnersToResolve);
+      //console.log("Trying to resolve tie between users: ", winnersToResolve);
       //for each tieBreaker question
       for (let q = 0; q < tieBreakerQuestions.length; q++) {
 
@@ -219,15 +267,15 @@ exports.poolUpdate = functions.firestore
               score = Math.abs(answers[tieBreakerQuestions[q].id] - tieBreakerQuestions[q].answer); //score is the absolute distance between the correct answer and users answer // NOTE: therefore the lower the score the better the user did
             }
 
-            console.log("graded user: ", winnersToResolve[i], " score is: ", score);
+            //console.log("graded user: ", winnersToResolve[i], " score is: ", score);
             //Check this users score against others in the tiebreaker
             if ((tieBreakerScore == null || score < tieBreakerScore) && (score != null)) { // If this users score is smaller then the previous best score they are the new winner
               tieBreakerScore = score;
               tieWinners = [userDoc.id];
-              console.log(score, " new tie winner is: ", winnersToResolve[i]);
+              //console.log(score, " new tie winner is: ", winnersToResolve[i]);
             } else if (score == tieBreakerScore && (score != null)) { // If the users score is equal to the best score then we are tied with the current winner
               tieWinners.push(userDoc.id);
-              console.log(score, " another tie winner is: ", winnersToResolve[i]);
+              //console.log(score, " another tie winner is: ", winnersToResolve[i]);
             }
 
           }
@@ -240,21 +288,10 @@ exports.poolUpdate = functions.firestore
             tieBreakerScore = null; //reset the tie score
           }
         }
-        console.log("tieBreaker winners are: ", winnersToResolve);
+        // console.log("tieBreaker winners are: ", winnersToResolve);
       }
 
       return tieWinners;
-    }
-
-    async function notifyPoolUsers(poolID, message) {
-      let pool = await getPool(poolID);
-      let noteOps = [];
-      for (var i = 0; i < pool.users.length; i++) {
-        noteOps.push(sendNotification(pool.users[i].uid, message));
-      }
-
-      await Promise.all(noteOps);
-      return 1;
     }
 
     if (previousData.state != newData.state) { //state has changed
@@ -300,7 +337,7 @@ exports.poolUpdate = functions.firestore
           console.log("Pool has stayed active!");
           if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers))) { //If the questions/tiebreakers have changed
             //grade the pool and send notifications to users about their grade
-            return gradePool(context.params.poolID, "score-update").then(function(result) {
+            return gradePool(context.params.poolID, "score-update").then(function (result) {
               console.log("Successfully graded ", result);
             });
           }
@@ -315,15 +352,15 @@ exports.poolUpdate = functions.firestore
     }
     /*
         if (newData.state === "active") { // TODO:If the pool has questions and is live
-
+    
           if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers)) || (previousData.state != newData.state)) { //If the questions or tiebreakers have changed
             log = log + 'Questions were changed. New questions object: ' + JSON.stringify(newData.questions);
-
+    
             let poolPromises = [];
             poolPromises.push(gradePool(context.params.poolID).then(function(result) {
               console.log("Successfully graded ", result);
             }));
-
+    
             //If this pool has children then add them to the list of pools to grade
             if (newData.childPools) {
               newData.childPools.forEach(function(poolID) {
@@ -332,11 +369,11 @@ exports.poolUpdate = functions.firestore
                 }));
               });
             }
-
+    
             return Promise.all(poolPromises, (previousData.state == newData.state)).then(function() {
               console.log("all Graded");
             });
-
+    
           } else { //The state has not changed and the questions have not changed
             log = log + 'Questions were not changed and state has not changed!';
           }
@@ -351,7 +388,7 @@ exports.poolUpdate = functions.firestore
   });
 
 //Check for any pools that are closing soon and notify the users in that pool
-exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function(context) {
+exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function (context) {
 
   //get any pools that close within "minutes" from now
   const minutes = 60;
@@ -369,8 +406,8 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
       let poolPromises = [];
       //If this pool has children then add them to the list of pools to send closing notifications to
       if (pool.childPools != null) {
-        pool.childPools.forEach(function(cpoolID) {
-          poolPromises.push(sendClosingNotificatoin(cpoolID).then(function(result) {
+        pool.childPools.forEach(function (cpoolID) {
+          poolPromises.push(sendClosingNotificatoin(cpoolID).then(function (result) {
             //console.log("Successfully sent closing notificatoins for child pool: ", cpoolID);
           }));
         });
@@ -387,7 +424,7 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
             title: "Pool closing soon",
             text: "Enter your answers now: " + pool.name + " is closing soon!",
             type: "PU",
-          }).then(result => {}));
+          }).then(result => { }));
         });
         console.log("Sent closing notificatoin to " + pool.users.length + " users!");
       } else {
@@ -445,7 +482,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
   // const picture = context.auth.token.picture || null;
   // const email = context.auth.token.email || null;
   console.log(data);
-  return db.collection("pools").doc(data.parentPool).get().then(function(doc) {
+  return db.collection("pools").doc(data.parentPool).get().then(function (doc) {
 
     console.log(doc.data());
     console.log('Parent pool state', doc.data.state);
@@ -459,7 +496,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
         admins: data.admins,
         allowShares: data.allowShares,
         private: true,
-      }).then(function(doc) {
+      }).then(function (doc) {
 
         //Add the pool to the parent pools children
         db.collection("pools").doc(data.parentPool).update({
@@ -509,7 +546,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
 
 });
 
-exports.deletePool = functions.https.onCall(async function(data, context) {
+exports.deletePool = functions.https.onCall(async function (data, context) {
   // Checking that the user is authenticated.
   if (!context.auth) {
     // Throwing an HttpsError so that the client gets the error details.
@@ -570,10 +607,10 @@ async function getPool(poolID) {
   poolData = (await poolData).data();
 
   if (poolData == null) {
-    console.log("Invalid pool returning");
+    //console.log("Invalid pool returning");
     return "invalid";
   }
-  console.log("This pools raw data is: ", poolData);
+  //console.log("This pools raw data is: ", poolData);
   //If the pool is a private/child pool get the needed data from the parentPool
   if (poolData.parentPool != null) {
 
@@ -626,7 +663,7 @@ async function getPool(poolID) {
   }
 }
 
-exports.joinPool = functions.https.onCall(async function(data, context) { //Function for joining and leaving pools
+exports.joinPool = functions.https.onCall(async function (data, context) { //Function for joining and leaving pools
   /**
    * This function must be called with the data param containing
    * {
@@ -737,7 +774,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
             pendingPools: admin.firestore.FieldValue.arrayRemove(poolID),
           });
 
-          let userToRemove = pool.users.find(function(e) {
+          let userToRemove = pool.users.find(function (e) {
             return e.uid === userID;
           });
           console.log(userToRemove);
@@ -903,7 +940,7 @@ exports.joinPool = functions.https.onCall(async function(data, context) { //Func
 
 });
 
-exports.addMessage = functions.https.onCall(async function(data, context) {
+exports.addMessage = functions.https.onCall(async function (data, context) {
   /*
   This should be called with the data pareameter containing
   {
@@ -975,7 +1012,7 @@ exports.addMessage = functions.https.onCall(async function(data, context) {
 
 });
 
-exports.sendAnnouncement = functions.https.onCall(async function(data, context) { //Sends an announcement to all users
+exports.sendAnnouncement = functions.https.onCall(async function (data, context) { //Sends an announcement to all users
 
   // Checking that the user is authenticated.
   if (!context.auth) {
@@ -1184,13 +1221,13 @@ async function removeNotification(uid, notificationID) {
 async function getUser(uidToGet) { //Gets a user and runs checks for errors and invalid pareameters
   let userData = (await db.collection('users').doc(uidToGet).get()).data();
 
-  (userData.pendingPools) ? null: userData.pendingPools = [];
+  (userData.pendingPools) ? null : userData.pendingPools = [];
 
   return userData
 }
 
 //Requests to be freinds with the specified user
-exports.freindRequest = functions.https.onCall(async function(data, context) {
+exports.freindRequest = functions.https.onCall(async function (data, context) {
 
   // Checking that the user is authenticated.
   if (!context.auth) {
@@ -1222,7 +1259,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayUnion(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
 
@@ -1230,7 +1267,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayUnion(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
 
@@ -1261,14 +1298,14 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayRemove(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
       //Remove us from the other users freinds
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayRemove(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
       //Wait for the operations to complete
@@ -1293,7 +1330,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       //Update our users pending freinds list
       await db.collection('users').doc(userID).update({
         pendingFriends: admin.firestore.FieldValue.arrayUnion(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
 
@@ -1319,14 +1356,14 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
       let ourDoc = db.collection('users').doc(userID).update({
         friends: admin.firestore.FieldValue.arrayRemove(uid),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(uid),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating recevers docs', error);
       });
       //Remove us from the other users freinds
       let theirDoc = db.collection('users').doc(uid).update({
         friends: admin.firestore.FieldValue.arrayRemove(userID),
         pendingFriends: admin.firestore.FieldValue.arrayRemove(userID),
-      }).catch(function(error) {
+      }).catch(function (error) {
         throw new functions.https.HttpsError('Error updating requester docs', error);
       });
       //Wait for the operations to complete
@@ -1347,7 +1384,7 @@ exports.freindRequest = functions.https.onCall(async function(data, context) {
 
 });
 
-exports.banUser = functions.https.onCall(async function(data, context) {
+exports.banUser = functions.https.onCall(async function (data, context) {
 
   // Check that the user is authenticated.
   if (!context.auth) {
@@ -1373,9 +1410,9 @@ exports.banUser = functions.https.onCall(async function(data, context) {
       //Disable the users account
       let op3 = admin.auth().updateUser(uidToBan, {
         disabled: true,
-      }).then(function(userRecord) {
+      }).then(function (userRecord) {
         console.log('Successfully disabled user');
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.log('Error disableing user: ', error);
       });
       //wait for the operations to finish
@@ -1401,9 +1438,9 @@ exports.banUser = functions.https.onCall(async function(data, context) {
       //enable the users account
       let op3 = admin.auth().updateUser(uidToBan, {
         disabled: false,
-      }).then(function(userRecord) {
+      }).then(function (userRecord) {
         console.log('Successfully enabled user');
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.log('Error enableing user: ', error);
       });
       //wait for the operations to finish
@@ -1426,6 +1463,7 @@ exports.banUser = functions.https.onCall(async function(data, context) {
   }
 
 });
+//:)
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
