@@ -39,8 +39,6 @@ var $$ = Dom7;
 
 var mainView = app.views.create('.view-main');
 
-
-
 ///////********Page Setup Functions and dom stuff*********\\\\\\\\\\
 function makeid(length) {
   var result = '';
@@ -76,7 +74,6 @@ $$('#n-question').on('click', function() {
   //add the new question html to the page
   addNumericQuestion(questionNumb, '');
 });
-
 
 // Delete pool button on click
 $$('.pool-delete').on('click', function() {
@@ -182,7 +179,6 @@ function setupMainPage() {
 
       loadPools();
 
-      //editUser('Administrator', 'test', 'user', null, null);
 
       $$('#username').html('Hi, ' + User.name);
       //console.log(User.username);
@@ -193,6 +189,49 @@ function setupMainPage() {
 
       //hide splash screen
       $$('#splash-screen').hide();
+
+      /*DEVELOPER CUSTOM CODE SECTION*/
+      /*This section is for code that will only be used by developers eg. custom query code. Try to keep it contained in the devCode function */
+      async function devCode() {
+        //editUser('Administrator', 'test', 'user', null, null);
+        console.log('RUNNING DEV CODE');
+
+        //code for getting all pools with a specified tag and returning the questions in them
+        let tag = "KM2y0p9jjt"; //GOLF=EHDD15qriN,BASEBALL=QhLgUC4mdp,BASKETBALL=nCex7MV8Qg,HOCKEY=ZdI3C4ouoe,SOCCER=8LnIGRPdLQ,AUTO_RACING=uLerNhOlXI,NFL_FOOTBALL=KM2y0p9jjt,
+        let resultQuestions = {
+          catagoryName: "NFL Football",
+          tagID: tag,
+          questions: [],
+          tiebreakers: [],
+        };
+
+        let devTagQuerySnapshot = await db.collection("pools").where("tags", "array-contains", tag).limit(3).get();
+        //console.log(devTagQuerySnapshot.docs);
+
+        //Loop trhough each pool
+        for (var i = 0; i < devTagQuerySnapshot.docs.length; i++) {
+          let data = devTagQuerySnapshot.docs[i].data();
+          //console.log(data);
+
+          //question loop
+          for (let x = 0; x < data.questions.length; x++) {
+            if (!resultQuestions.questions.includes(data.questions[x].description)) {
+              resultQuestions.questions.push(data.questions[x].description);
+            }
+          }
+          //tiebreaker loop
+          for (let x = 0; x < data.tiebreakers.length; x++) {
+            if (!resultQuestions.tiebreakers.includes(data.tiebreakers[x].description)) {
+              resultQuestions.tiebreakers.push(data.tiebreakers[x].description);
+            }
+          }
+        }
+
+        console.log(resultQuestions);
+        console.log(JSON.stringify(resultQuestions));
+      }
+      devCode();
+
     } else {
       console.log("This user is not an admin! Signing out");
       signOut();
@@ -496,9 +535,6 @@ function setAnswer(questionID, answerID) { //Set the selected answer as the corr
 function deleteQuestion(el) { //remove a question from the list
   deleteAnswer(el.parentElement.parentElement);
 }
-
-
-
 
 ///////*Announcements*\\\\\\\
 
@@ -816,6 +852,8 @@ async function deleteAdmin(adminID) {
   return 1;
 }
 
+/*MISC CODE SECTION*/
+/*This section is for code that doesn't fit in the other sections eg. Helper functions*/
 
 //displays uploaded picture on screen
 function previewPic(event, el) {
