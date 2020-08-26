@@ -165,6 +165,7 @@ function loadPools(callback) {
               a.classList.add("card");
               a.classList.add("pool-card");
               a.classList.add("col-30");
+              // a.classList.add("elevation-1");
 
               //When the card is clicked fill the popup with data
               a.onclick = function() {
@@ -172,11 +173,14 @@ function loadPools(callback) {
               };
 
               //Setup the card's inner html
-              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end"> ' + pool.name + ' </div > ' +
-                '<div class="card-content card-content-padding">' +
-                '  <p class="date">' + date.toLocaleString() + '</p>' +
-                '  <p> ' + pool.description + '</p>' +
-                '</div>';
+              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end"> ' + pool.name + '<h5 class="no-margin">' + date.toLocaleString() + '</h5></div >';
+              /*
+              '<div class="card-content card-content-padding">' +
+              '  <p class="date">' + date.toLocaleString() + '</p>' +
+              '  <p> ' + pool.description + '</p>' +
+              '</div>'
+              */
+
               //Add the card to the pool list
               //poolList.appendChild(a);
               console.log(pool.state);

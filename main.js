@@ -230,7 +230,7 @@ function setupMainPage() {
         console.log(resultQuestions);
         console.log(JSON.stringify(resultQuestions));
       }
-      devCode();
+      //devCode();//THIS SHOULD NOT BE RUNNING IN PUBLIC BUILDS
 
     } else {
       console.log("This user is not an admin! Signing out");
