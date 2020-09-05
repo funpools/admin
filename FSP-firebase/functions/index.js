@@ -164,47 +164,51 @@ exports.poolUpdate = functions.firestore
         //Notify each user in the pool
         //console.log("Sending notifications to users. Notification type: ", messageType);
         pool.users.forEach((user, i) => {
-          //Decide which type of notification to send to the user
-          switch (messageType) {
-            case "active":
-              sendNotification(user.uid, {
-                id: poolID,
-                poolID: poolID,
-                link: "/pool/?id=" + poolID,
-                title: pool.name + " is now active",
-                text: pool.name + " is now active. Click here to view the pool! ",
-                type: "PU",
-              });
-              break;
-            case "closed":
-              sendNotification(user.uid, {
-                id: poolID,
-                poolID: poolID,
-                link: "/pool/?id=" + poolID,
-                title: pool.name + " is now closed",
-                text: pool.name + " is now closed. Click here to view your results!",
-                type: "PU",
-              });
-              break;
-            case "score-update":
-              sendNotification(user.uid, {
-                id: poolID,
-                poolID: poolID,
-                link: "/pool/?id=" + poolID,
-                title: "Your score has been updated",
-                text: "A question in " + pool.name + " pool has been updated—check here for your score!",
-                type: "PU",
-              });
-              break;
-            default:
-              sendNotification(user.uid, {
-                id: poolID,
-                poolID: poolID,
-                link: "/pool/?id=" + poolID,
-                title: "Pool has been updated",
-                text: "Pool " + pool.name + "has been updated!",
-                type: "PU",
-              });
+          //Check if the user wants to recive notifications 
+          if (pool.unsubsribed.includes(user.uid)) {
+
+            //Decide which type of notification to send to the user
+            switch (messageType) {
+              case "active":
+                sendNotification(user.uid, {
+                  id: poolID,
+                  poolID: poolID,
+                  link: "/pool/?id=" + poolID,
+                  title: pool.name + " is now active",
+                  text: pool.name + " is now active. Click here to view the pool! ",
+                  type: "PU",
+                });
+                break;
+              case "closed":
+                sendNotification(user.uid, {
+                  id: poolID,
+                  poolID: poolID,
+                  link: "/pool/?id=" + poolID,
+                  title: pool.name + " is now closed",
+                  text: pool.name + " is now closed. Click here to view your results!",
+                  type: "PU",
+                });
+                break;
+              case "score-update":
+                sendNotification(user.uid, {
+                  id: poolID,
+                  poolID: poolID,
+                  link: "/pool/?id=" + poolID,
+                  title: "Your score has been updated",
+                  text: "A question in " + pool.name + " pool has been updated—check here for your score!",
+                  type: "PU",
+                });
+                break;
+              default:
+                sendNotification(user.uid, {
+                  id: poolID,
+                  poolID: poolID,
+                  link: "/pool/?id=" + poolID,
+                  title: "Pool has been updated",
+                  text: "Pool " + pool.name + "has been updated!",
+                  type: "PU",
+                });
+            }
           }
         });
 
@@ -639,6 +643,7 @@ async function getPool(poolID) {
       allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
       admins: poolData.admins ? poolData.admins : [],
+      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
       sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
     };
 
@@ -662,6 +667,7 @@ async function getPool(poolID) {
       bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
       allowShares: poolData.allowShares ? poolData.allowShares : true,
       admins: poolData.admins ? poolData.admins : [],
+      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
       sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
     };
   }
@@ -943,6 +949,46 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
   }
 
 });
+
+exports.setPoolNotificationPreference = functions.https.onCall(async function (data, context) {
+  /*
+  * This function must be called with the data param containing
+   * {
+   *    poolID:""//The id of the pool to unsubscribe the user from
+   *    preference:""//True to recive notifications false to not 
+   * }
+  */
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'while authenticated.');
+  }
+
+  //TODO: check for valid data
+  if (false) {
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+      'with valid data.');
+  }
+
+  const userID = context.auth.uid; //The uid of the user who requested this operation
+  const poolID = data.poolID; //the uid of the user whom the request is targeted
+  let pool = await getPool(poolID);
+  const preference = (pool.unsubscribed.includes(userID)); //the uid of the user whom the request is targeted
+
+  if (preference) {
+    await db.collection("pools").doc(poolID).update({
+      unsubscribed: admin.firestore.FieldValue.arrayRemove(userID),
+    });
+    return "on";
+  } else {
+    await db.collection("pools").doc(poolID).update({
+      unsubscribed: admin.firestore.FieldValue.arrayUnion(userID),
+    });
+    return "off";
+  }
+});
+
 
 exports.addMessage = functions.https.onCall(async function (data, context) {
   /*
