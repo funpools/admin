@@ -10,7 +10,7 @@ const db = admin.firestore();
 // Listen for changes in all documents in the 'pools' collection
 exports.poolUpdate = functions.firestore
   .document('pools/{poolID}')
-  .onWrite((change, context) => { //On write to any pool
+  .onWrite(async (change, context) => { //On write to any pool
     //// NOTE: we can get the poolsID with context.params.poolID
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
@@ -317,7 +317,44 @@ exports.poolUpdate = functions.firestore
           break;
         case "closed":
           //Grade the pool and notify the users that the pool is now closed
-          return gradePool(context.params.poolID, "closed");
+          let gradeResults = await gradePool(context.params.poolID, "closed");
+          let winnersList = '';
+          console.log('foo');
+          console.log(newData, newData.users, newData.users.keys);
+          for (let i = 0; i < newData.users.keys.length; i++) {
+            
+            var user = newData.users[newData.users.keys[i]];
+
+            console.log("USER: ", user)
+            //skip loosers
+            if(!user.isWinner) break;
+
+            // Get winner's contact info
+            await admin.auth().getUser(user.uid).then(userRecord => {
+              console.log("Winner Info: ", userRecord);
+              winnersList += '<p style="font-size: large"></br>Name: ' + userRecord.toJSON().email + '</br>Email: <a href="mailto:">' + userRecord.toJSON().displayName + '</a></p>'
+              resolve(userRecord.toJSON())
+            }).catch(error => {
+              console.error('Error fetching user data:', error)
+              reject({
+                status: 'error',
+                code: 500,
+                error
+              });
+            });
+          };
+          
+          // // Email admins winner info
+          // await admin.firestore().collection('mail').add({
+          //   to: ['david@reddlegend.com'],
+          //   message: {
+          //     subject: 'Winner info for ' + newData.name,
+          //     html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
+          //     <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
+          //   <p style="font-size: large"></br>Hi Admins,</br>Here\'s the winners info for the ' + newData.name + '.</br></p>' + winnersList + '</div>',
+          //   }
+          // }).then(() => console.log('Queued email for delivery!'));
+          return gradeResults;
           break;
         case "open":
           let scoreResetUsers = [];
