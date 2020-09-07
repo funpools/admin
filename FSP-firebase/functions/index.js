@@ -165,7 +165,7 @@ exports.poolUpdate = functions.firestore
         //console.log("Sending notifications to users. Notification type: ", messageType);
         pool.users.forEach((user, i) => {
           //Check if the user wants to recive notifications 
-          if (pool.unsubsribed.includes(user.uid)) {
+          if (pool.unsubscribed.includes(user.uid)) {
 
             //Decide which type of notification to send to the user
             switch (messageType) {
@@ -324,40 +324,43 @@ exports.poolUpdate = functions.firestore
           let gradeResults = await gradePool(context.params.poolID, "closed");
           let winnersList = '';
           console.log('foo');
-          console.log(newData, newData.users, newData.users.keys);
-          for (let i = 0; i < newData.users.keys.length; i++) {
-            
-            var user = newData.users[newData.users.keys[i]];
 
-            console.log("USER: ", user)
+          //console.log(newData.users);
+
+          for (let i = 0; i < newData.users.length; i++) {
+
+            var user = newData.users[i];
+
+            console.log("USER: ", JSON.stringify(user));
             //skip loosers
-            if(!user.isWinner) break;
-
-            // Get winner's contact info
-            await admin.auth().getUser(user.uid).then(userRecord => {
-              console.log("Winner Info: ", userRecord);
-              winnersList += '<p style="font-size: large"></br>Name: ' + userRecord.toJSON().email + '</br>Email: <a href="mailto:">' + userRecord.toJSON().displayName + '</a></p>'
-              resolve(userRecord.toJSON())
-            }).catch(error => {
-              console.error('Error fetching user data:', error)
-              reject({
-                status: 'error',
-                code: 500,
-                error
+            if (user.isWinner) {
+              // Get winner's contact info
+              await admin.auth().getUser(user.uid).then(userRecord => {
+                winnersList = winnersList + '<p style="font-size: large"></br>UID: ' + user.uid + '</br>Email: <a href="mailto:">' + userRecord.email + '</a></p>'
+                JSON.stringify(userRecord);
+                console.log("Winner Info: ", JSON.stringify(userRecord));
+              }).catch(error => {
+                console.error('Error fetching user data:', error)
+                let foo = {
+                  status: 'error',
+                  code: 500,
+                  error
+                };
               });
-            });
+            }
+
           };
-          
-          // // Email admins winner info
-          // await admin.firestore().collection('mail').add({
-          //   to: ['david@reddlegend.com'],
-          //   message: {
-          //     subject: 'Winner info for ' + newData.name,
-          //     html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
-          //     <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
-          //   <p style="font-size: large"></br>Hi Admins,</br>Here\'s the winners info for the ' + newData.name + '.</br></p>' + winnersList + '</div>',
-          //   }
-          // }).then(() => console.log('Queued email for delivery!'));
+
+          // Email admins winner info
+          await admin.firestore().collection('mail').add({
+            to: ['david@reddlegend.com'],
+            message: {
+              subject: 'Winner info for ' + newData.name,
+              html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
+              <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
+            <p style="font-size: large"></br>Hi Admins,</br>Here\'s the winners info for the ' + newData.name + '.</br></p>' + winnersList + '</div>',
+            }
+          }).then(() => console.log('Queued email for delivery!'));
           return gradeResults;
           break;
         case "open":
