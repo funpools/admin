@@ -165,7 +165,7 @@ exports.poolUpdate = functions.firestore
         //console.log("Sending notifications to users. Notification type: ", messageType);
         pool.users.forEach((user, i) => {
           //Check if the user wants to recive notifications 
-          if (pool.unsubscribed.includes(user.uid)) {
+          if (!pool.unsubscribed.includes(user.uid)) {
 
             //Decide which type of notification to send to the user
             switch (messageType) {
@@ -322,23 +322,23 @@ exports.poolUpdate = functions.firestore
         case "closed":
           //Grade the pool and notify the users that the pool is now closed
           let gradeResults = await gradePool(context.params.poolID, "closed");
+
+          //Get the winner data and email it to the admins
           let winnersList = '';
-          console.log('foo');
+          let poolData = await getPool(context.params.poolID);
 
-          //console.log(newData.users);
-
-          for (let i = 0; i < newData.users.length; i++) {
-
-            var user = newData.users[i];
-
-            console.log("USER: ", JSON.stringify(user));
+          for (let i = 0; i < poolData.users.length; i++) {
+            var user = poolData.users[i];
+            // console.log("USER: ", JSON.stringify(user));
             //skip loosers
             if (user.isWinner) {
               // Get winner's contact info
-              await admin.auth().getUser(user.uid).then(userRecord => {
-                winnersList = winnersList + '<p style="font-size: large"></br>UID: ' + user.uid + '</br>Email: <a href="mailto:">' + userRecord.email + '</a></p>'
-                JSON.stringify(userRecord);
-                console.log("Winner Info: ", JSON.stringify(userRecord));
+              await admin.auth().getUser(user.uid).then(async userRecord => {
+                let userData = await getUser(user.uid);
+                winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
+                //console.log(JSON.stringify(userData));
+                //JSON.stringify(userRecord); 
+                //console.log("Winner Info: ", JSON.stringify(userRecord));
               }).catch(error => {
                 console.error('Error fetching user data:', error)
                 let foo = {
@@ -350,15 +350,16 @@ exports.poolUpdate = functions.firestore
             }
 
           };
+          console.log("The winner list is: " + JSON.stringify(winnersList));
 
           // Email admins winner info
           await admin.firestore().collection('mail').add({
-            to: ['david@reddlegend.com'],
+            to: ['tsmith@funsportspools.com', 'development@funsportspools.com'],
             message: {
-              subject: 'Winner info for ' + newData.name,
+              subject: 'Winner info for ' + poolData.name,
               html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
               <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
-            <p style="font-size: large"></br>Hi Admins,</br>Here\'s the winners info for the ' + newData.name + '.</br></p>' + winnersList + '</div>',
+            <p style="font-size: large"></br>Hi Admins,<br />' + poolData.name + ' has been closed and the winner info is: </br></p>' + winnersList + '</div>',
             }
           }).then(() => console.log('Queued email for delivery!'));
           return gradeResults;
