@@ -354,7 +354,7 @@ exports.poolUpdate = functions.firestore
 
           // Email admins winner info
           await admin.firestore().collection('mail').add({
-            to: ['tsmith@funsportspools.com', 'development@funsportspools.com'],
+            to: ['tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com'],
             message: {
               subject: 'Winner info for ' + poolData.name,
               html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
