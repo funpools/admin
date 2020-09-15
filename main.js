@@ -4,32 +4,32 @@ var app = new Framework7({
   id: 'com.myapp.test',
   theme: 'aurora',
   routes: [{
-      path: '/home/',
-      url: 'index.html',
-      options: {
-        transition: 'f7-dive',
-      },
-      on: {
-        pageBeforeIn: function() {
-          app.preloader.hide();
-        }
-      }
+    path: '/home/',
+    url: 'index.html',
+    options: {
+      transition: 'f7-dive',
     },
-    {
-      path: '/login/',
-      url: 'pages/login.html',
-      options: {
-        transition: 'f7-dive',
-      },
-      on: {
-        pageInit: function(e, page) {
-          //When the pages is Initialized setup the signIn button
-          $$('#log-in').click(function(event) {
-            signIn($$('#uname').val(), $$('#pword').val());
-          });
-        },
+    on: {
+      pageBeforeIn: function () {
+        app.preloader.hide();
       }
+    }
+  },
+  {
+    path: '/login/',
+    url: 'pages/login.html',
+    options: {
+      transition: 'f7-dive',
     },
+    on: {
+      pageInit: function (e, page) {
+        //When the pages is Initialized setup the signIn button
+        $$('#log-in').click(function (event) {
+          signIn($$('#uname').val(), $$('#pword').val());
+        });
+      },
+    }
+  },
 
 
   ],
@@ -51,14 +51,14 @@ function makeid(length) {
 }
 
 //user search
-$$('#user-search').on('keyup', function(event) {
+$$('#user-search').on('keyup', function (event) {
   if (event.keyCode === 13) {
     $$('#user-search-button').click();
   }
 });
 
 // Setup for the new multiple choice question button
-$$('#mc-question').on('click', function() {
+$$('#mc-question').on('click', function () {
   //store the question number for later use
   var questionNumb = makeid(10);
   //add the new question html to the page
@@ -66,7 +66,7 @@ $$('#mc-question').on('click', function() {
 });
 
 // Setup for the new numeric question button
-$$('#n-question').on('click', function() {
+$$('#n-question').on('click', function () {
 
   //store the question number for later use
   var questionNumb = makeid(10);
@@ -76,55 +76,55 @@ $$('#n-question').on('click', function() {
 });
 
 // Delete pool button on click
-$$('.pool-delete').on('click', function() {
+$$('.pool-delete').on('click', function () {
   let idToDelete = document.getElementById("pool-name").dataset.id;
 
   app.dialog.create({
     text: 'Are you sure you want to delete this pool? This action can not be undone.',
     buttons: [{
-        text: 'Cancel',
-      },
-      {
-        text: 'Delete',
-        color: 'red',
-        onClick: function() {
-          console.log("Deleting pool: ", idToDelete);
-          app.preloader.show();
-          deletePool({
-            poolID: idToDelete,
-          }).then(function() {
-            app.toast.show({
-              text: "Succesfully deleted pool.",
-              closeTimeout: 5000,
-            });
-          }).catch(function(error) {
-            app.toast.show({
-              text: "There was an error deleting your pool. Please try again later.",
-              closeTimeout: 5000,
-              closeButton: true
-            });
-          }).finally(function(result) {
-            //Close the uneeded UI
-            loadPools(function() {
-              app.preloader.hide();
-              app.popup.close(".pool-popup");
-            });
-
+      text: 'Cancel',
+    },
+    {
+      text: 'Delete',
+      color: 'red',
+      onClick: function () {
+        console.log("Deleting pool: ", idToDelete);
+        app.preloader.show();
+        deletePool({
+          poolID: idToDelete,
+        }).then(function () {
+          app.toast.show({
+            text: "Succesfully deleted pool.",
+            closeTimeout: 5000,
           });
-        }
-      },
+        }).catch(function (error) {
+          app.toast.show({
+            text: "There was an error deleting your pool. Please try again later.",
+            closeTimeout: 5000,
+            closeButton: true
+          });
+        }).finally(function (result) {
+          //Close the uneeded UI
+          loadPools(function () {
+            app.preloader.hide();
+            app.popup.close(".pool-popup");
+          });
+
+        });
+      }
+    },
     ],
   }).open();
 
 });
 
 // Save pool button on click
-$$('.pool-save').on('click', function() {
+$$('.pool-save').on('click', function () {
   savePool();
 });
 
 //Duplicate pool button
-$$('.pool-duplicate').click(function() {
+$$('.pool-duplicate').click(function () {
   duplicatePool();
 });
 
@@ -132,9 +132,9 @@ $$('.pool-duplicate').click(function() {
 
 
 function setupMainPage() {
-  db.collection("admins").doc(uid).get().catch(function(error) {
+  db.collection("admins").doc(uid).get().catch(function (error) {
     console.log(error);
-  }).then(function(userData) {
+  }).then(function (userData) {
     //If the user exist then this user is an admin so load the main page
     if (userData.exists) {
       let uData = userData.data();
@@ -238,7 +238,7 @@ function setupMainPage() {
     }
 
     //load Feedback
-    db.collection("feedback").get().then(function(snapshot) {
+    db.collection("feedback").get().then(function (snapshot) {
 
       $$('.skeleton-feedback').hide();
       var options = {
@@ -249,9 +249,9 @@ function setupMainPage() {
         minute: '2-digit'
       };
       let messageIndex = 0;
-      snapshot.forEach(function(doc) {
+      snapshot.forEach(function (doc) {
 
-        getUser(doc.get('sender'), function(user) {
+        getUser(doc.get('sender'), function (user) {
           var message = {
             id: doc.id,
             sender: user,
@@ -291,16 +291,16 @@ function showFeedback(index) {
       app.dialog.create({
         text: 'Are you sure you want to delete this account?',
         buttons: [{
-            text: 'Cancel',
-          },
-          {
-            text: 'Delete',
-            color: 'red',
-            onClick: function() {
-              deleteAccount(message.sender.uid)
+          text: 'Cancel',
+        },
+        {
+          text: 'Delete',
+          color: 'red',
+          onClick: function () {
+            deleteAccount(message.sender.uid)
 
-            },
           },
+        },
         ],
         verticalButtons: false,
       }).open();
@@ -322,13 +322,13 @@ function showFeedback(index) {
       popup.open();
 
       //update feedback type in database
-      $$('.resolve-' + message.id).click(function() {
+      $$('.resolve-' + message.id).click(function () {
 
         app.preloader.show();
 
         db.collection("feedback").doc(message.id).update({
           type: 'resolved'
-        }).catch(function(error) {
+        }).catch(function (error) {
 
           console.log(error.message);
           app.preloader.hide();
@@ -336,7 +336,7 @@ function showFeedback(index) {
             text: "There was an error resolving feedback. please try agian later."
           });
 
-        }).then(function() {
+        }).then(function () {
 
           app.preloader.hide();
           popup.close();
@@ -382,7 +382,7 @@ function addAnswer(questionID, answerID, answerText, correct) { //Adds an answer
   </div>\
   </li>');
 
-  $$('#' + answerID + "-setanswer").click(function() {
+  $$('#' + answerID + "-setanswer").click(function () {
     setAnswer(questionID, answerID);
   });
   document.getElementById(answerID).value = answerText;
@@ -419,7 +419,7 @@ function addQuestion(questionID, description, answers) { //Adds a multiple choic
    </div>');
 
   //Setup the add answer button
-  $$('.mc-answer-' + questionID).on('click', function(event) {
+  $$('.mc-answer-' + questionID).on('click', function (event) {
     var answerID = makeid(10);
     addAnswer(questionID, answerID, '', false);
   });
@@ -431,7 +431,7 @@ function addQuestion(questionID, description, answers) { //Adds a multiple choic
   if (answers != null && answers.length > 0) {
     let i = 0;
     //Add each answer to the html
-    answers.forEach(function(answer) {
+    answers.forEach(function (answer) {
       addAnswer(questionID, answer.id, answer.text, answer.correct);
 
       if (i < 1) { //If this is the first answer remove the delete button
@@ -495,7 +495,7 @@ function addNumericQuestion(questionID, description, answer) {
 }
 
 function updateQuestionNumbers() {
-  $$('.question-title').forEach(function(question, i) {
+  $$('.question-title').forEach(function (question, i) {
     $$(question).text('Question ' + (i + 1));
   });
 }
@@ -515,15 +515,20 @@ function setAnswer(questionID, answerID) { //Set the selected answer as the corr
   let el = $$('#' + answerID + "-setanswer")[0]; //Get the element of the button(Correct/Undo)
   let answer = el.parentElement.parentElement.parentElement;
 
-  //Set the previously selected answers state and color to the default
-  $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
-  $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
-
 
   if (correctAnswers[questionID] == answerID) { //If this is already marked as the correct answer(eg. the admin has pressed undo in the panel) then remove it from the correct answers
-    delete correctAnswers[questionID];
-    console.log("Undo set answer as correct");
+    app.dialog.confirm('Are you sure you want to undo this?', 'Undo correct answer', function () {
+      console.log("Undo set answer as correct");
+      //Set the answers state and color to the default
+      $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
+      $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
+      delete correctAnswers[questionID];
+    });
   } else { //Else add the answer to the list of correct answers and set its html to the correct color and state
+    //Set the previously selected answers state and color to the default
+    $$('#' + correctAnswers[questionID] + "-setanswer").html("Correct");
+    $$('#' + correctAnswers[questionID] + "-setanswer").parent().parent().parent().removeAttr("style");
+
     correctAnswers[questionID] = answerID;
     el.innerHTML = "Undo";
     answer.style.backgroundColor = "rgba(76, 175, 80, .2)";
@@ -543,7 +548,7 @@ function newAnnouncement() {
   $$(".announcement-popup").find('.pic-upload').css("background-image", "");
   $$(".announcement-popup").find('.pic-icon').html("add_photo_alternate");
   $$(".announcement-popup").find('#send-announcement').off('click').click(
-    function() {
+    function () {
       app.preloader.show();
 
       let title = $$('#announcment-title').val();
@@ -567,7 +572,7 @@ function newAnnouncement() {
 
     });
   $$(".announcement-popup").find('#send-test-announcement').off('click').click(
-    function() {
+    function () {
       app.preloader.show();
 
       let title = $$('#announcment-title').val();
@@ -598,7 +603,7 @@ function newAnnouncement() {
 
 ///////*TAGS*\\\\\\\
 
-$$('#edit-tags-button').click(function() {
+$$('#edit-tags-button').click(function () {
   if ($$('#edit-tags-button').html() == "Edit") {
     console.log("Edit tags");
     app.sortable.enable('#sortable-tags-list');
@@ -624,9 +629,9 @@ $$('#edit-tags-button').click(function() {
   }
 });
 
-$$('#cancel-edit-tags-button').click(function() {
+$$('#cancel-edit-tags-button').click(function () {
   app.preloader.show();
-  loadTags().then(function() {
+  loadTags().then(function () {
     app.preloader.hide();
   });
   app.sortable.disable('#sortable-tags-list')
@@ -638,14 +643,14 @@ $$('#cancel-edit-tags-button').click(function() {
 
 });
 
-$$('#new-tag-button').click(function() {
+$$('#new-tag-button').click(function () {
   let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
     '<div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="New Category"></div>' +
     '</div></div><div class="sortable-handler"></div></li>');
   tagEl.attr('data-id', makeid(10)); // TODO: Check for id conflicts
 
   $$("#tags-list").append(tagEl);
-  $$('.delete-tag-button').click(function() {
+  $$('.delete-tag-button').click(function () {
     console.log("Deleteing tag.");
     $$(this).closest('li').remove();;
   });
@@ -667,7 +672,7 @@ async function loadTags() { //Clears the current tags then loads them from the s
   });
 
   $$('.delete-tag-button').hide();
-  $$('.delete-tag-button').click(function() {
+  $$('.delete-tag-button').click(function () {
     console.log("Deleteing tag.");
     $$(this).parent().parent().parent().remove();
   });
@@ -815,7 +820,7 @@ async function loadAdmins() {
       }
     }
 
-    $$('#id-' + adminID).find("[type=checkbox]").change(function() { //Save the admin anytime the check box changes
+    $$('#id-' + adminID).find("[type=checkbox]").change(function () { //Save the admin anytime the check box changes
       saveAdmin(adminID, {
         adminPermissions: {
           users: $$('#id-' + adminID).find('.users-checkbox').is(":checked"),
@@ -827,9 +832,9 @@ async function loadAdmins() {
       });
     });
 
-    $$('#id-' + adminID).find('.delete-admin').click(function() {
+    $$('#id-' + adminID).find('.delete-admin').click(function () {
       app.preloader.show();
-      deleteAdmin(adminID).then(function() {
+      deleteAdmin(adminID).then(function () {
         app.preloader.hide();
       });
     });
