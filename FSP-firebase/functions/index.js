@@ -195,7 +195,7 @@ exports.poolUpdate = functions.firestore
                   poolID: poolID,
                   link: "/pool/?id=" + poolID,
                   title: "Your score has been updated",
-                  text: "A question in " + pool.name + " pool has been updated—check here for your score!",
+                  text: "A question in " + pool.name + " has been updated—check here for your score!",
                   type: "PU",
                 });
                 break;
@@ -205,7 +205,7 @@ exports.poolUpdate = functions.firestore
                   poolID: poolID,
                   link: "/pool/?id=" + poolID,
                   title: "Pool has been updated",
-                  text: "Pool " + pool.name + "has been updated!",
+                  text: "" + pool.name + "has been updated!",
                   type: "PU",
                 });
             }
