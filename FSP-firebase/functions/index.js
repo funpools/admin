@@ -10,24 +10,24 @@ const db = admin.firestore();
 // Listen for changes in all documents in the 'pools' collection
 exports.poolUpdate = functions.firestore
   .document('pools/{poolID}')
-  .onWrite(async (change, context) => { //On write to any pool
+  .onWrite(async (change, context) => { //On write to any pool.
     //// NOTE: we can get the poolsID with context.params.poolID
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
     let log = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
 
-    //async function to grade the pool
+    /// Async function to grade the pool
+    //  function usage:
+    //    *Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
+    //    *Valid message types are:
+    //      "active"//This will let the users know that the pool is now active
+    //      "score-update"//This notifys the pools users of there new score
+    //      "none"//This will not send a notification
+    //
     async function gradePool(poolID, messageType) {
-      /* function usage
-       *Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
-       *Valid message types are:
-       *  "active"//This will let the users know that the pool is now active
-       *  "score-update"//This notifys the pools users of there new score
-       *  "none"//This will not send a notification
-       */
-
+      // Keeps track of the log rather than having a bunch of little logs
       let poolLog = "Graded pool: ";
-      let highestScore = 0; //This is used to determin the winner(s)
+      let highestScore = 0; //This is used to determine the winner(s)
       let winners = []; //Stores the winner(s). If there is a tie then their can be multiple winners in the array
 
       let poolRef = db.collection("pools").doc(poolID); //reference to the pools document
@@ -335,7 +335,7 @@ exports.poolUpdate = functions.firestore
               // Get winner's contact info
               await admin.auth().getUser(user.uid).then(async userRecord => {
                 let userData = await getUser(user.uid);
-                winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
+                winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
                 //console.log(JSON.stringify(userData));
                 //JSON.stringify(userRecord); 
                 //console.log("Winner Info: ", JSON.stringify(userRecord));
@@ -354,7 +354,8 @@ exports.poolUpdate = functions.firestore
 
           // Email admins winner info
           await admin.firestore().collection('mail').add({
-            to: ['tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com'],
+            to: ['tsmith@funsportspools.com', 'development@funsportspools.com',
+              'admin@funsportspools.com', 'Haley.Sacotte@wyecomm.com'],//'tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com,mike@onairsportsmarketing.com,Haley.Sacotte@wyecomm.com'
             message: {
               subject: 'Winner info for ' + poolData.name,
               html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
@@ -514,9 +515,9 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
       parentPool: "",
       admins: [],
       allowShares: bool,
+      requiresPermission:bool,// If the pool needs permission to join
     }
 */
-
   // Checking that the user is authenticated.
   if (!context.auth) {
     // Throwing an HttpsError so that the client gets the error details.
@@ -544,6 +545,7 @@ exports.createPrivatePool = functions.https.onCall((data, context) => {
         parentPool: data.parentPool,
         admins: data.admins,
         allowShares: data.allowShares,
+        requiresPermission: (data.requiresPermission != null) ? data.requiresPermission : true,
         private: true,
       }).then(function (doc) {
 
@@ -683,6 +685,7 @@ async function getPool(poolID) {
       pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
       admins: poolData.admins ? poolData.admins : [],
       unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
       sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
@@ -706,6 +709,7 @@ async function getPool(poolID) {
       pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
       bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
       allowShares: poolData.allowShares ? poolData.allowShares : true,
       admins: poolData.admins ? poolData.admins : [],
       unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
@@ -727,7 +731,7 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
     }
    */
 
-  console.log("Join pool function called with data: ", data);
+  console.log("Join pool function called with data: ", JSON.stringify(data));
 
   // Checking that the user is authenticated.
   if (!context.auth) {
@@ -762,11 +766,11 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
     if (pool.state != "closed" && !(pool.state == "active" && join)) { //If the pool is not closed and (The the user is not trying to join an active pool)
       if (userID == targetUid) { //If the user is requesting this operation as themselves
 
-        console.log("Loaded pool data: ", pool);
+        console.log("Loaded pool data: ", JSON.stringify(pool));
 
         if (join) { //If the user wants to join the pool
 
-          if (!pool.private || pool.allowedUsers.includes(userID)) { //If the user is allowed to join this pool add them to it
+          if (!pool.private || pool.allowedUsers.includes(userID) || !pool.requiresPermission) { //If the user is allowed to join this pool add them to it
 
             await db.collection("users").doc(userID).update({
               pools: admin.firestore.FieldValue.arrayUnion(poolID),
@@ -800,7 +804,7 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
             //Send request to the pool admin/admins to join the pool
             //// TODO: Send request to other admins
             let adminT = pool.admins[0];
-            console.log("admin is: ", adminT);
+            console.log("admin is: ", JSON.stringify(adminT));
             await sendNotification(adminT, {
               user: pool.admins[1],
               senderID: userID,
@@ -828,7 +832,7 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
           let userToRemove = pool.users.find(function (e) {
             return e.uid === userID;
           });
-          console.log(userToRemove);
+          console.log(JSON.stringify(userToRemove));
           //Remove the user from the pool//// QUESTION: Should we also delete thier answers?
           await db.collection("pools").doc(poolID).update({
             users: admin.firestore.FieldValue.arrayRemove(userToRemove),
@@ -949,7 +953,7 @@ exports.joinPool = functions.https.onCall(async function (data, context) { //Fun
               //Send request to the pool admin/admins to kick the user
               //// TODO: Send request to other admins
               let adminT = pool.admins[0];
-              console.log("admin is: ", adminT);
+              console.log("admin is: ", JSON.stringify(adminT));
               await sendNotification(adminT, {
                 user: pool.admins[1],
                 senderID: userID,
