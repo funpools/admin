@@ -6,6 +6,27 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+class Log {
+  constructor(string, name) {
+    this.string = string;
+    if (name != null) {
+      this.name = name;
+    }
+  }
+  add(string) {
+    this.string = this.string + string + '\n';
+  }
+  log(string) {
+    this.string = this.string + string + ' , ';
+  }
+  getLog() {
+    return this.string;
+  }
+  /// Prints the log to the console
+  toConsole() {
+    console.log(this.string);
+  }
+}
 
 // Listen for changes in all documents in the 'pools' collection
 exports.poolUpdate = functions.firestore
@@ -14,32 +35,30 @@ exports.poolUpdate = functions.firestore
     //// NOTE: we can get the poolsID with context.params.poolID
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
-    let log = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
+    let functionLog = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
 
     /// Async function to grade the pool
-    //  function usage:
-    //    *Input the ID of the pool and the type of message to send and this will grade this pool and all child pools
-    //    *Valid message types are:
-    //      "active"//This will let the users know that the pool is now active
-    //      "score-update"//This notifys the pools users of there new score
-    //      "none"//This will not send a notification
-    //
+    ///  function usage:
+    ///    *Input the ID of the pool and the type of message to send and this will grade the pool and all child pools
+    ///    *Valid message types are:
+    ///      "active"//This will let the users know that the pool is now active
+    ///      "score-update"//This notifies the pools users of there new score
+    ///      "closed"//This will let the users know that the pool is now closed
+    ///      "none"//This will not send a notification
     async function gradePool(poolID, messageType) {
       // Keeps track of the log rather than having a bunch of little logs
-      let poolLog = "Graded pool: ";
-      let highestScore = 0; //This is used to determine the winner(s)
-      let winners = []; //Stores the winner(s). If there is a tie then their can be multiple winners in the array
+      let poolLog = new Log('Grading pool: ' + poolID, 'gradePool:' + poolID);;
 
-      let poolRef = db.collection("pools").doc(poolID); //reference to the pools document
+      // Reference to the pools document
+      let poolRef = db.collection("pools").doc(poolID);
       let pool = getPool(poolID);
 
-      let userDocs = poolRef.collection("users").get(); // All user documents in this pool
-      let users = []; //The array of graded users
+      // All user documents in this pool this contains there answers
+      let userDocs = poolRef.collection("users").get();
+      let gradedUsers = []; //The array of graded users
 
       pool = await pool;
-      poolLog = poolLog + poolID + '{';
 
-      //console.log('child pools', pool.childPools);
       let poolPromises = [];
       //If this pool has children then add them to the list of pools to grade
       if (pool.childPools != null) {
@@ -52,121 +71,130 @@ exports.poolUpdate = functions.firestore
 
       userDocs = await userDocs;
 
-      let questions = pool.questions;
+      function gradeUser(user) {
+        let score = 0; //This users total score
+        let tieBreakerScores = [];
+        let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answer document
+
+        if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
+          let answers = userDoc.get("answers");
+
+          // 1. Grade the users answers to the questions
+          for (let i = 0; i < pool.questions.length; i++) {
+            // If the user answered this question correctly
+            if (answers[pool.questions[i].id] != null &&
+              answers[pool.questions[i].id] == pool.questions[i].correctAnswer) {
+              score++;
+            } else { }
+          }
+
+          // 2. Grade the users answers to the tieBreakers
+          for (let i = 0; i < pool.tiebreakers.length; i++) {
+            // Add the users score to the array 
+            tieBreakerScores.push(Math.abs(answers[pool.tiebreakers[i].id] - pool.tiebreakers[i].answer));
+          }
+
+        } else {
+          score = 0;
+        }
+
+        poolLog.log(user.uid + ':' + score + ',');
+        return {
+          uid: user.uid,
+          score: score,
+          tieBreakerScores: tieBreakerScores,
+          isWinner: false,//may not need?
+        };
+      }
 
       if (pool.users != null) { //If there are any users in this pool
-        poolLog = poolLog + ' User scores(uid:score):{'; //Logging
-
+        poolLog.log('Grading users');
         //Grade each user in the pool
-        for (let un = 0; un < pool.users.length; un++) {
-          const user = pool.users[un];
-          let score = 0; //This users total score
-          let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
-
-          if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
-            let answers = userDoc.get("answers");
-            //Go through each question and compare the correct answer with the users answer
-            for (let i = 0; i < questions.length; i++) {
-              if (answers[questions[i].id] != null && answers[questions[i].id] == questions[i].correctAnswer) { //If the user answerd this question correctly
-                score++;
-              } else { }
-            }
-
-            //Check to see if this user is the current winner //Note: we could posibly do this by finding the user with the higest score after we add all of them
-            if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
-              highestScore = score;
-              winners = [user.uid];
-            } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
-              winners.push(user.uid);
-            }
-
-
-          } else {
-            score = null;
-          }
-
-          poolLog += user.uid + ':' + score + ',';
-
+        for (let userIndex = 0; userIndex < pool.users.length; userIndex++) {
+          const user = pool.users[userIndex];
           //Add the graded user to the array
-          users.push({
-            uid: user.uid,
-            score: score,
-            isWinner: false,
-          });
-
+          gradedUsers.push(gradeUser(user));//TODO make this async?
         }
 
-        poolLog = poolLog + '}';
-
-        /*
-        pool.users.forEach((user, i) => {
-          let score = 0; //This users total score
-          let userDoc = userDocs.docs.find((a) => a.id == user.uid); //The users answers document
-          poolLog += user.uid + ': { ';
-
-          if (userDoc != null && userDoc.get("answers") != null) { //If the user has answered any questions
-            let answers = userDoc.get("answers");
-            //Go through each question and compare the correct answer with the users answer
-            for (let i = 0; i < questions.length; i++) {
-              if (answers[questions[i].id] != null && answers[questions[i].id] == questions[i].correctAnswer) { //If the user answerd this question correctly
-                score++;
-              } else {
-                poolLog += ' incorrect: ' + questions[i].id;
-              }
+        //Sort the graded users by score and tiebreaker scores
+        gradedUsers.sort((a, b) => {
+          // If the scores are not equal then we can sort by score 
+          if (b.score != a.score) {
+            return b.score - a.score;
+          } // Else there is a tie so try to sort by tiebreakers
+          else {
+            poolLog.log('');
+            for (let i = 0; i < pool.tiebreakers.length; i++) {
+              let tieScore = a.tieBreakerScores[i] - b.tieBreakerScores[i];
+              poolLog.log('resolving tie score is: ' + (tieScore));
+              if (tieScore != 0)
+                return tieScore;
             }
-
-            //Check to see if this user is the current winner
-            if (score > highestScore) { // If this users score is higher then the previous highestScore they are the new winner
-              highestScore = score;
-              winners = [user.uid];
-            } else if (score == highestScore) { // If the users score is equal to the highestScore then we are tied with the current winner
-              winners.push(user.uid);
-            }
-
-            poolLog += ' Updated users score final score is: ' + score + '}, ';
-
-          } else {
-            score = null;
-            poolLog += ' This user does not have any answers score is: ' + score;
           }
-          //Add the graded user to the array
-          users.push({
-            uid: user.uid,
-            score: score,
-            isWinner: false,
-          });
-
+          return 0;
         });
-        */
+        poolLog.log('Finished grading users');
 
-        if (!pool.questions.some(a => a.correctAnswer == null)) { //If there are no unanswed questions
-          //If there is a tie try and resolve it
-          if (winners.length > 1) {
-            poolLog = poolLog + "{More than one winner attempting tie resolution between: " + winners.toString();
-            let tieWinners = (await resolveTie(poolID, winners, pool.tiebreakers)); //Get the tie winners
-            winners = tieWinners;
-            poolLog = poolLog + " Tie winners are: " + winners.toString() + '}';
-          }
-
-          //TODO add case for true tie
-          if (winners.length <= 1 || !pool.tiebreakers.some(a => a.answer == null)) { //If there is only one winner or all the tiebreakers have been answered
-            // console.log("only one winner or true tie");
-            //Set the pool winners
-            for (var i = 0; i < users.length; i++) {
-              if (winners.includes(users[i].uid)) {
-                users[i].isWinner = true;
+        // If there are no unanswerd questions then determine the winner(s)
+        if (pool.questions.every(a => a.correctAnswer != null) && pool.tiebreakers.every(e => e.answer != null)) {
+          // Keep track of the place we are currently calculating eg(1st,2nd,3rd,etc.)
+          let place = 0;
+          for (let i = 0; i < gradedUsers.length; i++) {
+            const user = gradedUsers[i];
+            const previousUser = gradedUsers[i - 1];
+            // If there is a tie//TODO account for 3 way true tie
+            if ((previousUser != null) && previousUser.score == user.score) {
+              for (let x = 0; x < pool.tiebreakers.length; x++) {
+                let tieScore = user.tieBreakerScores[x] - previousUser.tieBreakerScores[x];
+                poolLog.log('resolving tie for user placing score is: ' + (tieScore));
+                // If the tie score is not 0 then the tie is resolved
+                if (tieScore != 0) {
+                  if (tieScore > 0) {
+                    // The previous user won
+                    place++;
+                    user.place = place;
+                  } else {
+                    // The current user won
+                    user.place = place;
+                    place++;
+                    previousUser.place = place;
+                  }
+                  break;// tieScore;
+                }
+                if (x >= pool.tiebreakers.length - 1) {
+                  // There has been a true tie
+                  user.place = place;
+                  place++;
+                }
               }
+
+            } else {
+              place++;
+              user.place = place;
             }
           }
 
+          //TODO possibly combine with above
+          for (var i = 0; i < gradedUsers.length; i++) {
+            if (gradedUsers[i].place == 1) {
+              gradedUsers[i].isWinner = true;
+            }
+          }
+          poolLog.log('gradedUserArray:' + JSON.stringify(gradedUsers));
         }
+
+        poolLog.log(' Final user array is: ' + JSON.stringify(gradedUsers));
+
+        // Update the pools doc with the new user data
+        await db.collection("pools").doc(poolID).update({
+          users: gradedUsers,
+        });
 
         //Notify each user in the pool
-        //console.log("Sending notifications to users. Notification type: ", messageType);
+        poolLog.log("Sending notifications to users. Notification type: ", messageType);
         pool.users.forEach((user, i) => {
-          //Check if the user wants to recive notifications 
+          //Check if the user is unsubbed from notifications 
           if (!pool.unsubscribed.includes(user.uid)) {
-
             //Decide which type of notification to send to the user
             switch (messageType) {
               case "active":
@@ -185,7 +213,7 @@ exports.poolUpdate = functions.firestore
                   poolID: poolID,
                   link: "/pool/?id=" + poolID,
                   title: pool.name + " is now closed",
-                  text: pool.name + " is now closed. Click here to view your results!",
+                  text: "The " + pool.name + " is closed. Your ranking is " + user.place + "/" + pool.users.length + ". Check here to see your results!",
                   type: "PU",
                 });
                 break;
@@ -211,134 +239,40 @@ exports.poolUpdate = functions.firestore
             }
           }
         });
-
-        //Sort the graded users by score and if they are a winner
-        users.sort((a, b) => {
-
-          //If ether A or B is a winner then sort by winner else continue normal sort
-          if (!(a.isWinner && b.isWinner)) {//If they are not both winners
-            if (a.isWinner) {
-              return -1;
-            } else if (b.isWinner) {
-              return 1;
-            }
-          }
-
-          if (b.score != a.score) {
-            return b.score - a.score;
-          } else {
-            if (a.uid > b.uid) {
-              return -1;
-            }
-          }
-          return 0;
-        });
-
-        poolLog = poolLog + ' Final user array is: ' + JSON.stringify(users);
-
-        //Wait for the pools doc to finish updating
-        await db.collection("pools").doc(poolID).update({
-          users: users,
-        });
-
       } else {
-        poolLog = poolLog + "error no users.";
+        poolLog.log('Error no users');
       }
 
-      //Wait for the child pool to be graded
+      // Wait for the child pools to be graded
       await Promise.all(poolPromises).then(function () {
         // /console.log("All pools graded!");
       });
 
-      return poolLog;
-    }
-
-    //Async function to resolve ties
-    async function resolveTie(poolID, winners, tieBreakerQuestions) {
-      let winnersToResolve = winners.slice();
-      let tieBreakerScore = null; //The lowest score of the tied users // NOTE:  Tiebreaker questions are graded by the distance to the correct answer terefor lower is better
-      let tieWinners = winners.slice(); //The winners of this tie.
-
-      //console.log("Trying to resolve tie between users: ", winnersToResolve);
-      //for each tieBreaker question
-      for (let q = 0; q < tieBreakerQuestions.length; q++) {
-
-        if (tieBreakerQuestions[q].answer != null) { //If question is valid grade the winners based of of it else move on to the next question
-          //for each remaning winner
-          for (let i = 0; i < winnersToResolve.length; i++) {
-            let userDoc = await db.collection("pools").doc(poolID).collection("users").doc(winnersToResolve[i]).get(); // Get this users document
-            let answers = userDoc.get("answers");
-            let score;
-
-            //If the user has answered this question grade them on it else they lose the tie breaker
-            if (answers && answers[tieBreakerQuestions[q].id] != null) {
-              score = Math.abs(answers[tieBreakerQuestions[q].id] - tieBreakerQuestions[q].answer); //score is the absolute distance between the correct answer and users answer // NOTE: therefore the lower the score the better the user did
-            }
-
-            //console.log("graded user: ", winnersToResolve[i], " score is: ", score);
-            //Check this users score against others in the tiebreaker
-            if ((tieBreakerScore == null || score < tieBreakerScore) && (score != null)) { // If this users score is smaller then the previous best score they are the new winner
-              tieBreakerScore = score;
-              tieWinners = [userDoc.id];
-              //console.log(score, " new tie winner is: ", winnersToResolve[i]);
-            } else if (score == tieBreakerScore && (score != null)) { // If the users score is equal to the best score then we are tied with the current winner
-              tieWinners.push(userDoc.id);
-              //console.log(score, " another tie winner is: ", winnersToResolve[i]);
-            }
-
-          }
-
-          //If the tie is resolved after grading break the loop else move on to next tiebreaker
-          if (tieWinners.length <= 1) {
-            break;
-          } else {
-            winnersToResolve = tieWinners.slice(); //set the winners to the tie winners this elemenates any users who lost the tie breaker
-            tieBreakerScore = null; //reset the tie score
-          }
-        }
-        // console.log("tieBreaker winners are: ", winnersToResolve);
-      }
-
-      return tieWinners;
+      return poolLog.getLog();
     }
 
     if (previousData.state != newData.state) { //state has changed
       switch (newData.state) {
         case "active":
           console.log("Pool now active!");
-          //Notify the users of this pool that it is now active
-          // notifyPoolUsers(context.params.poolID, { //todo send notificatoin to all child pools
-          //   id: context.params.poolID,
-          //   poolID: context.params.poolID,
-          //   link: "/pool/?id=" + context.params.poolID,
-          //   title: newData.name + " is now active",
-          //   text: newData.name + " is now active. Click here to view the pool! ",
-          //   type: "PU",
-          // });
-          //Grade the pool and notify the users that the pool is open
+          //Grade the pool and send the active notification
           return gradePool(context.params.poolID, "active");
-
           break;
         case "closed":
-          //Grade the pool and notify the users that the pool is now closed
+          //Grade the pool and send the closed notification
           let gradeResults = await gradePool(context.params.poolID, "closed");
 
           //Get the winner data and email it to the admins
           let winnersList = '';
           let poolData = await getPool(context.params.poolID);
-
           for (let i = 0; i < poolData.users.length; i++) {
             var user = poolData.users[i];
-            // console.log("USER: ", JSON.stringify(user));
-            //skip loosers
+            // Skip loosers
             if (user.isWinner) {
-              // Get winner's contact info
+              // Get winner's contact info and add it to the list
               await admin.auth().getUser(user.uid).then(async userRecord => {
                 let userData = await getUser(user.uid);
                 winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
-                //console.log(JSON.stringify(userData));
-                //JSON.stringify(userRecord); 
-                //console.log("Winner Info: ", JSON.stringify(userRecord));
               }).catch(error => {
                 console.error('Error fetching user data:', error)
                 let foo = {
@@ -348,11 +282,10 @@ exports.poolUpdate = functions.firestore
                 };
               });
             }
-
           };
           console.log("The winner list is: " + JSON.stringify(winnersList));
 
-          // Email admins winner info
+          // Email winner info to the admins
           await admin.firestore().collection('mail').add({
             to: ['tsmith@funsportspools.com', 'development@funsportspools.com',
               'admin@funsportspools.com', 'Haley.Sacotte@wyecomm.com'],//'tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com,mike@onairsportsmarketing.com,Haley.Sacotte@wyecomm.com'
@@ -366,6 +299,7 @@ exports.poolUpdate = functions.firestore
           return gradeResults;
           break;
         case "open":
+          // Reset the users scores
           let scoreResetUsers = [];
           newData.users.forEach((user, i) => {
             scoreResetUsers.push({
@@ -379,16 +313,15 @@ exports.poolUpdate = functions.firestore
           });
           break;
         default:
-
       }
-    } else { //the state is the same
+    } else { // The state is the same
       switch (newData.state) {
         case "active":
           console.log("Pool has stayed active!");
           if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers))) { //If the questions/tiebreakers have changed
-            //grade the pool and send notifications to users about their grade
+            // Grade the pool and send users a score update
             return gradePool(context.params.poolID, "score-update").then(function (result) {
-              console.log("Successfully graded ", result);
+              console.log("Successfully graded pool, log:", result);
             });
           }
 
@@ -400,39 +333,7 @@ exports.poolUpdate = functions.firestore
 
       }
     }
-    /*
-        if (newData.state === "active") { // TODO:If the pool has questions and is live
-    
-          if ((JSON.stringify(newData.questions) != JSON.stringify(previousData.questions)) || (JSON.stringify(newData.tiebreakers) != JSON.stringify(previousData.tiebreakers)) || (previousData.state != newData.state)) { //If the questions or tiebreakers have changed
-            log = log + 'Questions were changed. New questions object: ' + JSON.stringify(newData.questions);
-    
-            let poolPromises = [];
-            poolPromises.push(gradePool(context.params.poolID).then(function(result) {
-              console.log("Successfully graded ", result);
-            }));
-    
-            //If this pool has children then add them to the list of pools to grade
-            if (newData.childPools) {
-              newData.childPools.forEach(function(poolID) {
-                poolPromises.push(gradePool(poolID).then(function(result) {
-                  console.log("Successfully graded child pool ", result);
-                }));
-              });
-            }
-    
-            return Promise.all(poolPromises, (previousData.state == newData.state)).then(function() {
-              console.log("all Graded");
-            });
-    
-          } else { //The state has not changed and the questions have not changed
-            log = log + 'Questions were not changed and state has not changed!';
-          }
-        } else {
-          log = log + " Pool is not active";
-        }
-    */
-
-    console.log(log);
+    console.log(functionLog);
 
     return 0;
   });
