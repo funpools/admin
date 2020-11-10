@@ -28,6 +28,73 @@ class Log {
   }
 }
 
+async function getPool(poolID) {
+
+  let poolData = db.collection("pools").doc(poolID).get();
+
+  poolData = (await poolData).data();
+
+  if (poolData == null) {
+    //console.log("Invalid pool returning");
+    return "invalid";
+  }
+  //console.log("This pools raw data is: ", poolData);
+  //If the pool is a private/child pool get the needed data from the parentPool
+  if (poolData.parentPool != null) {
+
+    let parentData = await getPool(poolData.parentPool);
+
+    return {
+      poolID: poolID,
+      tags: parentData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: parentData.state,
+      date: parentData.state,
+      questions: parentData.questions,
+      tiebreakers: parentData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      private: true,
+      childPools: null,
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
+      admins: poolData.admins ? poolData.admins : [],
+      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
+    };
+
+  } else {
+    return {
+      poolID: poolID,
+      tags: poolData.tags,
+      name: poolData.name,
+      description: poolData.description,
+      state: poolData.state,
+      date: ((poolData.date) ? poolData.date.toDate() : ''),
+      questions: poolData.questions,
+      tiebreakers: poolData.tiebreakers,
+      users: (poolData.users) ? poolData.users : [],
+      winners: (poolData.winners) ? poolData.winners : [],
+      id: poolID,
+      childPools: (poolData.childPools) ? poolData.childPools : null,
+      private: false,
+      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
+      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
+      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
+      allowShares: poolData.allowShares ? poolData.allowShares : true,
+      admins: poolData.admins ? poolData.admins : [],
+      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
+      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
+    };
+  }
+}
+
 // Listen for changes in all documents in the 'pools' collection
 exports.poolUpdate = functions.firestore
   .document('pools/{poolID}')
@@ -37,14 +104,15 @@ exports.poolUpdate = functions.firestore
     const previousData = change.before.data(); //Data before the write
     let functionLog = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
 
-    /// Async function to grade the pool
-    ///  function usage:
-    ///    *Input the ID of the pool and the type of message to send and this will grade the pool and all child pools
-    ///    *Valid message types are:
-    ///      "active"//This will let the users know that the pool is now active
-    ///      "score-update"//This notifies the pools users of there new score
-    ///      "closed"//This will let the users know that the pool is now closed
-    ///      "none"//This will not send a notification
+    /** Async function to grade the pool
+       function usage:
+         *Input the ID of the pool and the type of message to send and this will grade the pool and all child pools
+         *Valid message types are:
+           "active"//This will let the users know that the pool is now active
+           "score-update"//This notifies the pools users of there new score
+           "closed"//This will let the users know that the pool is now closed
+           "none"//This will not send a notification
+     */
     async function gradePool(poolID, messageType) {
       // Keeps track of the log rather than having a bunch of little logs
       let poolLog = new Log('Grading pool: ' + poolID, 'gradePool:' + poolID);;
@@ -53,9 +121,9 @@ exports.poolUpdate = functions.firestore
       let poolRef = db.collection("pools").doc(poolID);
       let pool = getPool(poolID);
 
-      // All user documents in this pool this contains there answers
+      // Get all user answer documents in this pool
       let userDocs = poolRef.collection("users").get();
-      let gradedUsers = []; //The array of graded users
+      let gradedUsers = [];
 
       pool = await pool;
 
@@ -107,14 +175,16 @@ exports.poolUpdate = functions.firestore
         };
       }
 
+      let gradedUserPromises = [];
       if (pool.users != null) { //If there are any users in this pool
         poolLog.log('Grading users');
         //Grade each user in the pool
         for (let userIndex = 0; userIndex < pool.users.length; userIndex++) {
           const user = pool.users[userIndex];
           //Add the graded user to the array
-          gradedUsers.push(gradeUser(user));//TODO make this async?
+          gradedUsers.push(await gradeUser(user));
         }
+
 
         //Sort the graded users by score and tiebreaker scores
         gradedUsers.sort((a, b) => {
@@ -139,10 +209,11 @@ exports.poolUpdate = functions.firestore
         if (pool.questions.every(a => a.correctAnswer != null) && pool.tiebreakers.every(e => e.answer != null)) {
           // Keep track of the place we are currently calculating eg(1st,2nd,3rd,etc.)
           let place = 0;
+          // Determine each users place
           for (let i = 0; i < gradedUsers.length; i++) {
             const user = gradedUsers[i];
             const previousUser = gradedUsers[i - 1];
-            // If there is a tie//TODO account for 3 way true tie
+            // If there is a tie
             if ((previousUser != null) && previousUser.score == user.score) {
               for (let x = 0; x < pool.tiebreakers.length; x++) {
                 let tieScore = user.tieBreakerScores[x] - previousUser.tieBreakerScores[x];
@@ -159,12 +230,12 @@ exports.poolUpdate = functions.firestore
                     place++;
                     previousUser.place = place;
                   }
-                  break;// tieScore;
+                  break;
                 }
                 if (x >= pool.tiebreakers.length - 1) {
                   // There has been a true tie
                   user.place = place;
-                  place++;
+                  // place++;
                 }
               }
 
@@ -180,6 +251,7 @@ exports.poolUpdate = functions.firestore
               gradedUsers[i].isWinner = true;
             }
           }
+
           poolLog.log('gradedUserArray:' + JSON.stringify(gradedUsers));
         }
 
@@ -245,7 +317,7 @@ exports.poolUpdate = functions.firestore
 
       // Wait for the child pools to be graded
       await Promise.all(poolPromises).then(function () {
-        // /console.log("All pools graded!");
+        //console.log("All pools graded!");
       });
 
       return poolLog.getLog();
@@ -551,73 +623,6 @@ exports.deletePool = functions.https.onCall(async function (data, context) {
   }
 
 });
-
-async function getPool(poolID) {
-
-  let poolData = db.collection("pools").doc(poolID).get();
-
-  poolData = (await poolData).data();
-
-  if (poolData == null) {
-    //console.log("Invalid pool returning");
-    return "invalid";
-  }
-  //console.log("This pools raw data is: ", poolData);
-  //If the pool is a private/child pool get the needed data from the parentPool
-  if (poolData.parentPool != null) {
-
-    let parentData = await getPool(poolData.parentPool);
-
-    return {
-      poolID: poolID,
-      tags: parentData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: parentData.state,
-      date: parentData.state,
-      questions: parentData.questions,
-      tiebreakers: parentData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      private: true,
-      childPools: null,
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
-      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
-      admins: poolData.admins ? poolData.admins : [],
-      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
-      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
-    };
-
-  } else {
-    return {
-      poolID: poolID,
-      tags: poolData.tags,
-      name: poolData.name,
-      description: poolData.description,
-      state: poolData.state,
-      date: ((poolData.date) ? poolData.date.toDate() : ''),
-      questions: poolData.questions,
-      tiebreakers: poolData.tiebreakers,
-      users: (poolData.users) ? poolData.users : [],
-      winners: (poolData.winners) ? poolData.winners : [],
-      id: poolID,
-      childPools: (poolData.childPools) ? poolData.childPools : null,
-      private: false,
-      pendingUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      allowedUsers: poolData.allowedUsers ? poolData.allowedUsers : [],
-      bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
-      requiresPermission: (poolData.requiresPermission != null) ? poolData.requiresPermission : true,
-      allowShares: poolData.allowShares ? poolData.allowShares : true,
-      admins: poolData.admins ? poolData.admins : [],
-      unsubscribed: poolData.unsubscribed ? poolData.unsubscribed : [],
-      sentPoolClosingNotification: poolData.sentPoolClosingNotification ? poolData.sentPoolClosingNotification : false,
-    };
-  }
-}
 
 exports.joinPool = functions.https.onCall(async function (data, context) { //Function for joining and leaving pools
   /**
@@ -935,15 +940,15 @@ exports.setPoolNotificationPreference = functions.https.onCall(async function (d
   }
 });
 
-
-exports.addMessage = functions.https.onCall(async function (data, context) {
-  /*
-  This should be called with the data pareameter containing
+/** Adds a message to a chat
+  This should be called with the data parameter containing
   {
       poolID:"",//The id of the pool you wish to add a message to
       text:"",//The messages text
   }
-  */
+*/
+exports.addMessage = functions.https.onCall(async function (data, context) {
+
 
   //console.log(data);
 
@@ -1112,30 +1117,30 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
 
 
 
-async function sendNotification(uid, message) {
-  //Usage
-  /*
-    uid is the id of the targeted user
+/** Sends a notification to the specified user
+`@param uid is the id of the targeted user
 
-    Message structure (* is optional):
-    {
-        id: "",
-        title: "",
-        text: "",
-        type: "",
-        *link: "",//"/pool/?id=" + poolID,
-    }
+  @param message structure (* is optional):
+  {
+      id: "",
+      title: "",
+      text: "",
+      type: "",
+      *link: "",//"/pool/?id=" + poolID,
+  }
 
 //// NOTE: These types are not used notifications currently use old naming
-    Notification types:
-      A-(Announcement)
-      PU-(Pool update)
-      PI-(Pool invite)
-      PA-(Pool accept)
-      CU-(Chat update)
-      UR-(User report)
-      FR-(Freind request)
-  */
+  Notification types:
+    A-(Announcement)
+    PU-(Pool update)
+    PI-(Pool invite)
+    PA-(Pool accept)
+    CU-(Chat update)
+    UR-(User report)
+    FR-(Freind request)
+*/
+async function sendNotification(uid, message) {
+
 
   let user = db.collection('users').doc(uid).get();
   user = (await user);
