@@ -222,12 +222,13 @@ exports.poolUpdate = functions.firestore
                 if (tieScore != 0) {
                   if (tieScore > 0) {
                     // The previous user won
-                    place++;
+                    place = i + 1;
                     user.place = place;
                   } else {
+                    console.log("THIS is unlikely to happen. In fact it may be impossible")
                     // The current user won
                     user.place = place;
-                    place++;
+                    place = i + 1;
                     previousUser.place = place;
                   }
                   break;
