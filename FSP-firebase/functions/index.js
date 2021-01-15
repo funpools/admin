@@ -106,7 +106,7 @@ exports.poolUpdate = functions.runWith({
     const newData = change.after.data(); //Data after the write
     const previousData = change.before.data(); //Data before the write
     let functionLog = 'Pool ' + context.params.poolID + ' with state: ' + newData.state + ' has been updated! '; //This is a log so we can keep track of the pool and only consle. Log once for quota reasons
-
+    console.log('started for pool ' + context.params.poolID);
     /** Async function to grade the pool
        function usage:
          *Input the ID of the pool and the type of message to send and this will grade the pool and all child pools
@@ -342,7 +342,7 @@ exports.poolUpdate = functions.runWith({
       }
     }
 
-    if (previousData.state != newData.state) { //state has changed
+    if ((previousData.state == null) || previousData.state != newData.state) { //state has changed
       switch (newData.state) {
         case "active":
           console.log("Pool " + context.params.poolID + " now active!");
@@ -407,7 +407,7 @@ exports.poolUpdate = functions.runWith({
           });
           if (previousData.state == null || previousData.state == 'draft') {
             console.log("Pool: " + newData + " has been opened! is dev: " + newData.tags.includes("dev"));
-            sendAnnouncementNotification(newData.name, 'The ' + newData.name + ' pool has been opened—tap to play now!', "/pool/?id=" + context.params.poolID, '', newData.tags.includes("dev"));
+            await sendAnnouncementNotification(newData.name, 'The ' + newData.name + ' pool has been opened—tap to play now!', "/pool/?id=" + context.params.poolID, 'open-' + context.params.poolID, newData.tags.includes("dev"));
           }
           break;
         default:
@@ -1139,6 +1139,9 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
   if (test != null && test) {
     console.log("Sending a test announcment notification.");
     condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
+  } else {
+    console.log("Sending a real announcment notification.");
+
   }
 
   var message = {
@@ -1157,7 +1160,8 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
         channel_id: "default",
       },
     },
-    condition: condition,
+    // condition: condition,
+    topic: 'all',
   };
 
   // Send a message to devices subscribed to the combination of topics specified by the provided condition.
