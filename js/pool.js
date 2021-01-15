@@ -26,13 +26,13 @@ async function getPool(poolID, callback) {
   if (poolID in loadedPools) {
     console.log("found pool in array");
     //We call the callback and return it for backwards compatability
-    (callback) ? callback(loadedPools[poolID]): null;
+    (callback) ? callback(loadedPools[poolID]) : null;
     return loadedPools[poolID];
   } else {
     // Create a reference to the file we want to download
     var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
     // Get the download URL for the picture
-    let poolPic = poolPictureRef.getDownloadURL().catch(function(error) {
+    let poolPic = poolPictureRef.getDownloadURL().catch(function (error) {
       // TODO: add filler picture
       poolPic = "";
     });
@@ -45,13 +45,13 @@ async function getPool(poolID, callback) {
 
     if (poolData == null) {
       console.log("Invalid pool returning");
-      (callback) ? callback(invalidPool): null;
+      (callback) ? callback(invalidPool) : null;
       return invalidPool;
     }
 
     //If the pool is a private/child pool get the needed data from the parentPool
     if (poolData.private) {
-      getPool(poolData.parentPool, function(parentData) {
+      getPool(poolData.parentPool, function (parentData) {
         loadedPools[poolID] = {
           poolID: poolID,
           tags: parentData.tags,
@@ -71,7 +71,7 @@ async function getPool(poolID, callback) {
           allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
           admins: poolData.admins ? poolData.admins : [],
         };
-        (callback) ? callback(loadedPools[poolID]): null;
+        (callback) ? callback(loadedPools[poolID]) : null;
         //console.log(loadedPools[poolID]);
         return loadedPools[poolID];
       });
@@ -95,7 +95,7 @@ async function getPool(poolID, callback) {
         allowShares: poolData.allowShares ? poolData.allowShares : true,
         admins: poolData.admins ? poolData.admins : [],
       };
-      (callback) ? callback(loadedPools[poolID]): null;
+      (callback) ? callback(loadedPools[poolID]) : null;
       //console.log(loadedPools[poolID]);
       return loadedPools[poolID];
 
@@ -138,11 +138,11 @@ function loadPools(callback) {
   var pools = [];
 
   //Get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
-  db.collection("pools").get().then(function(poolsSnapshot) {
-    poolsSnapshot.forEach(function(doc) {
+  db.collection("pools").get().then(function (poolsSnapshot) {
+    poolsSnapshot.forEach(function (doc) {
 
       //Get the pool's Data
-      getPool(doc.id, function(poolDAT) {
+      getPool(doc.id, function (poolDAT) {
 
         //Add the pool data to an array for later use
         pools.push(poolDAT);
@@ -152,7 +152,7 @@ function loadPools(callback) {
 
           console.log("Loaded and sorted all pool data");
 
-          pools.forEach(function(pool) {
+          pools.forEach(function (pool) {
             if (pool.private) {
               //console.log('private pool not displaying.');
             } else {
@@ -168,7 +168,7 @@ function loadPools(callback) {
               // a.classList.add("elevation-1");
 
               //When the card is clicked fill the popup with data
-              a.onclick = function() {
+              a.onclick = function () {
                 openPoolPopup(pool);
               };
 
@@ -205,7 +205,7 @@ function loadPools(callback) {
             }
           });
           //We are done loading the pools so call the callback
-          (callback) ? callback(): null;
+          (callback) ? callback() : null;
           db.collection("universalData").doc("mainPage").get().then((mainPageData) => {
             $$('#poolcard-' + mainPageData.data().featuredPool).addClass("featured-pool");
           });
@@ -245,7 +245,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   }
 
   //check to see if this pool is already featured or not
-  db.collection("universalData").doc("mainPage").get().then(async function(mainPageData) {
+  db.collection("universalData").doc("mainPage").get().then(async function (mainPageData) {
     let featuredPool = await getPool(mainPageData.data().featuredPool);
     if (pool.id === mainPageData.data().featuredPool) { // if this is a featured pool
 
@@ -253,7 +253,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
       let displayPic = pool.pic;
       let featuredPic = storageRef.child('featured-pool-pic').getDownloadURL().then(picURL => {
         displayPic = picURL;
-      }).catch(error => {});
+      }).catch(error => { });
       await featuredPic;
       //set featured image
       $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + displayPic + ")"));
@@ -272,7 +272,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   });
 
   //  POOL TAGS
-  universalDataRef.get().then(function(doc) {
+  universalDataRef.get().then(function (doc) {
     universalData = doc.data();
     console.log(universalData);
     console.log("Setting up tag popup");
@@ -290,7 +290,7 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     });
   });
 
-  $$('#featured-pool-checkbox').on('change', function(e) {
+  $$('#featured-pool-checkbox').on('change', function (e) {
     if (e.target.checked) {
       $$('#featured-pool').show();
     } else {
@@ -552,7 +552,7 @@ async function editPool(poolData, callback) {
       });
       //Update the picture if it exists
       if (poolData.picture && poolData.picture != null) {
-        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture).then(function(snapshot) {
+        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture).then(function (snapshot) {
           console.log('Uploaded a blob or file!');
         });
       }
@@ -563,7 +563,7 @@ async function editPool(poolData, callback) {
     } else { //The pool does not exist so create a pool and set its information
       //make sure that the user is included as an admin
       let poolAdmins = (poolData.admins) ? poolData.admins : [];
-      (poolAdmins.includes(User.uid)) ? null: poolAdmins.push(User.uid);
+      (poolAdmins.includes(User.uid)) ? null : poolAdmins.push(User.uid);
 
       let doc = await db.collection("pools").add({
         name: (poolData.name) ? poolData.name : "No name given",
@@ -587,11 +587,41 @@ async function editPool(poolData, callback) {
       id = doc.id;
     }
 
+    // Set the weekly pool if this week
+    console.log(poolData.date);
+    /**
+     * 
+     * @param {Date} d 
+     */
+    function getWeekNumber(d) {
+      // Copy date so don't modify original
+      d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      // Set to nearest Thursday: current date + 4 - current day number
+      // Make Sunday's day number 7
+      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+      // Get first day of year
+      var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      // Calculate full weeks to nearest Thursday
+      var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      // Return array of year and week number
+      return [d.getUTCFullYear(), weekNo];
+    }
+    console.log(getWeekNumber(new Date())[1]);
+    console.log(getWeekNumber(poolData.date)[1]);
+    if (getWeekNumber(poolData.date)[1] == getWeekNumber(new Date())[1]) {
+      console.log('Pool starts this week');
+      await db.collection("pools").doc(poolData.poolID).update({
+        tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
+      });
+      console.log('Set this week tag');
+
+    }
+
 
     await featurePool(id, poolData.featuredPic, poolData.feature);
 
     //We are done editing the pool so reload the pools then call any callbacks and return
-    loadPools(function() {
+    loadPools(function () {
       app.preloader.hide();
       //Close the uneeded UI and notify the admin that the pool was saved
       app.toast.show({
@@ -599,7 +629,7 @@ async function editPool(poolData, callback) {
         closeTimeout: 3000,
       });
       app.popup.close(".pool-popup");
-      (callback) ? callback(id): null;
+      (callback) ? callback(id) : null;
       return id;
 
     });
@@ -661,7 +691,7 @@ async function newPool() { // New pool button on click
   //clear any current admin permissions
   $$('#chips-div').children().empty();
   admins.forEach((uid, i) => {
-    getUser(uid, function(admin) {
+    getUser(uid, function (admin) {
       // add to list
       $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
         '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
@@ -685,7 +715,7 @@ async function newPool() { // New pool button on click
 
 function duplicatePool() { //Duplicates the specified pool then opens the popup
   let id = document.getElementById("pool-name").dataset.id;
-  getPool(id).then(function(poolData) {
+  getPool(id).then(function (poolData) {
     let newPool = {
       name: poolData.name + '(Copy)',
       description: poolData.description ? poolData.description : "No Description",
@@ -705,7 +735,7 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
       });
     });
 
-    editPool(newPool, function(editedPoolID) {
+    editPool(newPool, function (editedPoolID) {
       console.log("Made a new duplicate pool: " + editedPoolID + ",", newPool);
       $$('#poolcard-' + editedPoolID)[0].click();
     });
@@ -725,10 +755,10 @@ async function featurePool(idToFeature, featuredPic, feature) {
   if (feature && pool.state == "open") {
     //if this pool will replace another featured pool then do some fancy code to confirm the admin wants to do this
     if (idToFeature != mainPageData.featuredPool && (mainPageData.featuredPool != null && mainPageData.featuredPool != '')) {
-      let confirmationPromise = new Promise(function(resolve, reject) {
-        app.dialog.confirm("Featuring this pool will overwrite any other featured pools. Are you sure you wish to proceed?", function() {
+      let confirmationPromise = new Promise(function (resolve, reject) {
+        app.dialog.confirm("Featuring this pool will overwrite any other featured pools. Are you sure you wish to proceed?", function () {
           resolve();
-        }, function() {
+        }, function () {
           reject();
         });
       });
@@ -757,17 +787,17 @@ async function featurePool(idToFeature, featuredPic, feature) {
       app.preloader.hide();
       // Listen for state changes, errors, and completion of the upload.
       uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
-        function(snapshot) {
+        function (snapshot) {
           // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
           progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           console.log('Upload is ' + progress + '% done');
           progressDialog.setProgress(progress);
         },
-        function(error) {
+        function (error) {
           // A full list of error codes is available at: https://firebase.google.com/docs/storage/web/handle-errors
           console.error(error);
         },
-        function() {
+        function () {
           console.log("Finished uploading photo.");
           progressDialog.close();
           app.preloader.show();
@@ -787,10 +817,10 @@ async function featurePool(idToFeature, featuredPic, feature) {
       if (pool.state != "open") { //If this is the featured pool but it is not open then dont allow it to be featured
         app.dialog.alert("This pool is no longer featured in the app because it's state is no longer open");
       }
-      let confirmationPromise = new Promise(function(resolve, reject) {
-        app.dialog.confirm("This operation will remove this pool from the featured pool. Are you sure you wish to proceed?", function() {
+      let confirmationPromise = new Promise(function (resolve, reject) {
+        app.dialog.confirm("This operation will remove this pool from the featured pool. Are you sure you wish to proceed?", function () {
           resolve();
-        }, function() {
+        }, function () {
           reject();
         });
       });

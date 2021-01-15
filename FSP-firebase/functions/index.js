@@ -424,6 +424,9 @@ exports.poolUpdate = functions.runWith({
           break;
       }
     }
+
+
+
     console.log("Finished execution of pool update for: " + context.params.poolID);
 
     return true;
@@ -493,6 +496,32 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
     notificationPromises.push(sendClosingNotificatoin(querySnapshot.docs[i].id));
   }
   await Promise.all(notificationPromises);
+
+  return true;
+});
+
+exports.weeklyPool = functions.pubsub.schedule('every monday 00:00').onRun(async function (context) {
+  //g2DfdYxi9z
+  //every monday 00:00
+  let startDate = new Date();
+  let endDate = new Date(startDate.getTime() + 604800000);
+  let querySnapshot = await db.collection('pools').orderBy('date').startAt(startDate).endAt(endDate).get();
+
+  console.log(querySnapshot.size, " pools are closing this week. Start and end date:", startDate, endDate);
+
+
+  // Set each pool to 'this week catagory'
+  let notificationPromises = [];
+  for (var i = 0; i < querySnapshot.docs.length; i++) {
+    let doc = querySnapshot.docs[i];
+    console.log('adding tag for pool ' + doc.id);
+
+
+    // Update the pools doc with the new thing
+    await db.collection("pools").doc(doc.id).update({
+      tags: admin.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
+    });
+  }
 
   return true;
 });
