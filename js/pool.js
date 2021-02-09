@@ -587,13 +587,13 @@ async function editPool(poolData, callback) {
       id = doc.id;
     }
 
-    // Set the weekly pool if this week
+    /// Here for later// Set the weekly pool if this week
     console.log(poolData.date);
     /**
      * 
      * @param {Date} d 
      */
-    function getWeekNumber(d) {
+    /*function getWeekNumber(d) {
       // Copy date so don't modify original
       d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
       // Set to nearest Thursday: current date + 4 - current day number
@@ -606,6 +606,7 @@ async function editPool(poolData, callback) {
       // Return array of year and week number
       return [d.getUTCFullYear(), weekNo];
     }
+
     console.log(getWeekNumber(new Date())[1]);
     console.log(getWeekNumber(poolData.date)[1]);
     if (getWeekNumber(poolData.date)[1] == getWeekNumber(new Date())[1]) {
@@ -614,7 +615,27 @@ async function editPool(poolData, callback) {
         tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
       });
       console.log('Set this week tag');
-
+    } else {
+      console.log('Pool does not start this week');
+      await db.collection("pools").doc(poolData.poolID).update({
+        tags: firebase.firestore.FieldValue.arrayRemove('g2DfdYxi9z'),
+      });
+    }*/
+    let poolTimeDiff = (poolData.date - Date.now());
+    console.log('poolData.date.getMilliseconds() ' + new Date(poolData.date));
+    console.log('(new Date()).getMilliseconds() ' + Date.now());
+    console.log(poolTimeDiff);
+    if (poolTimeDiff < 604800000 && poolTimeDiff > 0) {
+      console.log('Pool starts this week');
+      await db.collection("pools").doc(poolData.poolID).update({
+        tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
+      });
+      console.log('Set this week tag');
+    } else {
+      console.log('Pool does not start this week');
+      await db.collection("pools").doc(poolData.poolID).update({
+        tags: firebase.firestore.FieldValue.arrayRemove('g2DfdYxi9z'),
+      });
     }
 
 

@@ -1,4 +1,7 @@
 const functions = require('firebase-functions');
+// require("firebase-functions/lib/logger/compat");
+
+
 
 // The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
@@ -46,6 +49,7 @@ async function getPool(poolID) {
     let parentData = await getPool(poolData.parentPool);
 
     return {
+      resendEmail: (poolData.resendEmail != null) ? poolData.resendEmail : false,
       poolID: poolID,
       tags: parentData.tags,
       name: poolData.name,
@@ -71,6 +75,7 @@ async function getPool(poolID) {
 
   } else {
     return {
+      resendEmail: (poolData.resendEmail != null) ? poolData.resendEmail : false,
       poolID: poolID,
       tags: poolData.tags,
       name: poolData.name,
@@ -277,54 +282,63 @@ exports.poolUpdate = functions.runWith({
           });
 
           //Notify each user in the pool
-          poolLog.log("Sending notifications to users. Notification type: ", messageType);
-          pool.users.forEach((user, i) => {
-            //Check if the user is unsubbed from notifications 
-            if (!pool.unsubscribed.includes(user.uid)) {
-              //Decide which type of notification to send to the user
-              switch (messageType) {
-                case "active":
-                  sendNotification(user.uid, {
-                    id: poolID,
-                    poolID: poolID,
-                    link: "/pool/?id=" + poolID,
-                    title: pool.name + " is now active",
-                    text: pool.name + " is now active. Click here to view the pool! ",
-                    type: "PU",
-                  });
-                  break;
-                case "closed":
-                  sendNotification(user.uid, {
-                    id: poolID,
-                    poolID: poolID,
-                    link: "/pool/?id=" + poolID,
-                    title: pool.name + " is now closed",
-                    text: "The " + pool.name + " is closed. Your ranking is " + user.place + "/" + pool.users.length + ". Check here to see your results!",
-                    type: "PU",
-                  });
-                  break;
-                case "score-update":
-                  sendNotification(user.uid, {
-                    id: poolID,
-                    poolID: poolID,
-                    link: "/pool/?id=" + poolID,
-                    title: "Your score has been updated",
-                    text: "A question in " + pool.name + " has been updated—check here for your score!",
-                    type: "PU",
-                  });
-                  break;
-                default:
-                  sendNotification(user.uid, {
-                    id: poolID,
-                    poolID: poolID,
-                    link: "/pool/?id=" + poolID,
-                    title: "Pool has been updated",
-                    text: "" + pool.name + "has been updated!",
-                    type: "PU",
-                  });
+          try {
+            poolLog.log("Sending notifications to users. Notification type: ", messageType);
+            pool.users.forEach((user, i) => {
+              try {
+                //Check if the user is unsubbed from notifications 
+                if (!pool.unsubscribed.includes(user.uid)) {
+                  //Decide which type of notification to send to the user
+                  switch (messageType) {
+                    case "active":
+                      sendNotification(user.uid, {
+                        id: poolID,
+                        poolID: poolID,
+                        link: "/pool/?id=" + poolID,
+                        title: pool.name + " is now active",
+                        text: pool.name + " is now active. Click here to view the pool! ",
+                        type: "PU",
+                      });
+                      break;
+                    case "closed":
+                      sendNotification(user.uid, {
+                        id: poolID,
+                        poolID: poolID,
+                        link: "/pool/?id=" + poolID,
+                        title: pool.name + " is now closed",
+                        text: "The " + pool.name + " is closed. Your ranking is " + user.place + "/" + pool.users.length + ". Check here to see your results!",
+                        type: "PU",
+                      });
+                      break;
+                    case "score-update":
+                      sendNotification(user.uid, {
+                        id: poolID,
+                        poolID: poolID,
+                        link: "/pool/?id=" + poolID,
+                        title: "Your score has been updated",
+                        text: "A question in " + pool.name + " has been updated—check here for your score!",
+                        type: "PU",
+                      });
+                      break;
+                    default:
+                      sendNotification(user.uid, {
+                        id: poolID,
+                        poolID: poolID,
+                        link: "/pool/?id=" + poolID,
+                        title: "Pool has been updated",
+                        text: "" + pool.name + "has been updated!",
+                        type: "PU",
+                      });
+                  }
+                }
+              } catch (error) {
+                console.error('ERROR sending notification to a specific user');
               }
-            }
-          });
+            });
+          } catch (error) {
+            console.error('ERROR sending notifications');
+          }
+
         } else {
           poolLog.log('Error no users');
         }
@@ -422,6 +436,49 @@ exports.poolUpdate = functions.runWith({
             console.log("Successfully graded pool:" + context.params.poolID + " log: " + results);
           }
           break;
+        case "closed":
+          console.log('pool re-closed');
+          //Get the winner data and email it to the admins
+          let winnersList = '';
+          let poolData = await getPool(context.params.poolID);
+          if (poolData.resendEmail) {
+            console.log('pool re-closed sending winner email');
+
+            for (let i = 0; i < poolData.users.length; i++) {
+              var user = poolData.users[i];
+              // Skip loosers
+              if (user.isWinner) {
+                // Get winner's contact info and add it to the list
+                await admin.auth().getUser(user.uid).then(async userRecord => {
+                  let userData = await getUser(user.uid);
+                  winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
+                }).catch(error => {
+                  console.error('Error fetching user data:', error)
+                  let foo = {
+                    status: 'error',
+                    code: 500,
+                    error
+                  };
+                });
+              }
+            };
+
+            console.log("The winner list is: " + JSON.stringify(winnersList));
+
+            // Email winner info to the admins
+            await admin.firestore().collection('mail').add({
+              to: ['tsmith@funsportspools.com', 'development@funsportspools.com',
+                'admin@funsportspools.com', 'Haley.Sacotte@wyecomm.com'],//'tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com,mike@onairsportsmarketing.com,Haley.Sacotte@wyecomm.com'
+              message: {
+                subject: 'Winner info for ' + poolData.name,
+                html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
+                <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
+              <p style="font-size: large"></br>Hi Admins,<br />' + poolData.name + ' has been closed and the winner info is: </br></p>' + winnersList + '</div>',
+              }
+            }).then(() => console.log('Queued email for delivery!'));
+
+          }
+          break;
       }
     }
 
@@ -500,7 +557,7 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
   return true;
 });
 
-exports.weeklyPool = functions.pubsub.schedule('every monday 00:00').onRun(async function (context) {
+exports.weeklyPool = functions.pubsub.schedule('0 0 * * *').onRun(async function (context) {
   //g2DfdYxi9z
   //every monday 00:00
   let startDate = new Date();
