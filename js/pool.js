@@ -625,15 +625,16 @@ async function editPool(poolData, callback) {
     console.log('poolData.date.getMilliseconds() ' + new Date(poolData.date));
     console.log('(new Date()).getMilliseconds() ' + Date.now());
     console.log(poolTimeDiff);
+
     if (poolTimeDiff < 604800000 && poolTimeDiff > 0) {
       console.log('Pool starts this week');
-      await db.collection("pools").doc(poolData.poolID).update({
+      await db.collection("pools").doc(id).update({
         tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
       });
       console.log('Set this week tag');
     } else {
       console.log('Pool does not start this week');
-      await db.collection("pools").doc(poolData.poolID).update({
+      await db.collection("pools").doc(id).update({
         tags: firebase.firestore.FieldValue.arrayRemove('g2DfdYxi9z'),
       });
     }
