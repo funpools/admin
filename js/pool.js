@@ -626,7 +626,7 @@ async function editPool(poolData, callback) {
     console.log('(new Date()).getMilliseconds() ' + Date.now());
     console.log(poolTimeDiff);
 
-    if (poolTimeDiff < 604800000 && poolTimeDiff > 0) {
+    if (poolTimeDiff < 777600000 && poolTimeDiff > 0) {
       console.log('Pool starts this week');
       await db.collection("pools").doc(id).update({
         tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),

@@ -348,10 +348,10 @@ exports.poolUpdate = functions.runWith({
           //console.log("All pools graded!");
         });
 
-        return poolLog.getLog();
+        return 'poolLog.getLog()';//TODO once we migrate to type script we can fix this permenTLY
       } catch (error) {
         poolLog.log('ERROR');
-        poolLog.toConsole();
+        // poolLog.toConsole();
         console.error(error);
       }
     }
@@ -557,11 +557,11 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
   return true;
 });
 
-exports.weeklyPool = functions.pubsub.schedule('0 0 * * *').onRun(async function (context) {
+exports.weeklyPool = functions.pubsub.schedule('every monday 00:00').onRun(async function (context) {
   //g2DfdYxi9z
   //every monday 00:00
   let startDate = new Date();
-  let endDate = new Date(startDate.getTime() + 604800000);
+  let endDate = new Date(startDate.getTime() + 777600000);// :w777600000 is equal to 9 days
   let querySnapshot = await db.collection('pools').orderBy('date').startAt(startDate).endAt(endDate).get();
 
   console.log(querySnapshot.size, " pools are closing this week. Start and end date:", startDate, endDate);
