@@ -446,6 +446,16 @@ async function savePool() {
   let featured = $$('#featured-pool-checkbox').prop('checked');
   let featuredPic = null;
 
+  // If this pool has been closed do not allow editing
+  let pooldata = await getPool(id);
+  if (poolState === 'closed' && pooldata.state === 'closed') {
+    app.dialog.alert("This pool has been closed and cannot be edited.");
+
+    app.preloader.hide();
+    return;
+  }
+
+
   //If this is a featured pool load the image
   if (featured) {
     featuredPic = $$('.pool-popup').find('#featured-pool-pic').find('.pic-input')[0].files[0];

@@ -557,7 +557,7 @@ exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async f
   return true;
 });
 
-exports.weeklyPool = functions.pubsub.schedule('every monday 00:00').onRun(async function (context) {
+exports.weeklyPool = functions.pubsub.schedule('0 0 * * *').onRun(async function (context) {
   //g2DfdYxi9z
   //every monday 00:00
   let startDate = new Date();
