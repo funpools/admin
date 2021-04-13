@@ -21,8 +21,8 @@ const invalidPool = {
 
 let loadedPools = [];
 // An asyc method to get pool data
-async function getPool(poolID, callback) {
-  //If we have already loaded this users data then return it else load it from the database
+async function getPool(poolID, callback, poolDataInput) {
+  //If we have already loaded this pool data then return it else load it from the database
   if (poolID in loadedPools) {
     console.log("found pool in array");
     //We call the callback and return it for backwards compatability
@@ -36,12 +36,16 @@ async function getPool(poolID, callback) {
       // TODO: add filler picture
       poolPic = "";
     });
-    let poolData = db.collection("pools").doc(poolID).get();
+    let poolData = poolDataInput;
+    if (poolDataInput == null) {
+      poolData = db.collection("pools").doc(poolID).get();
 
-    poolData = await poolData;
+      poolData = await poolData;
+    }
+    poolData = poolData.data();
+
     poolPic = await poolPic;
 
-    poolData = poolData.data();
 
     if (poolData == null) {
       console.log("Invalid pool returning");
@@ -129,6 +133,7 @@ function loadPools(callback) {
   //Remove any old pool data from
   loadedPools = [];
 
+
   //Clear any old pool cards
   $$("#active-pools").html("");
   $$("#open-pools").html("");
@@ -138,7 +143,8 @@ function loadPools(callback) {
   var pools = [];
 
   //Get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
-  db.collection("pools").get().then(function (poolsSnapshot) {
+  db.collection("pools").where("private", "==", false).get().then(function (poolsSnapshot) {
+    console.log('GOT data from the server');
     poolsSnapshot.forEach(function (doc) {
 
       //Get the pool's Data
@@ -146,6 +152,7 @@ function loadPools(callback) {
 
         //Add the pool data to an array for later use
         pools.push(poolDAT);
+
         //Once the array length is the same as the number of pools we need to load, sort the array then add all the pools to the html
         if (pools.length >= poolsSnapshot.size) {
           pools.sort((a, b) => (a.name > b.name) ? 1 : -1); //Sort the array
@@ -211,7 +218,7 @@ function loadPools(callback) {
           });
 
         }
-      });
+      }, doc);
 
       ///
 
@@ -460,6 +467,7 @@ async function savePool() {
   if (featured) {
     featuredPic = $$('.pool-popup').find('#featured-pool-pic').find('.pic-input')[0].files[0];
   }
+
   //Get tags from the chips // TODO: Remove this is not needed
   let tags = [];
   $$('#pool-tags-list').find('.tag-chip-selected').forEach((selectedTag, i) => {

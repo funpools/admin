@@ -1141,7 +1141,7 @@ exports.sendAnnouncement = functions.https.onCall(async function (data, context)
   announcementId = announcementId.replace(/\s+/g, '-').toLowerCase();
   //const image = data.image;//Not needed at the moment
 
-  //If the user is an admin allow the announcment
+  //If the user is an admin allow the announcement
   let admin = await db.collection("admins").doc(uid).get();
   if (admin.exists && admin.data().adminPermissions.announcements) {
 
@@ -1190,6 +1190,7 @@ exports.sendAnnouncement = functions.https.onCall(async function (data, context)
  * @param {string} announcementId 
  * @param {bool} test 
  */
+/// DEPRECATED????
 async function sendAnnouncementNotification(title, body, link, announcementId, test) {
   // Define a condition which will send to devices which are subscribed
   let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";

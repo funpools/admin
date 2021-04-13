@@ -544,16 +544,23 @@ function deleteQuestion(el) { //remove a question from the list
 ///////*Announcements*\\\\\\\
 
 function newAnnouncement() {
+  //a-link-dropdown
   //clear any existing values in the popup
   $$(".announcement-popup").find('.pic-upload').css("background-image", "");
   $$(".announcement-popup").find('.pic-icon').html("add_photo_alternate");
+
+  // Send button setup
   $$(".announcement-popup").find('#send-announcement').off('click').click(
     function () {
       app.preloader.show();
 
       let title = $$('#announcment-title').val();
       let description = $$('#announcment-description').val();
-      let link = $$('#announcment-link').val();
+      let link = '';
+
+      if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
+        link = '/pool/?id=' + $$('#pool-select-dropdown').val();
+      }
       let announcement = {
         title: title,
         description: description,
@@ -571,13 +578,22 @@ function newAnnouncement() {
       });
 
     });
+
+  // Send test button setup
   $$(".announcement-popup").find('#send-test-announcement').off('click').click(
     function () {
+
+      let link = '';
+      if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
+        link = '/pool/?id=' + $$('#pool-select-dropdown').val();
+      }
+      console.log(link);
+      return null;
       app.preloader.show();
 
       let title = $$('#announcment-title').val();
       let description = $$('#announcment-description').val();
-      let link = $$('#announcment-link').val();
+      // let link = $$('#announcment-link').val();
       let announcement = {
         title: title,
         description: description,
@@ -596,13 +612,28 @@ function newAnnouncement() {
 
     });
 
+
+  var dropdown = document.createElement('select');
+  dropdown.id = 'pool-select-dropdown';
+  dropdown.innerHTML = '<option value="' + '">None</option>';
+
+  // Add the dropdown to the html
+  $$("#a-link-dropdown").empty().append(dropdown);
+
+  // Add active and open pools to the drop down list
+  for (const key in loadedPools) {
+    let e = loadedPools[key];
+    if (e.state == 'active' || e.state == 'open') {
+      $$('#pool-select-dropdown').append('<option value="' + e.id + '">' + e.name + '</option>')
+    }
+  }
+
   //open the popup
   app.popup.open(".announcement-popup");
 
 }
 
 ///////*TAGS*\\\\\\\
-
 $$('#edit-tags-button').click(function () {
   if ($$('#edit-tags-button').html() == "Edit") {
     console.log("Edit tags");
