@@ -841,42 +841,67 @@
   </div>
 
   <!-- Announcement popup -->
-  <div class="popup announcement-popup" style="height: 400px; margin: -200px; ">
-    <div class="block">
-
-      <div class="row no-gap" style="height: 340px;">
-        <div class=" col-80 list no-hairlines">
-          <div class="">Title</div>
-          <div class="item-input-wrap">
-            <input id="announcment-title" type="text" placeholder="Anouncement title">
-            <span class="input-clear-button"></span>
-          </div>
-
-          <div class="">Description</div>
-          <div class="">
-            <textarea id="announcment-description" class="" placeholder="Announcement description"></textarea>
-          </div>
-
-          <div class="">Link</div>
-          <div id="a-link-dropdown" class="item-input-wrap"></div>
-
-          <div class="">Date to send</div>
-          <div class="item-content item-input">
+  <div class="popup announcement-popup" style="height: 400px; margin: -200px">
+    <div class="display-flex justify-content-space-between flex-direction-column" style="height: 100%; overflow-y: scroll">
+      <div class="block list no-hairlines no-padding-left">
+        <ul>
+          <li class="item-content item-input">
+            <div class="item-media">
+              <i class="material-icons">title</i>
+            </div>
             <div class="item-inner">
+              <div class="item-title item-label">Title</div>
+              <div class="item-input-wrap">
+                <input id="announcement-title" type="text" placeholder="Announcement title">
+                <span class="input-clear-button"></span>
+              </div>
+            </div>
+          </li>
+
+          <li class="item-content item-input">
+            <div class="item-media">
+              <i class="material-icons">description</i>
+            </div>
+            <div class="item-inner">
+              <div class="item-title item-label">Description</div>
+              <div class="item-input-wrap">
+                <textarea id="announcement-description" placeholder="Announcement description"></textarea>
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
+            <div class="item-media">
+              <i class="material-icons">link</i>
+            </div>
+            <div class="item-inner">
+              <div class="item-title item-label">Link</div>
+              <div class="item-input-wrap input-dropdown-wrap">
+                <select id="pool-select-dropdown" placeholder="Please choose..">
+                  
+                </select>
+              </div>
+            </div>
+          </li>
+          <li class="item-content item-input">
+            <div class="item-media">
+              <i class="material-icons">schedule</i>
+            </div>
+            <div class="item-inner">
+              <div class="item-title item-label">Date to send</div>
               <div class="item-input-wrap">
                 <input type="text" placeholder="Select date and time (Leave empty to send immediately)"
                   readonly="readonly" id="announcement-date" />
               </div>
             </div>
-          </div>
-
+          </li>
+        </ul>
+      </div>
+      <div class="block">
+        <div class="row justify-content-space-between">
+          <button id="send-test-announcement" class="col button button-raised button-fill">Send Test Announcement</button>
+          <button id="send-announcement" class="col button button-raised button-fill">Send Announcement</button>
         </div>
-      </div>
-
-      <div class="row justify-content-space-around">
-        <button id="send-test-announcement" class="col button button-raised button-fill">Send Test Announcement</button>
-        <button id="send-announcement" class="col button button-raised button-fill">Send Announcement</button>
-      </div>
+    </div>
 
     </div>
   </div>

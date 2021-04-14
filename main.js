@@ -547,7 +547,6 @@ function newAnnouncement() {
   // Clear the date input
   announcementDateInput.setValue([]);
 
-  //a-link-dropdown
   //clear any existing values in the popup
   $$(".announcement-popup").find('.pic-upload').css("background-image", "");
   $$(".announcement-popup").find('.pic-icon').html("add_photo_alternate");
@@ -557,8 +556,8 @@ function newAnnouncement() {
     function () {
       app.preloader.show();
 
-      let title = $$('#announcment-title').val();
-      let description = $$('#announcment-description').val();
+      let title = $$('#announcement-title').val();
+      let description = $$('#announcement-description').val();
       let link = '';
 
       if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
@@ -597,9 +596,9 @@ function newAnnouncement() {
       console.log(link);
       app.preloader.show();
 
-      let title = $$('#announcment-title').val();
-      let description = $$('#announcment-description').val();
-      // let link = $$('#announcment-link').val();
+      let title = $$('#announcement-title').val();
+      let description = $$('#announcement-description').val();
+      // let link = $$('#announcement-link').val();
       let announcement = {
         title: title ?? null,
         description: description ?? null,
@@ -624,19 +623,14 @@ function newAnnouncement() {
 
     });
 
-
-  var dropdown = document.createElement('select');
-  dropdown.id = 'pool-select-dropdown';
-  dropdown.innerHTML = '<option value="' + '">None</option>';
-
-  // Add the dropdown to the html
-  $$("#a-link-dropdown").empty().append(dropdown);
+    // Clear previous dropdown options
+  $$('#pool-select-dropdown').html('<option value="">None</option>');
 
   // Add active and open pools to the drop down list
   for (const key in loadedPools) {
     let e = loadedPools[key];
     if (e.state == 'active' || e.state == 'open') {
-      $$('#pool-select-dropdown').append('<option value="' + e.id + '">' + e.name + '</option>')
+      $$('#pool-select-dropdown').append('<option value="' + e.id + '">' + e.name + '</option>');
     }
   }
 
