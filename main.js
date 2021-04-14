@@ -544,6 +544,9 @@ function deleteQuestion(el) { //remove a question from the list
 ///////*Announcements*\\\\\\\
 
 function newAnnouncement() {
+  // Clear the date input
+  announcementDateInput.setValue([]);
+
   //a-link-dropdown
   //clear any existing values in the popup
   $$(".announcement-popup").find('.pic-upload').css("background-image", "");
@@ -583,24 +586,33 @@ function newAnnouncement() {
   $$(".announcement-popup").find('#send-test-announcement').off('click').click(
     function () {
 
+      let sendDate = announcementDateInput.getValue()[0];
+
+
       let link = '';
       if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
         link = '/pool/?id=' + $$('#pool-select-dropdown').val();
       }
+
       console.log(link);
-      return null;
       app.preloader.show();
 
       let title = $$('#announcment-title').val();
       let description = $$('#announcment-description').val();
       // let link = $$('#announcment-link').val();
       let announcement = {
-        title: title,
-        description: description,
-        link: link,
+        title: title ?? null,
+        description: description ?? null,
+        link: link ?? null,
         test: true,
+        sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
+        sent: false,
       };
       console.log("Sending announcement: ", announcement);
+
+      db.collection('announcements').add(announcement);
+      return null;
+
 
       sendAnnouncement(announcement).then(result => {
         app.preloader.hide();
@@ -631,7 +643,17 @@ function newAnnouncement() {
   //open the popup
   app.popup.open(".announcement-popup");
 
+
+
 }
+
+// Setup the announcement date picker
+let announcementDateInput = app.calendar.create({
+  inputEl: '#announcement-date',
+  timePicker: true,
+  dateFormat: { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' },
+});
+
 
 ///////*TAGS*\\\\\\\
 $$('#edit-tags-button').click(function () {

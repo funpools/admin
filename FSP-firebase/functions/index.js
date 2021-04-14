@@ -1118,6 +1118,58 @@ exports.addMessage = functions.https.onCall(async function (data, context) {
 
 });
 
+exports.scheduledAnnouncement = functions.pubsub.schedule('every 1 minutes').onRun(async function (context) {
+  // console.log('This will be run every 1 minutes!');
+  let querySnapshot = await db.collection('announcements').where('sent', '==', false).where('sendDate', '<=', new Date()).get();
+  console.log(querySnapshot.docs);
+  querySnapshot.forEach(async (doc) => {
+    let data = doc.data();
+
+
+    const title = data.title;
+    const body = data.description;
+    const link = (data.link) ? data.link : null;
+    const test = (data.test) ? data.test : false;
+
+    if (test) {
+      console.log("Sending a test announcment, title: " + title + ", body: " + body + ", link: " + link);
+    } else {
+      console.log("Sending announcment, title: " + title + ", body: " + body + ", link: " + link);
+    }
+
+    let userQuerySnapshot = await db.collection("users").get();
+    let userDocs = userQuerySnapshot.docs;
+    let promises = [];
+    //console.log("Sending announcment to " + userDocs.length + " users");
+
+    for (var i = 0; i < userDocs.length; i++) {
+      if (!test || (userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2" || userDocs[i].id == "kvkL4oRtkDflKTeoOMJAkn2nRZe2")) {
+        promises.push(db.collection("users").doc(userDocs[i].id).collection('updates').doc(announcementId).set({
+          id: doc.id,
+          title: title,
+          text: body,
+          type: 'A',
+          link: link, //"/pool/?id=" + poolID,
+        }));
+      }
+    }
+
+    await sendAnnouncementNotification(title, body, link, announcementId, test);
+    await Promise.all(promises);
+
+    if (!test) {
+      return "Succesfully sent announcement";
+    } else {
+      return "Succesfully sent test announcement";
+    }
+
+
+  })
+  return null;
+
+
+});
+
 exports.sendAnnouncement = functions.https.onCall(async function (data, context) { //Sends an announcement to all users
 
   // Checking that the user is authenticated.
@@ -1192,15 +1244,7 @@ exports.sendAnnouncement = functions.https.onCall(async function (data, context)
  */
 /// DEPRECATED????
 async function sendAnnouncementNotification(title, body, link, announcementId, test) {
-  // Define a condition which will send to devices which are subscribed
-  let condition = "!('atopicthatexistssowecancheckifitdoesnt' in topics)";
-  if (test != null && test) {
-    console.log("Sending a test announcment notification.");
-    condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
-  } else {
-    console.log("Sending a real announcment notification.");
 
-  }
 
   var message = {
     notification: {
@@ -1218,9 +1262,18 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
         channel_id: "default",
       },
     },
-    // condition: condition,
-    topic: 'all',
+    // topic: 'all',
   };
+
+  // Define a condition which will send to devices which are subscribed
+  if (test != null && test) {
+    console.log("Sending a test announcment notification.");
+    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
+  } else {
+    console.log("Sending a real announcment notification.");
+    message.topic = 'all';
+  }
+
 
   // Send a message to devices subscribed to the combination of topics specified by the provided condition.
   await admin.messaging().send(message).then((response) => {
