@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 // require("firebase-functions/lib/logger/compat");
-
+require("firebase-functions/lib/logger/compat");
 
 
 // The Firebase Admin SDK to access the Firebase Realtime Database.
@@ -1121,29 +1121,31 @@ exports.addMessage = functions.https.onCall(async function (data, context) {
 exports.scheduledAnnouncement = functions.pubsub.schedule('every 1 minutes').onRun(async function (context) {
   // console.log('This will be run every 1 minutes!');
   let querySnapshot = await db.collection('announcements').where('sent', '==', false).where('sendDate', '<=', new Date()).get();
-  console.log(querySnapshot.docs);
-  querySnapshot.forEach(async (doc) => {
+  console.log('Query found : ' + querySnapshot.docs.length);
+
+  // Send announcement for each document found
+  for (let x = 0; x < querySnapshot.docs.length; x++) {
+    const doc = querySnapshot.docs[x];
+
     let data = doc.data();
-
-
     const title = data.title;
     const body = data.description;
     const link = (data.link) ? data.link : null;
     const test = (data.test) ? data.test : false;
+    const announcementId = doc.id;
 
     if (test) {
-      console.log("Sending a test announcment, title: " + title + ", body: " + body + ", link: " + link);
+      console.log("Sending a test announcement: " + title);
     } else {
-      console.log("Sending announcment, title: " + title + ", body: " + body + ", link: " + link);
+      console.log("Sending a announcement: " + title);
     }
 
     let userQuerySnapshot = await db.collection("users").get();
     let userDocs = userQuerySnapshot.docs;
     let promises = [];
-    //console.log("Sending announcment to " + userDocs.length + " users");
 
     for (var i = 0; i < userDocs.length; i++) {
-      if (!test || (userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2" || userDocs[i].id == "kvkL4oRtkDflKTeoOMJAkn2nRZe2")) {
+      if (!test || (userDocs[i].id == "YAk7ErsK3VTx7z6eLZUBECOPY9O2" || userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2" || userDocs[i].id == "kvkL4oRtkDflKTeoOMJAkn2nRZe2")) {
         promises.push(db.collection("users").doc(userDocs[i].id).collection('updates').doc(announcementId).set({
           id: doc.id,
           title: title,
@@ -1157,17 +1159,11 @@ exports.scheduledAnnouncement = functions.pubsub.schedule('every 1 minutes').onR
     await sendAnnouncementNotification(title, body, link, announcementId, test);
     await Promise.all(promises);
 
-    if (!test) {
-      return "Succesfully sent announcement";
-    } else {
-      return "Succesfully sent test announcement";
-    }
+    console.log("Finished sending a announcement");
 
+  }
 
-  })
   return null;
-
-
 });
 
 exports.sendAnnouncement = functions.https.onCall(async function (data, context) { //Sends an announcement to all users
@@ -1242,7 +1238,7 @@ exports.sendAnnouncement = functions.https.onCall(async function (data, context)
  * @param {string} announcementId 
  * @param {bool} test 
  */
-/// DEPRECATED????
+
 async function sendAnnouncementNotification(title, body, link, announcementId, test) {
 
 
@@ -1268,12 +1264,11 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
   // Define a condition which will send to devices which are subscribed
   if (test != null && test) {
     console.log("Sending a test announcment notification.");
-    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
+    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)|||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
   } else {
     console.log("Sending a real announcment notification.");
     message.topic = 'all';
   }
-
 
   // Send a message to devices subscribed to the combination of topics specified by the provided condition.
   await admin.messaging().send(message).then((response) => {
