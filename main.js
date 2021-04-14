@@ -604,13 +604,15 @@ function newAnnouncement() {
         description: description ?? null,
         link: link ?? null,
         test: true,
-        sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
+        //DATE TO SEND CODE
+        // sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
         sent: false,
       };
-      console.log("Sending announcement: ", announcement);
+      // console.log("Sending announcement: ", announcement);
 
-      db.collection('announcements').add(announcement);
-      return null;
+      //DATE TO SEND CODE
+      // db.collection('announcements').add(announcement);
+      // return null;
 
 
       sendAnnouncement(announcement).then(result => {
@@ -623,7 +625,7 @@ function newAnnouncement() {
 
     });
 
-    // Clear previous dropdown options
+  // Clear previous dropdown options
   $$('#pool-select-dropdown').html('<option value="">None</option>');
 
   // Add active and open pools to the drop down list
