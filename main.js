@@ -554,48 +554,13 @@ function newAnnouncement() {
   // Send button setup
   $$(".announcement-popup").find('#send-announcement').off('click').click(
     function () {
-      app.preloader.show();
-
-      let title = $$('#announcement-title').val();
-      let description = $$('#announcement-description').val();
-      let link = '';
-
-      if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
-        link = '/pool/?id=' + $$('#pool-select-dropdown').val();
-      }
-      let announcement = {
-        title: title,
-        description: description,
-        link: link,
-        test: false,
-      };
-      console.log("Sending announcement: ", announcement);
-
-      sendAnnouncement(announcement).then(result => {
-        app.preloader.hide();
-        console.log(result);
-      }).catch(error => {
-        app.preloader.hide();
-        console.error(error);
-      });
-
-    });
-
-  // Send test button setup
-  $$(".announcement-popup").find('#send-test-announcement').off('click').click(
-    function () {
-
       let sendDate = announcementDateInput.getValue()[0];
-
-
       let link = '';
       if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
         link = '/pool/?id=' + $$('#pool-select-dropdown').val();
       }
-
       console.log(link);
       app.preloader.show();
-
       let title = $$('#announcement-title').val();
       let description = $$('#announcement-description').val();
       // let link = $$('#announcement-link').val();
@@ -605,24 +570,42 @@ function newAnnouncement() {
         link: link ?? null,
         test: true,
         //DATE TO SEND CODE
-        // sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
+        sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
         sent: false,
       };
-      // console.log("Sending announcement: ", announcement);
-
+      console.log("Sending announcement: ", announcement);
       //DATE TO SEND CODE
-      // db.collection('announcements').add(announcement);
-      // return null;
+      await db.collection('announcements').add(announcement);
+      app.preloader.hide();
+      return null;
+    });
 
-
-      sendAnnouncement(announcement).then(result => {
-        app.preloader.hide();
-        console.log(result);
-      }).catch(error => {
-        app.preloader.hide();
-        console.error(error);
-      });
-
+  // Send test button setup
+  $$(".announcement-popup").find('#send-test-announcement').off('click').click(
+    async function () {
+      let sendDate = announcementDateInput.getValue()[0];
+      let link = '';
+      if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
+        link = '/pool/?id=' + $$('#pool-select-dropdown').val();
+      }
+      console.log(link);
+      app.preloader.show();
+      let title = $$('#announcement-title').val();
+      let description = $$('#announcement-description').val();
+      let announcement = {
+        title: title ?? null,
+        description: description ?? null,
+        link: link ?? null,
+        test: true,
+        //DATE TO SEND CODE
+        sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
+        sent: false,
+      };
+      console.log("Sending test announcement: ", announcement);
+      //DATE TO SEND CODE
+      await db.collection('announcements').add(announcement);
+      app.preloader.hide();
+      return null;
     });
 
   // Clear previous dropdown options

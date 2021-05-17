@@ -356,7 +356,9 @@ exports.poolUpdate = functions.runWith({
       }
     }
 
-    if ((previousData.state == null) || previousData.state != newData.state) { //state has changed
+    // If the state has changed
+    if ((previousData.state == null) || previousData.state != newData.state) {
+      console.log('The state has changed for pool: ' + context.params.poolID + ' old: ' + previousData.state + ' new: ' + newData.state);
       switch (newData.state) {
         case "active":
           console.log("Pool " + context.params.poolID + " now active!");
@@ -407,6 +409,19 @@ exports.poolUpdate = functions.runWith({
           console.log("Successfully graded pool:" + context.params.poolID + " log: " + gradeResults);
           break;
         case "open":
+          console.log('pool is open');
+          // Send announcement this pool just opened 
+          if (previousData.state == null || previousData.state === 'draft') {
+            console.log("Pool: " + newData + " has been opened! is dev: " + newData.tags.includes("dev"));
+            try {
+              // await sendAnnouncementFunction('Test', 'Test Desc', 'null', '9poUfNsz0XeEUlgqkOCg', true);
+              await sendAnnouncementNotification(newData.name, 'The ' + newData.name + ' pool has been opened—tap to play now!', "/pool/?id=" + context.params.poolID, 'open-' + context.params.poolID, newData.tags.includes("dev"));
+
+            } catch (error) {
+              console.log('ERROR sending pool opening notification', error);
+            }
+          }
+
           // Reset the users scores
           let scoreResetUsers = [];
           newData.users.forEach((user, i) => {
@@ -419,10 +434,7 @@ exports.poolUpdate = functions.runWith({
           await db.collection("pools").doc(context.params.poolID).update({
             users: scoreResetUsers,
           });
-          if (previousData.state == null || previousData.state == 'draft') {
-            console.log("Pool: " + newData + " has been opened! is dev: " + newData.tags.includes("dev"));
-            await sendAnnouncementNotification(newData.name, 'The ' + newData.name + ' pool has been opened—tap to play now!', "/pool/?id=" + context.params.poolID, 'open-' + context.params.poolID, newData.tags.includes("dev"));
-          }
+
           break;
         default:
       }
@@ -1159,12 +1171,82 @@ exports.scheduledAnnouncement = functions.pubsub.schedule('every 1 minutes').onR
     await sendAnnouncementNotification(title, body, link, announcementId, test);
     await Promise.all(promises);
 
+    await doc.ref.update({ sent: true });
     console.log("Finished sending a announcement");
 
   }
 
   return null;
 });
+
+async function sendAnnouncementFunction(title, body, link, announcementId, test) {
+
+  if (test) {
+    console.log("Sending a test announcement(ANNOUNCEMENT FUNCTION): " + title);
+  } else {
+    console.log("Sending a announcement(ANNOUNCEMENT FUNCTION): " + title);
+  }
+
+  let userQuerySnapshot = await db.collection("users").get();
+  let userDocs = userQuerySnapshot.docs;
+  let promises = [];
+
+  for (var i = 0; i < userDocs.length; i++) {
+    if (!test || (userDocs[i].id == "YAk7ErsK3VTx7z6eLZUBECOPY9O2" || userDocs[i].id == "9jFl5rEDLSWaEb50dZljVy1BVOr1" || userDocs[i].id == "hmv13BjWz6gMYJ06jYMoO6zKyYt2" || userDocs[i].id == "kvkL4oRtkDflKTeoOMJAkn2nRZe2")) {
+      promises.push(db.collection("users").doc(userDocs[i].id).collection('updates').doc(announcementId).set({
+        id: announcementId,
+        title: title,
+        text: body,
+        type: 'A',
+        link: link, //"/pool/?id=" + poolID,
+      }));
+    }
+  }
+
+
+  var message = {
+    notification: {
+      title: (title) ? title : 'No Title',
+      body: (body) ? body : 'No Body',
+    },
+    data: {
+      link: (link) ? link : '',
+      //notification_foreground: true,
+      notification_id: (announcementId) ? announcementId : 'THEIDWASNULL', //this is the id of the notificatoin as it is in the users updates collection
+    },
+    android: {
+      notification: {
+        //tag: 'A-' + message.id,
+        channel_id: "default",
+      },
+    },
+    // topic: 'user-9jFl5rEDLSWaEb50dZljVy1BVOr1',
+  };
+
+  // Define a condition which will send to devices which are subscribed
+  if (test != null && test) {
+    console.log("Sending a test announcment notification.");
+
+    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
+  } else {
+    console.log("Sending a real announcment notification.");
+    message.topic = 'all';
+  }
+
+  // Send a message to devices subscribed to the combination of topics specified by the provided condition.
+  await admin.messaging().send(message).then((response) => {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  }).catch((error) => {
+    console.log('Error sending message:', error);
+  });
+
+  await Promise.all(promises);
+
+  console.log("Finished sending a announcement");
+
+  return 1;
+}
 
 exports.sendAnnouncement = functions.https.onCall(async function (data, context) { //Sends an announcement to all users
 
@@ -1264,7 +1346,7 @@ async function sendAnnouncementNotification(title, body, link, announcementId, t
   // Define a condition which will send to devices which are subscribed
   if (test != null && test) {
     console.log("Sending a test announcment notification.");
-    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)|||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
+    message.condition = "('user-9jFl5rEDLSWaEb50dZljVy1BVOr1' in topics)||('user-hmv13BjWz6gMYJ06jYMoO6zKyYt2' in topics)||('user-kvkL4oRtkDflKTeoOMJAkn2nRZe2' in topics)";
   } else {
     console.log("Sending a real announcment notification.");
     message.topic = 'all';
