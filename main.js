@@ -553,7 +553,7 @@ function newAnnouncement() {
 
   // Send button setup
   $$(".announcement-popup").find('#send-announcement').off('click').click(
-    function () {
+    async function () {
       let sendDate = announcementDateInput.getValue()[0];
       let link = '';
       if ($$('#pool-select-dropdown').val() != null && $$('#pool-select-dropdown').val() != '') {
