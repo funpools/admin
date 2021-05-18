@@ -30,7 +30,11 @@
             <li><a id="reports-tab" href="#tab-1" class="tab-link style=" display: none;"">Reports</a></li>
             <li><a id="users-tab" href="#tab-2" class="tab-link" style="display: none;">Users</a></li>
             <li><a id="pools-tab" href="#tab-3" class="tab-link tab-link-active">Pools</a></li>
-            <li><a id="categories-tab" href="#tab-4" class="tab-link" style="display: none;">Categories</a></li>
+            <li><a id="categories-tab" href="#tab-4" class="tab-link" style="display: none;"
+                onclick="cancelEditTags()">Categories</a></li>
+            <li><a id="pages-tab" href="#tab-8" class="tab-link" style="display: none;"
+                onclick="cancelEditTags()">Pages</a></li>
+
             <li><a id="announcements-tab" href="#tab-6" class="tab-link" style="display: none;">Announcements</a></li>
             <li><a id="admins-tab" href="#tab-7" class="tab-link" style="display: none;">Admin Managment</a></li>
             <li><a href=" #" onclick="forgotPassword()" class="tab-link">Reset Password</a></li>
@@ -453,7 +457,7 @@
                 </div>
               </div>
             </div>
-            <!-- Catagory tab -->
+            <!-- Category tab -->
             <div id="tab-4" class="tab">
               <div class="block-card">
                 <div id="sortable-tags-list" class="list sortable sortable-opposite no-hairlines no-margin-bottom">
@@ -472,17 +476,49 @@
                   </ul>
                 </div>
                 <div class="display-flex justify-content-center" style="padding-bottom:5px;">
-                  <a href="#" id="new-tag-button" class="button" style="display:none;">+ Add Category</a>
+                  <a href="#" class="button new-tag-button" style="display:none;">+ Add Category</a>
                 </div>
                 <div class="block">
                   <div class="display-flex justify-content-center">
-                    <a href="#" id="cancel-edit-tags-button" class="button button-fill color-red"
+                    <a href="#" class="button button-fill color-red cancel-edit-tags-button"
                       style="display: none; margin-right: 16px; width: 100px">Cancel</a>
-                    <a href="#" id="edit-tags-button" class="button button-fill" style="width: 100px">Edit</a>
+                    <a href="#" class="button button-fill edit-tags-button" style="width: 100px">Edit</a>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Pages tab -->
+            <div id="tab-8" class="tab">
+              <div class="block-card">
+                <div id="sortable-tags-list" class="list sortable sortable-opposite no-hairlines no-margin-bottom">
+                  <ul id="pages-list">
+                    <li>
+                      <div class="item-content">
+                        <div class="item-inner">
+                          <div class="item-title"><input class="tag-title-input" type="text" name="Title"
+                              placeholder="Title" readonly></div>
+                          <div class="item-after"><a href="#" class="delete-tag-button"><i
+                                class="material-icons icon">cancel</i></a></div>
+                        </div>
+                      </div>
+                      <div class="sortable-handler"></div>
+                    </li>
+                  </ul>
+                </div>
+                <div class="display-flex justify-content-center" style="padding-bottom:5px;">
+                  <a href="#" class="button new-page-button" style="display:none;">+ Add Page</a>
+                </div>
+                <div class="block">
+                  <div class="display-flex justify-content-center">
+                    <a href="#" class="button button-fill color-red cancel-edit-tags-button"
+                      style="display: none; margin-right: 16px; width: 100px">Cancel</a>
+                    <a href="#" class="button button-fill edit-tags-button" style="width: 100px">Edit</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Forgot password tab -->
             <div id="tab-5" class="tab">
               <div class="block-card">

@@ -165,6 +165,7 @@ function setupMainPage() {
         }
         if (User.permissions.categories) {
           $$('#categories-tab').show();
+          $$('#pages-tab').show();
           loadTags();
         }
         if (User.permissions.analytics) {
@@ -634,16 +635,20 @@ let announcementDateInput = app.calendar.create({
 });
 
 
-///////*TAGS*\\\\\\\
-$$('#edit-tags-button').click(function () {
-  if ($$('#edit-tags-button').html() == "Edit") {
+///////*TAGS and PAGES*\\\\\\\
+
+//#region tag buttons
+$$('.edit-tags-button').click(function () {
+  if ($$('.edit-tags-button').html() == "Edit") {
     console.log("Edit tags");
     app.sortable.enable('#sortable-tags-list');
 
-    $$('#edit-tags-button').html("Save");
+    $$('.edit-tags-button').html("Save");
     $$('#tags-list').find('input').prop('readOnly', false);
-    $$('#new-tag-button').show();
-    $$('#cancel-edit-tags-button').show();
+    $$('#pages-list').find('input').prop('readOnly', false);
+    $$('.new-tag-button').show();
+    $$('.new-page-button').show();
+    $$('.cancel-edit-tags-button').show();
     $$('.delete-tag-button').show();
 
   } else {
@@ -652,30 +657,38 @@ $$('#edit-tags-button').click(function () {
     saveTags();
 
     app.sortable.disable('#sortable-tags-list');
-    $$('#edit-tags-button').html("Edit");
+    $$('.edit-tags-button').html("Edit");
     $$('#tags-list').find('input').prop('readOnly', true);
-    $$('#new-tag-button').hide();
-    $$('#cancel-edit-tags-button').hide();
+    $$('#pages-list').find('input').prop('readOnly', true);
+    $$('.new-tag-button').hide();
+    $$('.new-page-button').hide();
+    $$('.cancel-edit-tags-button').hide();
     $$('.delete-tag-button').hide();
 
   }
 });
 
-$$('#cancel-edit-tags-button').click(function () {
+function cancelEditTags() {
   app.preloader.show();
   loadTags().then(function () {
     app.preloader.hide();
   });
   app.sortable.disable('#sortable-tags-list')
-  $$('#edit-tags-button').html("Edit");
+  $$('.edit-tags-button').html("Edit");
   $$('#tags-list').find('input').prop('readOnly', true);
-  $$('#new-tag-button').hide();
-  $$('#cancel-edit-tags-button').hide();
-  $$('.delete-tag-button').hide();
+  $$('#pages-list').find('input').prop('readOnly', true);
+  $$('.new-tag-button').hide();
+  $$('.new-page-button').hide();
 
+  $$('.cancel-edit-tags-button').hide();
+  $$('.delete-tag-button').hide();
+}
+
+$$('.cancel-edit-tags-button').click(function () {
+  cancelEditTags();
 });
 
-$$('#new-tag-button').click(function () {
+$$('.new-tag-button').click(function () {
   let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
     '<div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="New Category"></div>' +
     '</div></div><div class="sortable-handler"></div></li>');
@@ -683,24 +696,55 @@ $$('#new-tag-button').click(function () {
 
   $$("#tags-list").append(tagEl);
   $$('.delete-tag-button').click(function () {
-    console.log("Deleteing tag.");
+    console.log("Deleting tag.");
     $$(this).closest('li').remove();;
   });
 });
 
+$$('.new-page-button').click(function () {
+  let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
+    '<div class="item-title"><input class="tag-title-input" type="text" name="Title" placeholder="New Category"></div>' +
+    '</div></div><div class="sortable-handler"></div></li>');
+  tagEl.attr('data-id', makeid(10)); // TODO: Check for id conflicts
+
+  $$("#pages-list").append(tagEl);
+  $$('.delete-tag-button').click(function () {
+    console.log("Deleting tag.");
+    $$(this).closest('li').remove();;
+  });
+});
+//#endregion
+
+
+/**Loads the tags into the web panel 
+ * * Also loads the "pages" into a separate panel
+ */
 async function loadTags() { //Clears the current tags then loads them from the server
   console.log("Loading tags");
 
   universalData = (await universalDataRef.get()).data();
   $$("#tags-list").empty();
+  $$("#pages-list").empty();
 
   universalData.tags.forEach((tag, i) => {
-    let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
-      '<div class="item-title"><input class="tag-title-input" value="' + tag.title + '" type="text" name="Title" placeholder="Title" readonly></div>' +
-      '</div></div><div class="sortable-handler"></div></li>');
-    tagEl.attr('data-id', tag.id);
+
     //tagEl.data("id", "gksajdhgfkajsdhg");
-    $$("#tags-list").append(tagEl);
+    // If a tag or "page"
+    if (tag.hidden === undefined || tag.hidden == false) {
+      let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
+        '<div class="item-title"><input class="tag-title-input" value="' + tag.title + '" type="text" name="Title" placeholder="Title" readonly></div>' +
+        '</div></div><div class="sortable-handler"></div></li>');
+      tagEl.attr('data-id', tag.id);
+      $$("#tags-list").append(tagEl);
+    } else {
+      let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
+        '<div class="item-title"><input class="tag-title-input" value="' + tag.title + '" type="text" name="Title" placeholder="Title" readonly></div>' +
+        '</div><a href="' + getTagLink(tag.id) + '">\
+        <span class="material-icons-outlined">content_copy</span>\
+        </a></div><div class="sortable-handler"></div></li>');
+      tagEl.attr('data-id', tag.id);
+      $$("#pages-list").append(tagEl);
+    }
   });
 
   $$('.delete-tag-button').hide();
@@ -708,6 +752,7 @@ async function loadTags() { //Clears the current tags then loads them from the s
     console.log("Deleteing tag.");
     $$(this).parent().parent().parent().remove();
   });
+
 
   return 1;
 }
@@ -726,7 +771,24 @@ async function saveTags() { //Saves the tags and their order as currently disply
       title: $$(tagElement).find('.tag-title-input').val(),
     });
   });
+
+  let pageElements = $$('#pages-list').find('.tag-input');
+
+  pageElements.forEach((tagElement, i) => {
+    console.log($$(tagElement).attr("test"), $$(tagElement).data('id'));
+    newTags.push({
+      id: $$(tagElement).attr("data-id"),
+      title: $$(tagElement).find('.tag-title-input').val(),
+      hidden: true,
+    });
+  });
+
   console.log(newTags);
+
+  for (let i = 0; i < newTags.length; i++) {
+    // Get the tag link as this also generates them
+    getTagLink(newTags[i].id);
+  }
 
   await universalDataRef.update({
     tags: newTags,
@@ -745,6 +807,17 @@ async function saveTags() { //Saves the tags and their order as currently disply
 
   return 1;
 }
+
+/**Returns the link to the given tag */
+function getTagLink(tagID) {
+  const linkID = tagID.slice(0, 5);
+  db.collection('links').doc(linkID).set({
+    id: tagID,
+    type: 'tag',
+  });
+  return 'https://fspl.ink/' + linkID;
+}
+
 
 /////////*ADMIN MANAGMENT*\\\\\\\\\\\
 async function loadAdmins() {
