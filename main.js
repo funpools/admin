@@ -739,11 +739,12 @@ async function loadTags() { //Clears the current tags then loads them from the s
     } else {
       let tagEl = $$('<li class="tag-input"><div class="item-content"><div class="item-media"><a href="#" class="delete-tag-button"><i class="material-icons icon">cancel</i></a></div><div class="item-inner">' +
         '<div class="item-title"><input class="tag-title-input" value="' + tag.title + '" type="text" name="Title" placeholder="Title" readonly></div>' +
-        '</div><a href="' + getTagLink(tag.id) + '">\
-        <span class="material-icons-outlined">content_copy</span>\
+        '</div><a onClick="copyTagLinkToClipboard(\'' + tag.id + '\')">\
+        <span class="material-icons">content_copy</span>\
         </a></div><div class="sortable-handler"></div></li>');
       tagEl.attr('data-id', tag.id);
       $$("#pages-list").append(tagEl);
+
     }
   });
 
@@ -816,6 +817,22 @@ function getTagLink(tagID) {
     type: 'tag',
   });
   return 'https://fspl.ink/' + linkID;
+}
+
+function copyToClipboard(text) {
+  console.log('copying ' + text);
+  var dummy = document.createElement("textarea");
+  document.body.appendChild(dummy);
+  dummy.value = text;
+  dummy.select();
+  document.execCommand("copy");
+  document.body.removeChild(dummy);
+}
+
+function copyTagLinkToClipboard(tagID) {
+  const link = getTagLink(tagID);
+  copyToClipboard(link);
+  app.toast.show({ text: 'Link copied', closeTimeout: 1700, });
 }
 
 
