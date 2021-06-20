@@ -569,7 +569,7 @@ function newAnnouncement() {
         title: title ?? null,
         description: description ?? null,
         link: link ?? null,
-        test: true,
+        test: false,
         //DATE TO SEND CODE
         sendDate: sendDate ?? new Date(0, 0, 0, 0, 0, 0, 0),// de wey @.@ (JS makes you do this).
         sent: false,
