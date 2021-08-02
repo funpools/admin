@@ -80,7 +80,7 @@ $$("#t-question").on("click", function () {
   var questionNumb = makeid(10);
 
   //add the new question html to the page
-  addNumericQuestion(questionNumb, "");
+  addTiebreakerQuestion(questionNumb, "");
 });
 
 // Delete pool button on click
@@ -470,6 +470,21 @@ function addAnswer(questionID, answerID, answerText, correct) {
   }
 }
 
+function renderQuestionButtons() {
+  console.log("questionIDs.length");
+  console.log(questionIDs.length);
+  if (questionIDs.length <= 0) {
+    $$("#n-question").show();
+  } else {
+    $$("#n-question").hide();
+  }
+  if (numericQuestionIDs.length <= 0) {
+    $$("#mc-question").show();
+  } else {
+    $$("#mc-question").hide();
+  }
+}
+
 var questionIDs = [];
 
 function addQuestion(questionID, description, answers) {
@@ -543,7 +558,7 @@ function addQuestion(questionID, description, answers) {
   }
   updateQuestionNumbers();
 
-  $$("#n-question").hide();
+  renderQuestionButtons();
 }
 
 var numericQuestionIDs = [];
@@ -597,6 +612,7 @@ function addNumericQuestion(questionID, description, answer) {
   document.getElementById(questionID + "-numeric-answer").value = answer;
 
   updateQuestionNumbers();
+  renderQuestionButtons();
 }
 
 let tiebreakerIDs = [];
@@ -649,6 +665,8 @@ function addTiebreakerQuestion(questionID, description, answer) {
   document.getElementById(questionID + "-numeric-answer").value = answer;
 
   updateQuestionNumbers();
+
+  renderQuestionButtons();
 }
 
 function updateQuestionNumbers() {
@@ -709,11 +727,22 @@ function setAnswer(questionID, answerID) {
 
 function deleteQuestion(ID) {
   //remove a question from the list
+
   console.log("ID");
   console.log(ID);
-  questionIDs.splice(questionIDs.indexOf(ID), 1);
+  questionIDs = questionIDs.filter(function (e) {
+    return e != ID;
+  });
+  numericQuestionIDs = numericQuestionIDs.filter(function (e) {
+    return e != ID;
+  });
+  tiebreakerIDs = tiebreakerIDs.filter(function (e) {
+    return e != ID;
+  });
+
   let el = $$("#" + ID).remove();
   updateQuestionNumbers();
+  renderQuestionButtons();
 }
 
 ///////*Announcements*\\\\\\\
