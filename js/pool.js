@@ -17,7 +17,7 @@ const invalidPool = {
   bannedUsers: [],
   allowShares: false,
   admins: [],
-}
+};
 
 let loadedPools = [];
 // An asyc method to get pool data
@@ -26,11 +26,11 @@ async function getPool(poolID, callback, poolDataInput) {
   if (poolID in loadedPools) {
     console.log("found pool in array");
     //We call the callback and return it for backwards compatability
-    (callback) ? callback(loadedPools[poolID]) : null;
+    callback ? callback(loadedPools[poolID]) : null;
     return loadedPools[poolID];
   } else {
     // Create a reference to the file we want to download
-    var poolPictureRef = storageRef.child('pool-pictures').child(poolID);
+    var poolPictureRef = storageRef.child("pool-pictures").child(poolID);
     // Get the download URL for the picture
     let poolPic = poolPictureRef.getDownloadURL().catch(function (error) {
       // TODO: add filler picture
@@ -46,10 +46,9 @@ async function getPool(poolID, callback, poolDataInput) {
 
     poolPic = await poolPic;
 
-
     if (poolData == null) {
       console.log("Invalid pool returning");
-      (callback) ? callback(invalidPool) : null;
+      callback ? callback(invalidPool) : null;
       return invalidPool;
     }
 
@@ -60,22 +59,25 @@ async function getPool(poolID, callback, poolDataInput) {
           poolID: poolID,
           tags: parentData.tags,
           name: poolData.name,
-          description: poolData.description ? poolData.description : "No Description",
+          description: poolData.description
+            ? poolData.description
+            : "No Description",
           rules: poolData.rules ? poolData.rules : "No Rules",
           state: parentData.state,
           date: parentData.state,
           pic: parentData.pic,
           questions: parentData.questions,
           tiebreakers: parentData.tiebreakers,
-          winners: (poolData.winners) ? poolData.winners : [],
+          winners: poolData.winners ? poolData.winners : [],
           id: poolID,
           private: true,
           bannedUsers: poolData.bannedUsers ? poolData.bannedUsers : [],
           pendingUsers: poolData.pendingUsers ? poolData.pendingUsers : [],
-          allowShares: (poolData.allowShares != null) ? poolData.allowShares : true,
+          allowShares:
+            poolData.allowShares != null ? poolData.allowShares : true,
           admins: poolData.admins ? poolData.admins : [],
         };
-        (callback) ? callback(loadedPools[poolID]) : null;
+        callback ? callback(loadedPools[poolID]) : null;
         //console.log(loadedPools[poolID]);
         return loadedPools[poolID];
       });
@@ -84,14 +86,16 @@ async function getPool(poolID, callback, poolDataInput) {
         poolID: poolID,
         tags: poolData.tags,
         name: poolData.name,
-        description: poolData.description ? poolData.description : "No Description",
+        description: poolData.description
+          ? poolData.description
+          : "No Description",
         rules: poolData.rules ? poolData.rules : "No Rules",
         state: poolData.state,
-        date: ((poolData.date) ? poolData.date.toDate() : ''),
+        date: poolData.date ? poolData.date.toDate() : "",
         pic: poolPic,
         questions: poolData.questions,
         tiebreakers: poolData.tiebreakers,
-        winners: (poolData.winners) ? poolData.winners : [],
+        winners: poolData.winners ? poolData.winners : [],
         id: poolID,
         private: false,
         pendingUsers: poolData.pendingUsers ? poolData.pendingUsers : [],
@@ -99,40 +103,34 @@ async function getPool(poolID, callback, poolDataInput) {
         allowShares: poolData.allowShares ? poolData.allowShares : true,
         admins: poolData.admins ? poolData.admins : [],
       };
-      (callback) ? callback(loadedPools[poolID]) : null;
+      callback ? callback(loadedPools[poolID]) : null;
       //console.log(loadedPools[poolID]);
       return loadedPools[poolID];
-
     }
   }
 }
 
 //Setup the date format for pools
 let poolDateInput = app.calendar.create({
-  inputEl: '#pool-date-input',
+  inputEl: "#pool-date-input",
   timePicker: true,
   dateFormat: {
-    weekday: 'long',
-    month: 'long',
-    day: '2-digit',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric'
+    weekday: "long",
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
   },
 });
 
-
-
-
 // This loads the pools. This can also be used to refresh the pools page
 function loadPools(callback) {
-
   //Close any open pool popup
   app.popup.close(".pool-popup");
 
   //Remove any old pool data from
   loadedPools = [];
-
 
   //Clear any old pool cards
   $$("#active-pools").html("");
@@ -143,98 +141,121 @@ function loadPools(callback) {
   var pools = [];
 
   //Get all pools in the database and setup the cards. // TODO:only load the global pools and maybe the most popular custom pools
-  db.collection("pools").where("private", "==", false).get().then(function (poolsSnapshot) {
-    console.log('GOT data from the server');
-    poolsSnapshot.forEach(function (doc) {
+  db.collection("pools")
+    .where("private", "==", false)
+    .get()
+    .then(function (poolsSnapshot) {
+      console.log("GOT data from the server");
+      poolsSnapshot.forEach(function (doc) {
+        //Get the pool's Data
+        getPool(
+          doc.id,
+          function (poolDAT) {
+            //Add the pool data to an array for later use
+            pools.push(poolDAT);
 
-      //Get the pool's Data
-      getPool(doc.id, function (poolDAT) {
+            //Once the array length is the same as the number of pools we need to load, sort the array then add all the pools to the html
+            if (pools.length >= poolsSnapshot.size) {
+              pools.sort((a, b) => (a.name > b.name ? 1 : -1)); //Sort the array
 
-        //Add the pool data to an array for later use
-        pools.push(poolDAT);
+              console.log("Loaded and sorted all pool data");
 
-        //Once the array length is the same as the number of pools we need to load, sort the array then add all the pools to the html
-        if (pools.length >= poolsSnapshot.size) {
-          pools.sort((a, b) => (a.name > b.name) ? 1 : -1); //Sort the array
+              pools.forEach(function (pool) {
+                if (pool.private) {
+                  //console.log('private pool not displaying.');
+                } else {
+                  var poolList = document.getElementById("pool-list");
+                  let date =
+                    pool.date != "" && !isNaN(pool.date)
+                      ? pool.date
+                      : "This pool does not have a date"; //Set the date if it is valid else set it to a string
 
-          console.log("Loaded and sorted all pool data");
+                  //Setup the pool card
+                  let a = document.createElement("div");
+                  a.id = "poolcard-" + pool.id;
+                  a.classList.add("card");
+                  a.classList.add("pool-card");
+                  a.classList.add("col-30");
+                  // a.classList.add("elevation-1");
 
-          pools.forEach(function (pool) {
-            if (pool.private) {
-              //console.log('private pool not displaying.');
-            } else {
-              var poolList = document.getElementById("pool-list");
-              let date = (pool.date != '' && !isNaN(pool.date)) ? pool.date : "This pool does not have a date"; //Set the date if it is valid else set it to a string
+                  //When the card is clicked fill the popup with data
+                  a.onclick = function () {
+                    openPoolPopup(pool);
+                  };
 
-              //Setup the pool card
-              let a = document.createElement('div');
-              a.id = "poolcard-" + pool.id;
-              a.classList.add("card");
-              a.classList.add("pool-card");
-              a.classList.add("col-30");
-              // a.classList.add("elevation-1");
-
-              //When the card is clicked fill the popup with data
-              a.onclick = function () {
-                openPoolPopup(pool);
-              };
-
-              //Setup the card's inner html
-              a.innerHTML = '<div style="background-image:url(' + pool.pic + ')" class="card-header align-items-flex-end"> ' + pool.name + '<h5 class="no-margin">' + date.toLocaleString() + '</h5></div >';
-              /*
+                  //Setup the card's inner html
+                  a.innerHTML =
+                    '<div style="background-image:url(' +
+                    pool.pic +
+                    ')" class="card-header align-items-flex-end"> ' +
+                    pool.name +
+                    '<h5 class="no-margin">' +
+                    date.toLocaleString() +
+                    "</h5></div >";
+                  /*
               '<div class="card-content card-content-padding">' +
               '  <p class="date">' + date.toLocaleString() + '</p>' +
               '  <p> ' + pool.description + '</p>' +
               '</div>'
               */
 
-              //Add the card to the pool list
-              //poolList.appendChild(a);
-              console.log(pool.state);
-              //Add the pool to the html depending on its state
-              switch (pool.state) {
-                case "active":
-                  $$("#active-pools").append(a);
-                  break;
-                case "open":
-                  $$("#open-pools").append(a);
-                  break;
-                case "draft":
-                  $$("#draft-pools").append(a);
-                  break;
-                case "closed":
-                  $$("#closed-pools").append(a);
-                  break;
-                default:
-                  $$("#draft-pools").append(a);
-              }
-
+                  //Add the card to the pool list
+                  //poolList.appendChild(a);
+                  console.log(pool.state);
+                  //Add the pool to the html depending on its state
+                  switch (pool.state) {
+                    case "active":
+                      $$("#active-pools").append(a);
+                      break;
+                    case "open":
+                      $$("#open-pools").append(a);
+                      break;
+                    case "draft":
+                      $$("#draft-pools").append(a);
+                      break;
+                    case "closed":
+                      $$("#closed-pools").append(a);
+                      break;
+                    default:
+                      $$("#draft-pools").append(a);
+                  }
+                }
+              });
+              //We are done loading the pools so call the callback
+              callback ? callback() : null;
+              db.collection("universalData")
+                .doc("mainPage")
+                .get()
+                .then((mainPageData) => {
+                  $$("#poolcard-" + mainPageData.data().featuredPool).addClass(
+                    "featured-pool"
+                  );
+                });
             }
-          });
-          //We are done loading the pools so call the callback
-          (callback) ? callback() : null;
-          db.collection("universalData").doc("mainPage").get().then((mainPageData) => {
-            $$('#poolcard-' + mainPageData.data().featuredPool).addClass("featured-pool");
-          });
+          },
+          doc
+        );
 
-        }
-      }, doc);
-
-      ///
-
+        ///
+      });
     });
-  });
-
 }
 
-async function openPoolPopup(pool) { //Opens the popup for the given pool
-  console.log('Opening pool popup for pool: ', pool);
+async function openPoolPopup(pool) {
+  //Opens the popup for the given pool
+  console.log("Opening pool popup for pool: ", pool);
   //Reset all elements
-  $$('.pool-delete').parent().show();
-  $$('.pool-save').parent().show();
+  $$(".pool-delete").parent().show();
+  $$(".pool-save").parent().show();
 
-  $$('.pool-popup').find('#pool-pic').find('.pic-upload').css("background-image", ("url(" + pool.pic + ")"));
-  $$('.pool-popup').find('#pool-pic').find('.pic-icon').html('edit');
+  $$("#n-question").show();
+  $$("#mc-question").show();
+
+  $$(".pool-popup")
+    .find("#pool-pic")
+    .find(".pic-upload")
+    .css("background-image", "url(" + pool.pic + ")");
+  $$(".pool-popup").find("#pool-pic").find(".pic-icon").html("edit");
   document.getElementById("pool-name").value = pool.name;
   document.getElementById("pool-name").dataset.id = pool.poolID;
   document.getElementById("pool-description").innerHTML = pool.description;
@@ -242,76 +263,101 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   var poolVisibilityDiv = document.getElementById("pool-visibility");
   $$("#pool-visibility").val(pool.state).change();
 
-
   if (pool.admins.includes(User.uid) || User.superUser) {
     console.log("This user is an admin of this pool or a super user");
   } else {
     console.log("This user is not an admin of this pool and not a super user");
-    $$('.pool-delete').parent().hide();
-    $$('.pool-save').parent().hide();
+    $$(".pool-delete").parent().hide();
+    $$(".pool-save").parent().hide();
   }
 
   //check to see if this pool is already featured or not
-  db.collection("universalData").doc("mainPage").get().then(async function (mainPageData) {
-    let featuredPool = await getPool(mainPageData.data().featuredPool);
-    if (pool.id === mainPageData.data().featuredPool) { // if this is a featured pool
+  db.collection("universalData")
+    .doc("mainPage")
+    .get()
+    .then(async function (mainPageData) {
+      let featuredPool = await getPool(mainPageData.data().featuredPool);
+      if (pool.id === mainPageData.data().featuredPool) {
+        // if this is a featured pool
 
-      // get featured image
-      let displayPic = pool.pic;
-      let featuredPic = storageRef.child('featured-pool-pic').getDownloadURL().then(picURL => {
-        displayPic = picURL;
-      }).catch(error => { });
-      await featuredPic;
-      //set featured image
-      $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + displayPic + ")"));
-      $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
-      //update checkbox
-      $$('#featured-pool-checkbox').prop('checked', true);
-      $$('#featured-pool').show();
-    } else {
-      //set featured image
-      $$('.pool-popup').find('#featured-pool-pic').find('.pic-upload').css("background-image", ("url(" + '' + ")"));
-      $$('.pool-popup').find('#featured-pool-pic').find('.pic-icon').html('edit');
-      //update checkbox
-      $$('#featured-pool-checkbox').prop('checked', false);
-      $$('#featured-pool').hide();
-    }
-  });
+        // get featured image
+        let displayPic = pool.pic;
+        let featuredPic = storageRef
+          .child("featured-pool-pic")
+          .getDownloadURL()
+          .then((picURL) => {
+            displayPic = picURL;
+          })
+          .catch((error) => {});
+        await featuredPic;
+        //set featured image
+        $$(".pool-popup")
+          .find("#featured-pool-pic")
+          .find(".pic-upload")
+          .css("background-image", "url(" + displayPic + ")");
+        $$(".pool-popup")
+          .find("#featured-pool-pic")
+          .find(".pic-icon")
+          .html("edit");
+        //update checkbox
+        $$("#featured-pool-checkbox").prop("checked", true);
+        $$("#featured-pool").show();
+      } else {
+        //set featured image
+        $$(".pool-popup")
+          .find("#featured-pool-pic")
+          .find(".pic-upload")
+          .css("background-image", "url(" + "" + ")");
+        $$(".pool-popup")
+          .find("#featured-pool-pic")
+          .find(".pic-icon")
+          .html("edit");
+        //update checkbox
+        $$("#featured-pool-checkbox").prop("checked", false);
+        $$("#featured-pool").hide();
+      }
+    });
 
   //  POOL TAGS
   universalDataRef.get().then(function (doc) {
     universalData = doc.data();
     console.log(universalData);
     console.log("Setting up tag popup");
-    $$('#pool-tags-list').html("");
+    $$("#pool-tags-list").html("");
     universalData.tags.forEach((tag, i) => {
-      let tagEl = $$('<div id="' + tag.id + '" class="tag-chip no-select">' + tag.title + '</div>');
-      tagEl.attr('data-id', tag.id);
+      let tagEl = $$(
+        '<div id="' +
+          tag.id +
+          '" class="tag-chip no-select">' +
+          tag.title +
+          "</div>"
+      );
+      tagEl.attr("data-id", tag.id);
       if (pool.tags.includes(tag.id)) {
-        tagEl.addClass('tag-chip-selected');
+        tagEl.addClass("tag-chip-selected");
       }
       tagEl.click(() => {
-        $$('#' + tag.id).toggleClass('tag-chip-selected');
+        $$("#" + tag.id).toggleClass("tag-chip-selected");
       });
-      $$('#pool-tags-list').append(tagEl);
+      $$("#pool-tags-list").append(tagEl);
     });
   });
 
-  $$('#featured-pool-checkbox').on('change', function (e) {
+  $$("#featured-pool-checkbox").on("change", function (e) {
     if (e.target.checked) {
-      $$('#featured-pool').show();
+      $$("#featured-pool").show();
     } else {
-      $$('#featured-pool').hide();
+      $$("#featured-pool").hide();
     }
   });
 
-  let date2 = (pool.date != '') ? pool.date : new Date();
-  poolDateInput.setValue([date2])
+  let date2 = pool.date != "" ? pool.date : new Date();
+  poolDateInput.setValue([date2]);
 
   // document.getElementById("pool-date").value = "";
   // document.getElementById("pool-time").value = "";
 
-  document.getElementById("pool-questions").innerHTML = ''; //Clear any leftover html data from old questions
+  document.getElementById("pool-questions").innerHTML = ""; //Clear any leftover html data from old questions
 
   //Clear the question and answer IDs because we are loading a new pool
   questionIDs = [];
@@ -323,11 +369,17 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
   if (pool.questions != null) {
     console.log(pool.questions);
     for (let i = 0; i < pool.questions.length; i++) {
-      addQuestion(pool.questions[i].id, pool.questions[i].description, pool.questions[i].answers);
+      addQuestion(
+        pool.questions[i].id,
+        pool.questions[i].description,
+        pool.questions[i].answers
+      );
     }
-  } else { //There are no questions in this pool
+  } else {
+    //There are no questions in this pool
     // TODO: maybe add a question?
   }
+  //TODO numiric pool
 
   //Check to see if this pool has any tiebreakers. If so then load them
   if (pool.tiebreakers != null) {
@@ -335,17 +387,21 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     //For each tiebreaker in the pool.
     for (let i = 0; i < pool.tiebreakers.length; i++) {
       console.log("dsfkjhsgdfjkh");
-      addNumericQuestion(pool.tiebreakers[i].id, pool.tiebreakers[i].description, pool.tiebreakers[i].answer);
+      addTiebreakerQuestion(
+        pool.tiebreakers[i].id,
+        pool.tiebreakers[i].description,
+        pool.tiebreakers[i].answer
+      );
     }
   }
 
-  if (pool.state === "active" || pool.state === "closed") { //hide the delete button if the pool is active or closed
-    $$('.delete-button').hide();
+  if (pool.state === "active" || pool.state === "closed") {
+    //hide the delete button if the pool is active or closed
+    $$(".delete-button").hide();
   }
 
-
   let admins = [];
-  let adminSnapshot = await db.collection('admins').get();
+  let adminSnapshot = await db.collection("admins").get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
     //if (adminSnapshot.docs[i].id != User.uid) {
     admins.push({
@@ -357,84 +413,121 @@ async function openPoolPopup(pool) { //Opens the popup for the given pool
     //getUser(uid, function(admin) {});
   }
   //console.log(admins);
-  $$('#admins-list').html('');
+  $$("#admins-list").html("");
 
   //clear any current permissions
-  $$('#chips-div').children().empty();
+  $$("#chips-div").children().empty();
   admins.forEach((admin, i) => {
-
     // add to list
-    $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
-      '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
-      '<div class="item-inner"><div class="item-title">' + admin.name + '</div>' +
-      '<div class="item-after"></div></div></div></li>');
+    $$("#admins-list").append(
+      '<li class="user-' +
+        admin.uid +
+        '"><div class="item-content">' +
+        '<div class="item-media popup-close"><div style="background-image: url(' +
+        admin.profilePic +
+        ')" class="picture"></div></div>' +
+        '<div class="item-inner"><div class="item-title">' +
+        admin.name +
+        "</div>" +
+        '<div class="item-after"></div></div></div></li>'
+    );
 
-    $$('.user-' + admin.uid).find('.item-inner').click(() => {
-      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin);
-    });
+    $$(".user-" + admin.uid)
+      .find(".item-inner")
+      .click(() => {
+        addChip($$(".user-" + admin.uid).find(".item-inner")[0], admin);
+      });
 
     // add to chips if this user is an admin of this pool
     if (pool.admins.includes(admin.uid)) {
-      addChip($$('.user-' + admin.uid).find('.item-inner')[0], admin);
+      addChip($$(".user-" + admin.uid).find(".item-inner")[0], admin);
     }
 
     if (i == pool.admins.length - 1) {
       //setup searchbar
       var searchbar = app.searchbar.create({
-        el: '.admins-searchbar',
-        searchContainer: '#admins-list',
-        searchIn: '.item-title',
+        el: ".admins-searchbar",
+        searchContainer: "#admins-list",
+        searchIn: ".item-title",
       });
     }
   });
 
-
   app.popup.open(".pool-popup");
-};
+}
 
-function addChip(el, admin) { // add an admin chip
+function addChip(el, admin) {
+  // add an admin chip
   console.log("Adding chip for admin: ", admin);
   //if user is not already selected
-  if ($$('.chip-' + admin.uid).length < 1) {
-
+  if ($$(".chip-" + admin.uid).length < 1) {
     if (admin.uid != User.uid) {
       //add chip
-      $$('#chips-div').children().append('<div class=" u-chip animate fadeInDown chip chip-' + admin.uid +
-        '" data-uid="' + admin.uid + '"><div class="chip-media" style="background-image: url(' + admin.profilePic +
-        ')"></div><div class="chip-label">' + admin.name +
-        '</div><a href="#" onclick="removeChip(this, \'' + admin.uid +
-        '\')" class="chip-delete"></a></div>');
-
+      $$("#chips-div")
+        .children()
+        .append(
+          '<div class=" u-chip animate fadeInDown chip chip-' +
+            admin.uid +
+            '" data-uid="' +
+            admin.uid +
+            '"><div class="chip-media" style="background-image: url(' +
+            admin.profilePic +
+            ')"></div><div class="chip-label">' +
+            admin.name +
+            '</div><a href="#" onclick="removeChip(this, \'' +
+            admin.uid +
+            '\')" class="chip-delete"></a></div>'
+        );
     } else {
       //add chip
-      $$('#chips-div').children().append('<div class=" u-chip animate fadeInDown chip chip-' + admin.uid +
-        '" data-uid="' + admin.uid + '"><div class="chip-media" style="background-image: url(' + admin.profilePic +
-        ')"></div><div class="chip-label">' + admin.name +
-        '</div></div>');
+      $$("#chips-div")
+        .children()
+        .append(
+          '<div class=" u-chip animate fadeInDown chip chip-' +
+            admin.uid +
+            '" data-uid="' +
+            admin.uid +
+            '"><div class="chip-media" style="background-image: url(' +
+            admin.profilePic +
+            ')"></div><div class="chip-label">' +
+            admin.name +
+            "</div></div>"
+        );
     }
 
     //animate height
-    $$('#chips-div').css("height", $$('#chips-div').children()[0].scrollHeight + "px");
+    $$("#chips-div").css(
+      "height",
+      $$("#chips-div").children()[0].scrollHeight + "px"
+    );
 
     //add check mark by user
-    $$(el).find('.item-after').html('<i class="icon material-icons animate fadeIn">check</i>');
-    $$(el).find('.item-after').html('<i class="icon material-icons animate fadeIn">check</i>');
-
+    $$(el)
+      .find(".item-after")
+      .html('<i class="icon material-icons animate fadeIn">check</i>');
+    $$(el)
+      .find(".item-after")
+      .html('<i class="icon material-icons animate fadeIn">check</i>');
   }
 
   //getUser(uid, function(user) {});
-
 }
 
-function removeChip(el, uid) { //Add a user chip to private pool invit
+function removeChip(el, uid) {
+  //Add a user chip to private pool invit
   //remove chip
   $$(el).parent().remove();
 
   //animate height
-  $$('#chips-div').css("height", $$('#chips-div').children()[0].scrollHeight + "px");
+  $$("#chips-div").css(
+    "height",
+    $$("#chips-div").children()[0].scrollHeight + "px"
+  );
 
   //remove check mark by user
-  $$('.user-' + uid).find('.item-after').html('');
+  $$(".user-" + uid)
+    .find(".item-after")
+    .html("");
 }
 
 async function savePool() {
@@ -445,47 +538,51 @@ async function savePool() {
   let name = document.getElementById("pool-name").value;
   let description = document.getElementById("pool-description").innerHTML;
   let rules = $$("#pool-rules").html();
-  let pic = $$('.pool-popup').find('#pool-pic').find('.pic-input')[0].files[0];
+  let pic = $$(".pool-popup").find("#pool-pic").find(".pic-input")[0].files[0];
   let timestamp = poolDateInput.getValue()[0];
   let poolState = $$("#pool-visibility").val();
   let poolQuestions = document.getElementsByClassName("mc-question");
   let poolTieBreakers = document.getElementsByClassName("n-question");
-  let featured = $$('#featured-pool-checkbox').prop('checked');
+  let featured = $$("#featured-pool-checkbox").prop("checked");
   let featuredPic = null;
 
   // If this pool has been closed do not allow editing
   let pooldata = await getPool(id);
-  if (poolState === 'closed' && pooldata.state === 'closed') {
+  if (poolState === "closed" && pooldata.state === "closed") {
     app.dialog.alert("This pool has been closed and cannot be edited.");
 
     app.preloader.hide();
     return;
   }
 
-
   //If this is a featured pool load the image
   if (featured) {
-    featuredPic = $$('.pool-popup').find('#featured-pool-pic').find('.pic-input')[0].files[0];
+    featuredPic = $$(".pool-popup")
+      .find("#featured-pool-pic")
+      .find(".pic-input")[0].files[0];
   }
 
   //Get tags from the chips // TODO: Remove this is not needed
   let tags = [];
-  $$('#pool-tags-list').find('.tag-chip-selected').forEach((selectedTag, i) => {
-    console.log($$(selectedTag).attr("id"), $$(selectedTag).attr("data-id"));
-    tags.push($$(selectedTag).attr("data-id"));
-  });
+  $$("#pool-tags-list")
+    .find(".tag-chip-selected")
+    .forEach((selectedTag, i) => {
+      console.log($$(selectedTag).attr("id"), $$(selectedTag).attr("data-id"));
+      tags.push($$(selectedTag).attr("data-id"));
+    });
 
   let admins = [];
-  await $$('#chips-div').find('.u-chip').forEach((adminChip, i) => {
-    console.log($$(adminChip).attr("uid"), $$(adminChip).attr("data-uid"));
-    admins.push($$(adminChip).attr("data-uid"));
-  });
+  await $$("#chips-div")
+    .find(".u-chip")
+    .forEach((adminChip, i) => {
+      console.log($$(adminChip).attr("uid"), $$(adminChip).attr("data-uid"));
+      admins.push($$(adminChip).attr("data-uid"));
+    });
   console.log(admins);
 
   let questions = [];
   //For each question
   for (let i = 0; i < poolQuestions.length; i++) {
-
     let questionID = poolQuestions[i].id;
     let answerEL = document.getElementsByClassName(questionID + "-answer");
     let answers = [];
@@ -495,7 +592,7 @@ async function savePool() {
       //ADD this answer to the question object
       answers.push({
         id: answerEL[x].id,
-        correct: (correctAnswers[questionID] == answerEL[x].id), //Inline if statement to check if this answer id is the correct one
+        correct: correctAnswers[questionID] == answerEL[x].id, //Inline if statement to check if this answer id is the correct one
         text: answerEL[x].value,
       });
     }
@@ -503,9 +600,12 @@ async function savePool() {
     //Add this multiple choice question to the questions object
     questions.push({
       id: questionID,
-      description: document.getElementById('question-description-' + questionID).value,
+      description: document.getElementById("question-description-" + questionID)
+        .value,
       answers: answers,
-      correctAnswer: (correctAnswers[questionID]) ? correctAnswers[questionID] : null,
+      correctAnswer: correctAnswers[questionID]
+        ? correctAnswers[questionID]
+        : null,
     });
   }
   console.log(questions);
@@ -514,14 +614,14 @@ async function savePool() {
 
   //For each tiebreaker
   for (let i = 0; i < poolTieBreakers.length; i++) {
-
     let questionID = poolTieBreakers[i].id;
     let numericAnswer = document.getElementById(questionID + "-numeric-answer");
 
     tieBreakers.push({
       id: questionID,
-      description: document.getElementById('question-description-' + questionID).value,
-      answer: (numericAnswer.value) ? numericAnswer.value : null,
+      description: document.getElementById("question-description-" + questionID)
+        .value,
+      answer: numericAnswer.value ? numericAnswer.value : null,
     });
   }
 
@@ -552,64 +652,77 @@ async function editPool(poolData, callback) {
   try {
     let id;
 
-    if (poolData.poolID != null && poolData.poolID != 0) { //If the poolID is valid edit the data
+    if (poolData.poolID != null && poolData.poolID != 0) {
+      //If the poolID is valid edit the data
       id = poolData.poolID;
-      let poolRef = db.collection('pools').doc(poolData.poolID);
+      let poolRef = db.collection("pools").doc(poolData.poolID);
       //Update the pools data
       await poolRef.update({
-        name: (poolData.name) ? poolData.name : "No name given",
-        description: (poolData.description) ? poolData.description : "No Description",
-        rules: (poolData.rules) ? poolData.rules : "No Rules",
-        date: (poolData.date) ? poolData.date : new Date(),
-        tags: (poolData.tags) ? poolData.tags : [],
-        questions: (poolData.questions) ? poolData.questions : [],
-        tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
-        state: (poolData.state) ? poolData.state : "hidden",
+        name: poolData.name ? poolData.name : "No name given",
+        description: poolData.description
+          ? poolData.description
+          : "No Description",
+        rules: poolData.rules ? poolData.rules : "No Rules",
+        date: poolData.date ? poolData.date : new Date(),
+        tags: poolData.tags ? poolData.tags : [],
+        questions: poolData.questions ? poolData.questions : [],
+        tiebreakers: poolData.tiebreakers ? poolData.tiebreakers : [],
+        state: poolData.state ? poolData.state : "hidden",
         private: false,
-        admins: (poolData.admins) ? poolData.admins : [],
+        admins: poolData.admins ? poolData.admins : [],
       });
       //Update the picture if it exists
       if (poolData.picture && poolData.picture != null) {
-        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture).then(function (snapshot) {
-          console.log('Uploaded a blob or file!');
-        });
+        await storageRef
+          .child("pool-pictures")
+          .child(poolData.poolID)
+          .put(poolData.picture)
+          .then(function (snapshot) {
+            console.log("Uploaded a blob or file!");
+          });
       }
 
       loadedPools[id] = {
-        state: (poolData.state) ? poolData.state : "hidden",
+        state: poolData.state ? poolData.state : "hidden",
       };
-    } else { //The pool does not exist so create a pool and set its information
+    } else {
+      //The pool does not exist so create a pool and set its information
       //make sure that the user is included as an admin
-      let poolAdmins = (poolData.admins) ? poolData.admins : [];
-      (poolAdmins.includes(User.uid)) ? null : poolAdmins.push(User.uid);
+      let poolAdmins = poolData.admins ? poolData.admins : [];
+      poolAdmins.includes(User.uid) ? null : poolAdmins.push(User.uid);
 
       let doc = await db.collection("pools").add({
-        name: (poolData.name) ? poolData.name : "No name given",
-        description: (poolData.description) ? poolData.description : "No Description",
-        rules: (poolData.rules) ? poolData.rules : "No Rules",
-        date: (poolData.date) ? poolData.date : new Date(),
-        tags: (poolData.tags) ? poolData.tags : [],
-        questions: (poolData.questions) ? poolData.questions : [],
-        tiebreakers: (poolData.tiebreakers) ? poolData.tiebreakers : [],
-        state: (poolData.state) ? poolData.state : "hidden",
+        name: poolData.name ? poolData.name : "No name given",
+        description: poolData.description
+          ? poolData.description
+          : "No Description",
+        rules: poolData.rules ? poolData.rules : "No Rules",
+        date: poolData.date ? poolData.date : new Date(),
+        tags: poolData.tags ? poolData.tags : [],
+        questions: poolData.questions ? poolData.questions : [],
+        tiebreakers: poolData.tiebreakers ? poolData.tiebreakers : [],
+        state: poolData.state ? poolData.state : "hidden",
         private: false,
         admins: poolAdmins,
       });
 
       //Upload the picture if it exists
       if (poolData.picture && poolData.picture != null) {
-        await storageRef.child('pool-pictures').child(poolData.poolID).put(poolData.picture);
+        await storageRef
+          .child("pool-pictures")
+          .child(poolData.poolID)
+          .put(poolData.picture);
       }
 
-      console.log('Created pool with id: ' + doc.id);
+      console.log("Created pool with id: " + doc.id);
       id = doc.id;
     }
 
     /// Here for later// Set the weekly pool if this week
     console.log(poolData.date);
     /**
-     * 
-     * @param {Date} d 
+     *
+     * @param {Date} d
      */
     /*function getWeekNumber(d) {
       // Copy date so don't modify original
@@ -639,24 +752,29 @@ async function editPool(poolData, callback) {
         tags: firebase.firestore.FieldValue.arrayRemove('g2DfdYxi9z'),
       });
     }*/
-    let poolTimeDiff = (poolData.date - Date.now());
-    console.log('poolData.date.getMilliseconds() ' + new Date(poolData.date));
-    console.log('(new Date()).getMilliseconds() ' + Date.now());
+    let poolTimeDiff = poolData.date - Date.now();
+    console.log("poolData.date.getMilliseconds() " + new Date(poolData.date));
+    console.log("(new Date()).getMilliseconds() " + Date.now());
     console.log(poolTimeDiff);
 
     if (poolTimeDiff < 777600000 && poolTimeDiff > 0) {
-      console.log('Pool starts this week');
-      await db.collection("pools").doc(id).update({
-        tags: firebase.firestore.FieldValue.arrayUnion('g2DfdYxi9z'),
-      });
-      console.log('Set this week tag');
+      console.log("Pool starts this week");
+      await db
+        .collection("pools")
+        .doc(id)
+        .update({
+          tags: firebase.firestore.FieldValue.arrayUnion("g2DfdYxi9z"),
+        });
+      console.log("Set this week tag");
     } else {
-      console.log('Pool does not start this week');
-      await db.collection("pools").doc(id).update({
-        tags: firebase.firestore.FieldValue.arrayRemove('g2DfdYxi9z'),
-      });
+      console.log("Pool does not start this week");
+      await db
+        .collection("pools")
+        .doc(id)
+        .update({
+          tags: firebase.firestore.FieldValue.arrayRemove("g2DfdYxi9z"),
+        });
     }
-
 
     await featurePool(id, poolData.featuredPic, poolData.feature);
 
@@ -669,18 +787,16 @@ async function editPool(poolData, callback) {
         closeTimeout: 3000,
       });
       app.popup.close(".pool-popup");
-      (callback) ? callback(id) : null;
+      callback ? callback(id) : null;
       return id;
-
     });
-
   } catch (error) {
     console.error(error);
     app.preloader.hide();
     app.toast.show({
       text: error,
       closeTimeout: 10000,
-      closeButton: true
+      closeButton: true,
     });
     app.popup.close(".pool-popup");
   }
@@ -707,11 +823,11 @@ async function editPool(poolData, callback) {
   */
 }
 
-
-async function newPool() { // New pool button on click
+async function newPool() {
+  // New pool button on click
   //clear any existing values in the popup
-  $$(".pool-popup").find('.pic-upload').css("background-image", "");
-  $$(".pool-popup").find('.pic-icon').html("add_photo_alternate");
+  $$(".pool-popup").find(".pic-upload").css("background-image", "");
+  $$(".pool-popup").find(".pic-icon").html("add_photo_alternate");
   $$("#pool-name").val("");
   $$("#pool-description").html("");
   document.getElementById("pool-name").dataset.id = "0";
@@ -723,50 +839,63 @@ async function newPool() { // New pool button on click
 
   // TODO: Load admins name data
   let admins = [];
-  let adminSnapshot = await db.collection('admins').get();
+  let adminSnapshot = await db.collection("admins").get();
   for (var i = 0; i < adminSnapshot.docs.length; i++) {
     admins.push(adminSnapshot.docs[i].id);
   }
-  $$('#admins-list').html('');
+  $$("#admins-list").html("");
   //clear any current admin permissions
-  $$('#chips-div').children().empty();
+  $$("#chips-div").children().empty();
   admins.forEach((uid, i) => {
     getUser(uid, function (admin) {
       // add to list
-      $$('#admins-list').append('<li class="user-' + admin.uid + '"><div class="item-content">' +
-        '<div class="item-media popup-close"><div style="background-image: url(' + admin.profilePic + ')" class="picture"></div></div>' +
-        '<div class="item-inner" onclick="addChip(this, \'' + admin.uid + '\')"><div class="item-title">' + admin.fullName() + '</div>' +
-        '<div class="item-after"></div></div></div></li>');
+      $$("#admins-list").append(
+        '<li class="user-' +
+          admin.uid +
+          '"><div class="item-content">' +
+          '<div class="item-media popup-close"><div style="background-image: url(' +
+          admin.profilePic +
+          ')" class="picture"></div></div>' +
+          '<div class="item-inner" onclick="addChip(this, \'' +
+          admin.uid +
+          '\')"><div class="item-title">' +
+          admin.fullName() +
+          "</div>" +
+          '<div class="item-after"></div></div></div></li>'
+      );
 
       if (i == admins.length - 1) {
         //setup searchbar
         var searchbar = app.searchbar.create({
-          el: '.admins-searchbar',
-          searchContainer: '#admins-list',
-          searchIn: '.item-title',
+          el: ".admins-searchbar",
+          searchContainer: "#admins-list",
+          searchIn: ".item-title",
         });
       }
     });
   });
   //open the popup
   app.popup.open(".pool-popup");
-  return "Cleared data and opened popup."
+  return "Cleared data and opened popup.";
 }
 
-function duplicatePool() { //Duplicates the specified pool then opens the popup
+function duplicatePool() {
+  //Duplicates the specified pool then opens the popup
   let id = document.getElementById("pool-name").dataset.id;
   getPool(id).then(function (poolData) {
     let newPool = {
-      name: poolData.name + '(Copy)',
-      description: poolData.description ? poolData.description : "No Description",
+      name: poolData.name + "(Copy)",
+      description: poolData.description
+        ? poolData.description
+        : "No Description",
       rules: poolData.rules ? poolData.rules : "No Rules",
       tags: [],
       questions: poolData.questions,
       tiebreakers: poolData.tiebreakers,
-      state: 'draft',
+      state: "draft",
       admins: [User.uid],
     };
-    console.log('Duplicating pool: ' + id);
+    console.log("Duplicating pool: " + id);
     //clear the selected questions
     newPool.questions.forEach((question, i) => {
       newPool.questions[i].correctAnswer = null;
@@ -777,30 +906,38 @@ function duplicatePool() { //Duplicates the specified pool then opens the popup
 
     editPool(newPool, function (editedPoolID) {
       console.log("Made a new duplicate pool: " + editedPoolID + ",", newPool);
-      $$('#poolcard-' + editedPoolID)[0].click();
+      $$("#poolcard-" + editedPoolID)[0].click();
     });
   });
-
 }
 
 async function featurePool(idToFeature, featuredPic, feature) {
   app.preloader.show();
 
-  let mainPageData = (await db.collection("universalData").doc("mainPage").get()).data();
+  let mainPageData = (
+    await db.collection("universalData").doc("mainPage").get()
+  ).data();
   let pool = await getPool(idToFeature);
   app.preloader.hide();
-
 
   //if we are trying to feature this pool and it is open
   if (feature && pool.state == "open") {
     //if this pool will replace another featured pool then do some fancy code to confirm the admin wants to do this
-    if (idToFeature != mainPageData.featuredPool && (mainPageData.featuredPool != null && mainPageData.featuredPool != '')) {
+    if (
+      idToFeature != mainPageData.featuredPool &&
+      mainPageData.featuredPool != null &&
+      mainPageData.featuredPool != ""
+    ) {
       let confirmationPromise = new Promise(function (resolve, reject) {
-        app.dialog.confirm("Featuring this pool will overwrite any other featured pools. Are you sure you wish to proceed?", function () {
-          resolve();
-        }, function () {
-          reject();
-        });
+        app.dialog.confirm(
+          "Featuring this pool will overwrite any other featured pools. Are you sure you wish to proceed?",
+          function () {
+            resolve();
+          },
+          function () {
+            reject();
+          }
+        );
       });
 
       try {
@@ -813,24 +950,29 @@ async function featurePool(idToFeature, featuredPic, feature) {
     }
     console.log("Featureing pool id: " + idToFeature);
     await db.collection("universalData").doc("mainPage").update({
-      featuredPool: idToFeature
+      featuredPool: idToFeature,
     });
 
     //Update the picture if it exists
-    if (featuredPic != null) { //If there is a picture upload it and display the progress
+    if (featuredPic != null) {
+      //If there is a picture upload it and display the progress
       console.log("Uploading pic");
 
       var progress = 0;
-      let progressDialog = app.dialog.progress('Uploading featured photo', progress);
-      var uploadTask = storageRef.child('featured-pool-pic').put(featuredPic);
+      let progressDialog = app.dialog.progress(
+        "Uploading featured photo",
+        progress
+      );
+      var uploadTask = storageRef.child("featured-pool-pic").put(featuredPic);
 
       app.preloader.hide();
       // Listen for state changes, errors, and completion of the upload.
-      uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
+      uploadTask.on(
+        firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
         function (snapshot) {
           // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
           progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload is ' + progress + '% done');
+          console.log("Upload is " + progress + "% done");
           progressDialog.setProgress(progress);
         },
         function (error) {
@@ -841,7 +983,8 @@ async function featurePool(idToFeature, featuredPic, feature) {
           console.log("Finished uploading photo.");
           progressDialog.close();
           app.preloader.show();
-        });
+        }
+      );
 
       await uploadTask;
 
@@ -851,18 +994,25 @@ async function featurePool(idToFeature, featuredPic, feature) {
       app.preloader.hide();
       return 1;
     }
-
   } else {
-    if (idToFeature == mainPageData.featuredPool) { //If this is the currently featured pool then remove it from the featuredpool
-      if (pool.state != "open") { //If this is the featured pool but it is not open then dont allow it to be featured
-        app.dialog.alert("This pool is no longer featured in the app because it's state is no longer open");
+    if (idToFeature == mainPageData.featuredPool) {
+      //If this is the currently featured pool then remove it from the featuredpool
+      if (pool.state != "open") {
+        //If this is the featured pool but it is not open then dont allow it to be featured
+        app.dialog.alert(
+          "This pool is no longer featured in the app because it's state is no longer open"
+        );
       }
       let confirmationPromise = new Promise(function (resolve, reject) {
-        app.dialog.confirm("This operation will remove this pool from the featured pool. Are you sure you wish to proceed?", function () {
-          resolve();
-        }, function () {
-          reject();
-        });
+        app.dialog.confirm(
+          "This operation will remove this pool from the featured pool. Are you sure you wish to proceed?",
+          function () {
+            resolve();
+          },
+          function () {
+            reject();
+          }
+        );
       });
 
       try {
@@ -875,15 +1025,17 @@ async function featurePool(idToFeature, featuredPic, feature) {
 
       console.log("Removeing featured pool id: " + idToFeature);
       await db.collection("universalData").doc("mainPage").update({
-        featuredPool: '',
+        featuredPool: "",
       });
 
       return -1;
     } else if (feature) {
-      if (pool.state != "open") { //If this is the featured pool but it is not open then dont allow it to be featured
-        app.dialog.alert("This pool cannot be featured in the app because it's state is not open.");
+      if (pool.state != "open") {
+        //If this is the featured pool but it is not open then dont allow it to be featured
+        app.dialog.alert(
+          "This pool cannot be featured in the app because it's state is not open."
+        );
       }
     }
   }
-
 }
