@@ -501,6 +501,27 @@ exports.poolUpdate = functions.runWith({
     return true;
   });
 
+//Check for any pools that are past their date and sets them to active
+exports.poolAutoActivate= functions.pubsub.schedule('every 2 minutes').onRun(async function (context) {
+
+  let endDate = new Date();
+  let querySnapshot = await db.collection('pools').where("state","==","open").where("date", "<", endDate).get();
+
+  //send a notificatoin for each of the found pools
+  let updatePromises = [];
+  for (var i = 0; i < querySnapshot.docs.length; i++) {
+
+    console.log("set pool: "+querySnapshot.docs[i].id+" to active");
+    // set the pool to active
+    await db.collection("pools").doc(querySnapshot.docs[i].id).update({
+      state: 'active',
+    });
+  }
+  await Promise.all(updatePromises);
+
+  return true;
+});
+
 //Check for any pools that are closing soon and notify the users in that pool
 exports.poolClosing = functions.pubsub.schedule('every 2 minutes').onRun(async function (context) {
 
