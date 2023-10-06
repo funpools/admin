@@ -127,8 +127,6 @@ exports.poolUpdate = functions.runWith({
       let poolLog = new Log('Grading pool: ' + poolID, 'gradePool:' + poolID);;
 
       try {
-
-
         // Reference to the pools document
         let poolRef = db.collection("pools").doc(poolID);
         let pool = getPool(poolID);
@@ -237,18 +235,18 @@ exports.poolUpdate = functions.runWith({
                   poolLog.log('resolving tie for user placing score is: ' + (tieScore));
                   // If the tie score is not 0 then the tie is resolved
                   if (tieScore != 0) {
-                    if (tieScore > 0) {
+                    // if (tieScore > 0) {
                       poolLog.log("this is probably going  to happen.")
                       // The previous user won
                       place = i + 1;
                       user.place = place;
-                    } else {
-                      poolLog.log("THIS is unlikely to happen. In fact it may be impossible")
-                      // The current user won
-                      user.place = place;
-                      place = i + 1;
-                      previousUser.place = place;
-                    }
+                    // } else {
+                    //   // poolLog.log("THIS is unlikely to happen. In fact it may be impossible")
+                    //   // // The current user won
+                    //   // user.place = place;
+                    //   // place = i + 1;
+                    //   // previousUser.place = place;
+                    // }
                     break;
                   }
                   if (x >= pool.tiebreakers.length - 1) {
@@ -373,12 +371,15 @@ exports.poolUpdate = functions.runWith({
 
           //Get the winner data and email it to the admins
           let winnersList = '';
+          let place2List = '';
+          let place3List = '';
+
           let poolData = await getPool(context.params.poolID);
           for (let i = 0; i < poolData.users.length; i++) {
             var user = poolData.users[i];
             // Skip loosers
             if (user.isWinner) {
-              // Get winner's contact info and add it to the list
+              // Get winner's contact info and add it to Place3Listthe list
               await admin.auth().getUser(user.uid).then(async userRecord => {
                 let userData = await getUser(user.uid);
                 winnersList = winnersList + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
@@ -390,19 +391,52 @@ exports.poolUpdate = functions.runWith({
                   error
                 };
               });
+            }else if(user.place==2){
+              // Get 2nd place contact info and add it to the list
+              await admin.auth().getUser(user.uid).then(async userRecord => {
+                let userData = await getUser(user.uid);
+                place2List = place2List + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
+              }).catch(error => {
+                console.error('Error fetching user data:', error)
+                let foo = {
+                  status: 'error',
+                  code: 500,
+                  error
+                };
+              });
+            }else if (user.place==3){
+              // Get 3rd place contact info and add it to the list
+              await admin.auth().getUser(user.uid).then(async userRecord => {
+                let userData = await getUser(user.uid);
+                place3List = place3List + '<p style="font-size: large"></br>Name:' + userData.firstName + ' ' + userData.lastName + ' <br /> UID: ' + user.uid + '<br /> SCORE: ' + user.score + '/' + poolData.questions.length + '<br /> Email: <a href="mailto:"> ' + userRecord.email + ' </a></p>';
+              }).catch(error => {
+                console.error('Error fetching user data:', error)
+                let foo = {
+                  status: 'error',
+                  code: 500,
+                  error
+                };
+              });
             }
           };
+
+
+
           console.log("The winner list is: " + JSON.stringify(winnersList));
 
           // Email winner info to the admins
           await admin.firestore().collection('mail').add({
             to: ['tsmith@funsportspools.com', 'development@funsportspools.com',
-              'admin@funsportspools.com', 'Haley.Sacotte@wyecomm.com'],//'tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com,mike@onairsportsmarketing.com,Haley.Sacotte@wyecomm.com'
+              'admin@funsportspools.com', 'Haley.Sacotte@wyecomm.com','ethan@overstep.co'],//'tsmith@funsportspools.com', 'development@funsportspools.com', 'admin@funsportspools.com,mike@onairsportsmarketing.com,Haley.Sacotte@wyecomm.com'
             message: {
               subject: 'Winner info for ' + poolData.name,
               html: '<div style="margin: 32px auto; padding: 32px; max-width: 500px; background-color: #f0f0f0; border-radius: 8px">\
               <img src="https://admin.funpools.app/logo.png" style="width: 40%; max-width: 150px; display: block; margin: 0 auto;"/>\
-            <p style="font-size: large"></br>Hi Admins,<br />' + poolData.name + ' has been closed and the winner info is: </br></p>' + winnersList + '</div>',
+            <p style="font-size: large"></br>Hi Admins,<br />' + poolData.name + ' has been closed and the winner info is: </br></p>'
+             +'1st Place:' + winnersList +
+             '</br>2nd Place:'+place2List+
+             '</br>3rd Place:'+place3List+
+             '</div>',
             }
           }).then(() => console.log('Queued email for delivery!'));
 
